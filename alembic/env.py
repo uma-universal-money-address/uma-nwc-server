@@ -2,7 +2,7 @@ from logging.config import fileConfig
 
 from quart import current_app, Quart
 from nwc_backend import create_app
-from nwc_backend.models.ModelBase import ModelBase
+from nwc_backend.models.model_base import ModelBase
 from nwc_backend.db import db
 
 from alembic import context
