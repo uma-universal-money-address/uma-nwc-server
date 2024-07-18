@@ -1,8 +1,8 @@
 from logging.config import fileConfig
 
 from quart import current_app, Quart
-from nwc_backend.app import create_app
-from nwc_backend.models.Base import Base
+from nwc_backend import create_app
+from nwc_backend.models.ModelBase import ModelBase
 from nwc_backend.db import db
 
 from alembic import context
@@ -16,7 +16,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
+target_metadata = ModelBase.metadata
 
 
 def get_app() -> Quart:

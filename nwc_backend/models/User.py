@@ -1,11 +1,8 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-from nwc_backend.models.Base import Base
-from sqlalchemy.orm import Mapped, mapped_column
+from nwc_backend.models.ModelBase import ModelBase
 
 
-class User(Base):
+class User(ModelBase):
     __tablename__ = "user"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
