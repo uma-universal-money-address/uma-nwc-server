@@ -4,6 +4,7 @@
 from quart import Quart
 from nwc_backend.db import db
 from nwc_backend.configs.local_dev import DATABASE_URI
+import nwc_backend.alembic_importer  # noqa: F401
 
 
 def create_app():
