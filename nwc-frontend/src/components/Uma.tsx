@@ -23,7 +23,6 @@ const Container = styled.div`
   flex-direction: row;
   gap: 6px;
   align-items: center;
-  justify-content: center;
   width: 100%;
 `;
 

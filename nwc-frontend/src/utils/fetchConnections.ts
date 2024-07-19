@@ -1,10 +1,4 @@
-export interface Connection {
-  appId: string;
-  name: string;
-  createdAt: string;
-  lastUsed: string;
-  avatar: string;
-}
+import { Connection } from "src/types/Connection";
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const fetchConnections = async () => {

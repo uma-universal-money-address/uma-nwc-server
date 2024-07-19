@@ -10,6 +10,7 @@ import { Nav } from "./Nav";
 import { NotificationLayout } from "./NotificationLayout";
 import { LayoutInnerContent } from "./LayoutInnerContent";
 import GlobalNotificationContext from "src/hooks/useGlobalNotificationContext";
+import { PermissionsPage } from "./permissions/PermissionsPage";
 
 const router = createBrowserRouter([
   {
@@ -20,6 +21,10 @@ const router = createBrowserRouter([
     path: "/connection/:appId",
     element: <ConnectionPage />,
   },
+  {
+    path: "/permissions/:appId",
+    element: <PermissionsPage />,
+  }
 ]);
 
 export function Root() {
