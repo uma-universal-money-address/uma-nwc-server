@@ -3,16 +3,22 @@ import { Button, Icon, UnstyledButton } from "@lightsparkdev/ui/components";
 import { Label } from "@lightsparkdev/ui/components/typography/Label";
 import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
+import { useState } from "react";
 import { Avatar } from "src/components/Avatar";
 import { Uma } from "src/components/Uma";
 import { useConnection } from "src/hooks/useConnection";
 import { useUma } from "src/hooks/useUma";
+import { LimitFrequency } from "src/types/Connection";
 import { convertToNormalDenomination } from "src/utils/convertToNormalDenomination";
+import { formatConnectionString } from "src/utils/formatConnectionString";
+import { EditLimit } from "./EditLimit";
 
 
 export const PermissionsPage = ({ appId }: { appId: string }) => {
   const { connection, updateConnection, isLoading: isLoadingConnection } = useConnection({ appId });
   const { uma, isLoading: isLoadingUma } = useUma();
+
+  const [isEditLimitVisible, setIsEditLimitVisible] = useState<boolean>(false);
 
   if (isLoadingConnection || isLoadingUma) {
     return (
@@ -29,14 +35,20 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
     lastUsed,
     avatar,
     permissions,
-    amountPerMonthLowestDenom,
+    amountInLowestDenom,
+    limitFrequency,
+    limitEnabled,
     currency,
     verified,
   } = connection;
 
   const handleEdit = () => {
-    // TODO: Implement edit permissions
-    console.log("Edit permissions");
+    setIsEditLimitVisible(true);
+  }
+
+  const handleSubmitEditLimit = ({ amountInLowestDenom, frequency, enabled }: {amountInLowestDenom: number, frequency: LimitFrequency, enabled: boolean}) => {
+    updateConnection({ amountInLowestDenom, limitFrequency: frequency, limitEnabled: enabled });
+    setIsEditLimitVisible(false);
   }
 
   const header = (
@@ -82,7 +94,9 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
           </Permissions>
         </PermissionsDescription>
         <Limit onClick={handleEdit}>
-          <LimitDescription>{`${currency.symbol}${convertToNormalDenomination(amountPerMonthLowestDenom, currency)}/month spending limit`}</LimitDescription>
+          <LimitDescription>{
+            limitEnabled ? `${formatConnectionString({ currency, limitFrequency, amountInLowestDenom })} spending limit` : "No spending limit"
+          }</LimitDescription>
           <Icon name="Pencil" width={12} />
         </Limit>
       </PermissionsContainer>
@@ -91,6 +105,17 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
         <Button text="Connect UMA" kind="primary" fullWidth />
         <Button text="Cancel" kind="secondary" fullWidth />
       </ButtonSection>
+
+      <EditLimit
+        visible={isEditLimitVisible}
+        amountInLowestDenom={amountInLowestDenom}
+        currency={currency}
+        limitFrequency={limitFrequency}
+        frequency={limitFrequency}
+        enabled={limitEnabled}
+        handleSubmit={handleSubmitEditLimit}
+        handleCancel={() => setIsEditLimitVisible(false)}
+      />
     </Container>
   )
 }

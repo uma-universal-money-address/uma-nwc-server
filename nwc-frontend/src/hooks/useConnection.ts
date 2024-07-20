@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Connection } from "src/types/Connection";
+import { Connection, LimitFrequency } from "src/types/Connection";
 import { Currency } from "src/types/Currency";
 
 export const useConnection = ({ appId }: { appId: string }) => {
@@ -35,7 +35,9 @@ export const useConnection = ({ appId }: { appId: string }) => {
               description: "Send payments from your UMA",
             },
           ],
-          amountPerMonthLowestDenom: 200,
+          amountInLowestDenom: 200,
+          limitFrequency: LimitFrequency.MONTHLY,
+          limitEnabled: true,
           currency: {
             symbol: "$",
             name: "US Dollar",
@@ -59,15 +61,17 @@ export const useConnection = ({ appId }: { appId: string }) => {
   }, [appId]);
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  const updateConnection = async ({ amountPerMonthLowestDenom }: { amountPerMonthLowestDenom: number }) => {
+  const updateConnection = async ({ amountInLowestDenom, limitFrequency, limitEnabled }: { amountInLowestDenom: number, limitFrequency: LimitFrequency, limitEnabled: boolean }) => {
     try {
       // await fetch("/connection", {
       //   method: "POST",
-      //   body: JSON.stringify({ appId: connection.appId, amountPerMonthLowestDenom }),
+      //   body: JSON.stringify({ appId: connection.appId, amountInLowestDenom, limitFrequency, limitEnabled }),
       // });
       setConnection({
         ...connection,
-        amountPerMonthLowestDenom,
+        amountInLowestDenom,
+        limitFrequency,
+        limitEnabled,
       });
     } catch (e) {
       console.error(e);
