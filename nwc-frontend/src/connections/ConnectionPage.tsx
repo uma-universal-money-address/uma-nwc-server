@@ -10,13 +10,19 @@ import { Shimmer } from "src/components/Shimmer";
 import { Button, UnstyledButton } from "@lightsparkdev/ui/components";
 import { Limit } from "./Limit";
 import { useState } from "react";
+import { EditLimit } from "src/permissions/EditLimit";
 
 export default function ConnectionPage({ appId }: { appId: string }) {
-  const { connection, isLoading: isLoadingConnection } = useConnection({ appId });
+  const { connection, updateConnection, isLoading: isLoadingConnection } = useConnection({ appId });
   const [isEditLimitVisible, setIsEditLimitVisible] = useState<boolean>(false);
 
   const handleEdit = () => {
     setIsEditLimitVisible(true);
+  }
+
+  const handleSubmitEditLimit = ({ amountInLowestDenom, frequency, enabled }: {amountInLowestDenom: number, frequency: LimitFrequency, enabled: boolean}) => {
+    updateConnection({ amountInLowestDenom, limitFrequency: frequency, limitEnabled: enabled });
+    setIsEditLimitVisible(false);
   }
 
   return (
@@ -30,7 +36,7 @@ export default function ConnectionPage({ appId }: { appId: string }) {
         <Section>
           <SectionHeader>
             <Title content="Spending limit" />
-            <Button kind="ghost" icon="Pencil" iconSide="left" text="Edit" onClick={handleEdit} />
+            <Button kind="ghost" icon="Pencil" iconSide="left" text="Edit" onClick={handleEdit} disabled={isLoadingConnection} typography={{color: "blue39"}} />
           </SectionHeader>
           {isLoadingConnection ? <Shimmer width={200} height={20} /> : <Limit connection={connection} />}
         </Section>
@@ -39,6 +45,20 @@ export default function ConnectionPage({ appId }: { appId: string }) {
           <TransactionTable appId={appId} />
         </Section>
       </Content>
+      {
+        isLoadingConnection ? null : (
+          <EditLimit
+            title="Edit spending limit"
+            visible={isEditLimitVisible}
+            amountInLowestDenom={connection.amountInLowestDenom}
+            currency={connection.currency}
+            frequency={connection.limitFrequency}
+            enabled={connection?.limitEnabled}
+            handleCancel={() => setIsEditLimitVisible(false)}
+            handleSubmit={handleSubmitEditLimit}
+          />
+        )
+      }
     </Main>
   );
 }
@@ -76,20 +96,8 @@ const SectionHeader = styled.div`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-`;
 
-const EditButton = styled(UnstyledButton)`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: ${colors.gray95};
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover {
-    background: ${colors.gray90};
+  * {
+    border: none !important;
   }
 `;

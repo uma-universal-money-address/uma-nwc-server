@@ -13,11 +13,12 @@ interface Props {
   currency: Currency,
   frequency: LimitFrequency,
   enabled: boolean,
+  title: string,
   handleSubmit: ({frequency, enabled, amountInLowestDenom}: { frequency: LimitFrequency, enabled: boolean, amountInLowestDenom: number }) => void,
   handleCancel: () => void,
 }
 
-export const EditLimit = ({ handleSubmit, handleCancel, visible, amountInLowestDenom, currency, frequency, enabled }: Props) => {
+export const EditLimit = ({ handleSubmit, handleCancel, visible, amountInLowestDenom, currency, frequency, enabled, title }: Props) => {
   const [isEnabled, setIsEnabled] = useState<boolean>(enabled);
   const [newAmount, setNewAmount] = useState<number>(amountInLowestDenom);
   const [newFrequency, setNewFrequency] = useState<LimitFrequency>(frequency);
@@ -32,7 +33,7 @@ export const EditLimit = ({ handleSubmit, handleCancel, visible, amountInLowestD
       onClose={handleCancel}
     >
       <Intro>
-        <Title>Spending limit</Title>
+        <Title>{title}</Title>
         <Description>Protect your UMA by setting a spending limit. You can always change this in settings.</Description>
       </Intro>
       <Controls>
