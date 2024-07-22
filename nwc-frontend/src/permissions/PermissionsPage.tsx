@@ -12,6 +12,7 @@ import { LimitFrequency } from "src/types/Connection";
 import { convertToNormalDenomination } from "src/utils/convertToNormalDenomination";
 import { formatConnectionString } from "src/utils/formatConnectionString";
 import { EditLimit } from "./EditLimit";
+import { PermissionsList } from "./PermissionsList";
 
 
 export const PermissionsPage = ({ appId }: { appId: string }) => {
@@ -83,14 +84,7 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
           </AppSection>
           <Permissions>
             <Label size="Large" content="Would like to" />
-            <PermissionList>
-              {permissions.map((permission) => (
-                <Permission key={permission}>
-                  <Icon name="CheckmarkCircleTier1" width={16}/>
-                  {permission.description}
-                </Permission>
-              ))}
-            </PermissionList>
+            <PermissionsList permissions={permissions} />
           </Permissions>
         </PermissionsDescription>
         <Limit onClick={handleEdit}>
@@ -201,19 +195,6 @@ const Permissions = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${Spacing.sm};
-`;
-
-const PermissionList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-const Permission = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
 `;
 
 const Limit = styled.div`

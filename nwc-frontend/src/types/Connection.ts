@@ -1,4 +1,4 @@
-interface Permission {
+export interface Permission {
   type: string;
   description: string;
   optional?: boolean;
