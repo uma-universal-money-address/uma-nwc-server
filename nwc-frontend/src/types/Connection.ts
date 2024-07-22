@@ -1,3 +1,5 @@
+import { Currency } from "./Currency";
+
 export interface Permission {
   type: string;
   description: string;
@@ -20,6 +22,7 @@ export interface Connection {
   avatar: string;
   permissions: Permission[];
   amountInLowestDenom: number;
+  amountInLowestDenomUsed: number;
   limitFrequency: LimitFrequency;
   limitEnabled: boolean;
   currency: Currency;

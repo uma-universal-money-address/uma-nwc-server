@@ -7,9 +7,17 @@ import { Header } from "./Header";
 import { PermissionsList } from "src/permissions/PermissionsList";
 import { useConnection } from "src/hooks/useConnection";
 import { Shimmer } from "src/components/Shimmer";
+import { Button, UnstyledButton } from "@lightsparkdev/ui/components";
+import { Limit } from "./Limit";
+import { useState } from "react";
 
 export default function ConnectionPage({ appId }: { appId: string }) {
   const { connection, isLoading: isLoadingConnection } = useConnection({ appId });
+  const [isEditLimitVisible, setIsEditLimitVisible] = useState<boolean>(false);
+
+  const handleEdit = () => {
+    setIsEditLimitVisible(true);
+  }
 
   return (
     <Main>
@@ -20,8 +28,11 @@ export default function ConnectionPage({ appId }: { appId: string }) {
           {isLoadingConnection ? <Shimmer width={200} height={20} /> : <PermissionsList permissions={connection.permissions} />}
         </Section>
         <Section>
-          <Title content="Spending limit" />
-
+          <SectionHeader>
+            <Title content="Spending limit" />
+            <Button kind="ghost" icon="Pencil" iconSide="left" text="Edit" onClick={handleEdit} />
+          </SectionHeader>
+          {isLoadingConnection ? <Shimmer width={200} height={20} /> : <Limit connection={connection} />}
         </Section>
         <Section>
           <Title content="Transactions" />
@@ -52,10 +63,33 @@ const Section = styled.section`
   flex-direction: column;
   gap: ${Spacing.lg};
   width: 100%;
-  padding: ${Spacing["2xl"]} ${Spacing["2xl"]};
+  padding: ${Spacing["xl"]} ${Spacing["xl"]};
 
   &:not(:last-child) {
     border-bottom: 1px solid ${colors.gray90};
-    padding-bottom: ${Spacing["2xl"]};
+    padding-bottom: ${Spacing["xl"]};
+  }
+`;
+
+const SectionHeader = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const EditButton = styled(UnstyledButton)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: ${colors.gray95};
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: ${colors.gray90};
   }
 `;
