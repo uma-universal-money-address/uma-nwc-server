@@ -9,14 +9,16 @@ import { Uma } from "src/components/Uma";
 import { useConnection } from "src/hooks/useConnection";
 import { useUma } from "src/hooks/useUma";
 import { LimitFrequency } from "src/types/Connection";
-import { convertToNormalDenomination } from "src/utils/convertToNormalDenomination";
 import { formatConnectionString } from "src/utils/formatConnectionString";
 import { EditLimit } from "./EditLimit";
 import { PermissionsList } from "./PermissionsList";
 
-
 export const PermissionsPage = ({ appId }: { appId: string }) => {
-  const { connection, updateConnection, isLoading: isLoadingConnection } = useConnection({ appId });
+  const {
+    connection,
+    updateConnection,
+    isLoading: isLoadingConnection,
+  } = useConnection({ appId });
   const { uma, isLoading: isLoadingUma } = useUma();
 
   const [isEditLimitVisible, setIsEditLimitVisible] = useState<boolean>(false);
@@ -26,10 +28,10 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
       <Container>
         <Title content="Loading..." />
       </Container>
-    )
+    );
   }
 
-  const { 
+  const {
     name,
     domain,
     createdAt,
@@ -45,12 +47,24 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
 
   const handleEdit = () => {
     setIsEditLimitVisible(true);
-  }
+  };
 
-  const handleSubmitEditLimit = ({ amountInLowestDenom, frequency, enabled }: {amountInLowestDenom: number, frequency: LimitFrequency, enabled: boolean}) => {
-    updateConnection({ amountInLowestDenom, limitFrequency: frequency, limitEnabled: enabled });
+  const handleSubmitEditLimit = ({
+    amountInLowestDenom,
+    frequency,
+    enabled,
+  }: {
+    amountInLowestDenom: number;
+    frequency: LimitFrequency;
+    enabled: boolean;
+  }) => {
+    updateConnection({
+      amountInLowestDenom,
+      limitFrequency: frequency,
+      limitEnabled: enabled,
+    });
     setIsEditLimitVisible(false);
-  }
+  };
 
   const header = (
     <Header>
@@ -59,7 +73,7 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
         <Icon name="Close" width={8} />
       </UnstyledButton>
     </Header>
-  )
+  );
   return (
     <Container>
       {header}
@@ -75,9 +89,11 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
             <AppDetails>
               <AppName>
                 {name}
-                {verified ? (<VerifiedBadge>
-                  <Icon name="CheckmarkCircleTier3" width={20}/>
-                </VerifiedBadge>) : null}
+                {verified ? (
+                  <VerifiedBadge>
+                    <Icon name="CheckmarkCircleTier3" width={20} />
+                  </VerifiedBadge>
+                ) : null}
               </AppName>
               <AppDomain>{domain}</AppDomain>
             </AppDetails>
@@ -88,9 +104,11 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
           </Permissions>
         </PermissionsDescription>
         <Limit onClick={handleEdit}>
-          <LimitDescription>{
-            limitEnabled ? `${formatConnectionString({ currency, limitFrequency, amountInLowestDenom })} spending limit` : "No spending limit"
-          }</LimitDescription>
+          <LimitDescription>
+            {limitEnabled
+              ? `${formatConnectionString({ currency, limitFrequency, amountInLowestDenom })} spending limit`
+              : "No spending limit"}
+          </LimitDescription>
           <Icon name="Pencil" width={12} />
         </Limit>
       </PermissionsContainer>
@@ -112,8 +130,8 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
         handleCancel={() => setIsEditLimitVisible(false)}
       />
     </Container>
-  )
-}
+  );
+};
 
 const Container = styled.div`
   display: flex;
@@ -136,8 +154,7 @@ const Header = styled.div`
   justify-content: space-between;
 `;
 
-const VaspLogo = styled.img`
-`;
+const VaspLogo = styled.img``;
 
 const Intro = styled.div`
   display: flex;
@@ -150,7 +167,7 @@ const PermissionsContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  border: 0.5px solid #C0C9D6;
+  border: 0.5px solid #c0c9d6;
   border-radius: 8px;
 `;
 
@@ -159,7 +176,7 @@ const PermissionsDescription = styled.div`
   flex-direction: column;
   gap: ${Spacing.xl};
   width: 100%;
-  border-bottom: 0.5px solid #C0C9D6;
+  border-bottom: 0.5px solid #c0c9d6;
   padding: ${Spacing.lg};
 `;
 

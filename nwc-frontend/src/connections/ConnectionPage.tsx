@@ -1,64 +1,100 @@
 import styled from "@emotion/styled";
+import { Button } from "@lightsparkdev/ui/components";
 import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
-import { TransactionTable } from "src/components/TransactionTable";
-import { Header } from "./Header";
-import { PermissionsList } from "src/permissions/PermissionsList";
-import { useConnection } from "src/hooks/useConnection";
-import { Shimmer } from "src/components/Shimmer";
-import { Button, UnstyledButton } from "@lightsparkdev/ui/components";
-import { Limit } from "./Limit";
 import { useState } from "react";
+import { Shimmer } from "src/components/Shimmer";
+import { TransactionTable } from "src/components/TransactionTable";
+import { useConnection } from "src/hooks/useConnection";
 import { EditLimit } from "src/permissions/EditLimit";
+import { PermissionsList } from "src/permissions/PermissionsList";
+import { Header } from "./Header";
+import { Limit } from "./Limit";
 
 export default function ConnectionPage({ appId }: { appId: string }) {
-  const { connection, updateConnection, isLoading: isLoadingConnection } = useConnection({ appId });
+  const {
+    connection,
+    updateConnection,
+    isLoading: isLoadingConnection,
+  } = useConnection({ appId });
   const [isEditLimitVisible, setIsEditLimitVisible] = useState<boolean>(false);
 
   const handleEdit = () => {
     setIsEditLimitVisible(true);
-  }
+  };
 
-  const handleSubmitEditLimit = ({ amountInLowestDenom, frequency, enabled }: {amountInLowestDenom: number, frequency: LimitFrequency, enabled: boolean}) => {
-    updateConnection({ amountInLowestDenom, limitFrequency: frequency, limitEnabled: enabled });
+  const handleSubmitEditLimit = ({
+    amountInLowestDenom,
+    frequency,
+    enabled,
+  }: {
+    amountInLowestDenom: number;
+    frequency: LimitFrequency;
+    enabled: boolean;
+  }) => {
+    updateConnection({
+      amountInLowestDenom,
+      limitFrequency: frequency,
+      limitEnabled: enabled,
+    });
     setIsEditLimitVisible(false);
-  }
+  };
 
   return (
     <Main>
-      <Header />
+      {connection ? (
+        <Header connection={connection} updateConnection={updateConnection} />
+      ) : null}
       <Content>
-        <Section>
-          <Title content="Permissions" />
-          {isLoadingConnection ? <Shimmer width={200} height={20} /> : <PermissionsList permissions={connection.permissions} />}
-        </Section>
-        <Section>
-          <SectionHeader>
-            <Title content="Spending limit" />
-            <Button kind="ghost" icon="Pencil" iconSide="left" text="Edit" onClick={handleEdit} disabled={isLoadingConnection} typography={{color: "blue39"}} />
-          </SectionHeader>
-          {isLoadingConnection ? <Shimmer width={200} height={20} /> : <Limit connection={connection} />}
-        </Section>
+        {!isLoadingConnection && connection?.isActive ? (
+          <>
+            <Section>
+              <Title content="Permissions" />
+              {isLoadingConnection ? (
+                <Shimmer width={200} height={20} />
+              ) : (
+                <PermissionsList permissions={connection.permissions} />
+              )}
+            </Section>
+            <Section>
+              <SectionHeader>
+                <Title content="Spending limit" />
+                <Button
+                  kind="ghost"
+                  icon="Pencil"
+                  iconSide="left"
+                  text="Edit"
+                  onClick={handleEdit}
+                  disabled={isLoadingConnection}
+                  typography={{ color: "blue39" }}
+                />
+              </SectionHeader>
+              {isLoadingConnection ? (
+                <Shimmer width={200} height={20} />
+              ) : (
+                <Limit connection={connection} />
+              )}
+            </Section>
+          </>
+        ) : null}
         <Section>
           <Title content="Transactions" />
           <TransactionTable appId={appId} />
         </Section>
       </Content>
-      {
-        isLoadingConnection ? null : (
-          <EditLimit
-            title="Edit spending limit"
-            visible={isEditLimitVisible}
-            amountInLowestDenom={connection.amountInLowestDenom}
-            currency={connection.currency}
-            frequency={connection.limitFrequency}
-            enabled={connection?.limitEnabled}
-            handleCancel={() => setIsEditLimitVisible(false)}
-            handleSubmit={handleSubmitEditLimit}
-          />
-        )
-      }
+      {isLoadingConnection ? null : (
+        <EditLimit
+          title="Edit spending limit"
+          visible={isEditLimitVisible}
+          amountInLowestDenom={connection.amountInLowestDenom}
+          currency={connection.currency}
+          frequency={connection.limitFrequency}
+          enabled={connection?.limitEnabled}
+          handleCancel={() => setIsEditLimitVisible(false)}
+          handleSubmit={handleSubmitEditLimit}
+        />
+      )}
     </Main>
   );
 }

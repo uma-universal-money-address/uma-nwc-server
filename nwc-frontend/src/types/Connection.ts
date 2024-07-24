@@ -19,6 +19,7 @@ export interface Connection {
   verified: boolean;
   createdAt: string;
   lastUsed: string;
+  disconnectedAt: string;
   avatar: string;
   permissions: Permission[];
   amountInLowestDenom: number;

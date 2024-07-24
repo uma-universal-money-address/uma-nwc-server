@@ -20,8 +20,14 @@ function App() {
       <Intro>
         <Title size="Large" content="Manage your UMA connections" />
         <Description>
-          <Body content="Review permissions, edit spending limits, and view transactions for the third-party apps and services connected to your UMA. "/>
-          <Button text="Learn more" kind="ghost" onClick={handleLearnMore} typography={{ type: "Body", color: "blue39" }} size="Medium" />
+          <Body content="Review permissions, edit spending limits, and view transactions for the third-party apps and services connected to your UMA. " />
+          <Button
+            text="Learn more"
+            kind="ghost"
+            onClick={handleLearnMore}
+            typography={{ type: "Body", color: "blue39" }}
+            size="Medium"
+          />
         </Description>
       </Intro>
       <Content>
@@ -37,17 +43,30 @@ function App() {
       >
         <Section>
           <Title content="How does it work?" size="Medium" />
-          <Body color="grayBlue43" content={`You can unlock payments experiences on the apps and services you use by connecting your ${vasp} UMA.`} />
-          <Body color="grayBlue43" content={[
-            "UMA connections are powered by ",
-            { text: "Nostr Wallet Connect", externalLink: "https://nwc.dev/", color: "blue39" },
-            ", a standardized protocol that enables apps and services to securely interact with other UMAs or wallets.",
-          ]} />
+          <Body
+            color="grayBlue43"
+            content={`You can unlock payments experiences on the apps and services you use by connecting your ${vasp} UMA.`}
+          />
+          <Body
+            color="grayBlue43"
+            content={[
+              "UMA connections are powered by ",
+              {
+                text: "Nostr Wallet Connect",
+                externalLink: "https://nwc.dev/",
+                color: "blue39",
+              },
+              ", a standardized protocol that enables apps and services to securely interact with other UMAs or wallets.",
+            ]}
+          />
         </Section>
 
         <Section>
           <Title content="You are in control" size="Medium" />
-          <Body color="grayBlue43" content="For each app or service that you connect to your UMA, you can review permissions, edit your spending limit, view transactions, or disconnect your UMA." />
+          <Body
+            color="grayBlue43"
+            content="For each app or service that you connect to your UMA, you can review permissions, edit your spending limit, view transactions, or disconnect your UMA."
+          />
         </Section>
       </Modal>
     </Main>
@@ -68,8 +87,7 @@ const Intro = styled.div`
   gap: ${Spacing.sm};
 `;
 
-const Description = styled.div`
-`;
+const Description = styled.div``;
 
 const Content = styled.div`
   padding: ${Spacing["3xl"]} ${Spacing.xl};

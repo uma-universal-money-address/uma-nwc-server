@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Connection, fetchConnections } from "src/utils/fetchConnections";
+import { Connection } from "src/types/Connection";
+import { fetchConnections } from "src/utils/fetchConnections";
 
 export function useConnections() {
   const [connections, setConnections] = useState<Connection[]>();
