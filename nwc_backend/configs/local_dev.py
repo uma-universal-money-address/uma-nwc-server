@@ -6,3 +6,5 @@ import os
 DATABASE_URI = "sqlite+pysqlite:///" + os.path.join(
     os.getcwd(), "instance", "nwc.sqlite"
 )
+
+FRONTEND_BUILD_PATH = "../nwc-frontend/dist"
