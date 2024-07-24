@@ -1,20 +1,31 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-from quart import Quart
+import os
+from quart import Quart, send_from_directory
 from nwc_backend.db import db
-from nwc_backend.configs.local_dev import DATABASE_URI
 import nwc_backend.alembic_importer  # noqa: F401
 
 
 def create_app():
 
     app = Quart(__name__)
-    app.config["DATABASE_URI"] = DATABASE_URI
+
+    app.config.from_envvar("QUART_CONFIG")
+    app.static_folder = app.config["FRONTEND_BUILD_PATH"]
     db.init_app(app)
 
-    @app.route("/", defaults={"path": ""})
+    @app.route("/hello", defaults={"path": ""})
     async def serve(path):
         return {"hello": "world"}
+
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    async def serve_frontend(path):
+        print("path", path, send_from_directory)
+        if path != "" and os.path.exists(app.static_folder + "/" + path):
+            return await send_from_directory(app.static_folder, path)
+        else:
+            return await send_from_directory(app.static_folder, "index.html")
 
     return app
