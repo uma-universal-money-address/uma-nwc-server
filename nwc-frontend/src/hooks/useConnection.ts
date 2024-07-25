@@ -36,13 +36,16 @@ export const useConnection = ({ appId }: { appId: string }) => {
             },
           ],
           amountInLowestDenom: 200,
+          amountInLowestDenomUsed: 40,
           limitFrequency: LimitFrequency.MONTHLY,
           limitEnabled: true,
           currency: {
-            symbol: "$",
+            code: "USD",
             name: "US Dollar",
+            symbol: "$",
             decimals: 2,
-          } as Currency,
+            type: "fiat",
+          },
           isActive: false,
         } as Connection;
         setConnection(connection);

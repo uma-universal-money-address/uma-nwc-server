@@ -1,4 +1,4 @@
-import { Connection } from "src/types/Connection";
+import { Connection, LimitFrequency } from "src/types/Connection";
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const fetchConnections = async () => {
@@ -17,6 +17,17 @@ export const fetchConnections = async () => {
       name: "Test",
       createdAt: new Date().toISOString(),
       lastUsed: new Date().toISOString(),
+      amountInLowestDenom: 300,
+      amountInLowestDenomUsed: 200,
+      limitFrequency: LimitFrequency.MONTHLY,
+      limitEnabled: true,
+      currency: {
+        code: "USD",
+        name: "US Dollar",
+        symbol: "$",
+        decimals: 2,
+        type: "fiat",
+      },
       avatar: "/uma.svg",
     },
     {
@@ -24,6 +35,17 @@ export const fetchConnections = async () => {
       name: "Test 2",
       createdAt: new Date().toISOString(),
       lastUsed: new Date().toISOString(),
+      amountInLowestDenom: 100,
+      amountInLowestDenomUsed: 10,
+      limitFrequency: LimitFrequency.DAILY,
+      limitEnabled: true,
+      currency: {
+        code: "USD",
+        name: "US Dollar",
+        symbol: "$",
+        decimals: 2,
+        type: "fiat",
+      },
       avatar: "/uma.svg",
     },
     {
@@ -31,6 +53,17 @@ export const fetchConnections = async () => {
       name: "Test 3",
       createdAt: new Date().toISOString(),
       lastUsed: new Date().toISOString(),
+      amountInLowestDenom: 200,
+      amountInLowestDenomUsed: 70,
+      limitFrequency: LimitFrequency.WEEKLY,
+      limitEnabled: true,
+      currency: {
+        code: "USD",
+        name: "US Dollar",
+        symbol: "$",
+        decimals: 2,
+        type: "fiat",
+      },
       avatar: "/uma.svg",
     },
   ] as Connection[];
