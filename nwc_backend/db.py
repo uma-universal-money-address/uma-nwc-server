@@ -1,10 +1,12 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import sqlalchemy
 import uuid
 from typing import Callable, Optional, Type
-from sqlalchemy import create_engine, Uuid
+
+import sqlalchemy
+from quart import Quart
+from sqlalchemy import Engine, Uuid, create_engine
 from sqlalchemy.engine import Dialect
 
 
@@ -27,14 +29,14 @@ class SQLAlchemyDB:
     def __init__(self) -> None:
         setattr(self, "Column", sqlalchemy.Column)  # noqa: B010
 
-    def init_app(self, app):
+    def init_app(self, app: Quart) -> None:
         self._engine = create_engine(app.config["DATABASE_URI"])
 
     @property
-    def engine(self):
+    def engine(self) -> Engine:
         assert self._engine
         return self._engine
 
 
 db = SQLAlchemyDB()
-Column: Type[sqlalchemy.Column] = db.Column  # pyre-ignore[16] pylint: disable=no-member
+Column: Type[sqlalchemy.Column] = db.Column

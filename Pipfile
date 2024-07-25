@@ -4,15 +4,16 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-quart = "*"
-pyre = "*"
-black = "*"
-ruff = "*"
-pyre-check = "*"
 alembic = "*"
+nostr-sdk = "*"
 python-dotenv = "*"
+quart = "*"
 
 [dev-packages]
+black = "*"
+pyre-check = "*"
+ruff = "*"
+
 
 [requires]
 python_version = "3.11"

@@ -3,7 +3,7 @@
 
 import os
 
-DATABASE_URI = "sqlite+pysqlite:///" + os.path.join(
+DATABASE_URI: str = "sqlite+pysqlite:///" + os.path.join(
     os.getcwd(), "instance", "nwc.sqlite"
 )
 
