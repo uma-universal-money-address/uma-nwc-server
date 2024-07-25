@@ -101,6 +101,7 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
       </ButtonSection>
 
       <EditLimit
+        title="Spending limit"
         visible={isEditLimitVisible}
         amountInLowestDenom={amountInLowestDenom}
         currency={currency}
