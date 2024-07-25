@@ -2,12 +2,14 @@
 # pyre-strict
 
 import os
+
 from quart import Quart, send_from_directory
-from nwc_backend.db import db
+
 import nwc_backend.alembic_importer  # noqa: F401
+from nwc_backend.db import db
 
 
-def create_app():
+def create_app() -> Quart:
 
     app = Quart(__name__)
 
