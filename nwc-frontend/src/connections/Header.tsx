@@ -4,6 +4,7 @@ import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Avatar } from "src/components/Avatar";
+import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
 import { Connection } from "src/types/Connection";
 import { formatTimestamp } from "src/utils/formatTimestamp";
 
@@ -12,14 +13,25 @@ export const Header = ({
   updateConnection,
 }: {
   connection: Connection;
-  updateConnection: () => void;
+  updateConnection: () => Promise<boolean>;
 }) => {
   const [isDisconnectModalVisible, setIsDisconnectModalVisible] =
     useState<boolean>(false);
+  const { setSuccessMessage, setError } = useGlobalNotificationContext();
 
   const handleDisconnect = () => {
     setIsDisconnectModalVisible(false);
-    updateConnection({ ...connection, isActive: false });
+    updateConnection({ ...connection, isActive: false })
+      .then((succeeded) => {
+        if (succeeded) {
+          setSuccessMessage(`${connection.name} disconnected successfully`);
+        } else {
+          setError(new Error(`Failed to disconnect ${connection.name}`));
+        }
+      })
+      .catch((e) => {
+        setError(e);
+      });
   };
 
   const appDescription = connection.isActive

@@ -87,8 +87,10 @@ export const useConnection = ({ appId }: { appId: string }) => {
         isActive,
         disconnectedAt: isActive ? undefined : new Date().toISOString(),
       });
+      return true;
     } catch (e) {
       console.error(e);
+      return false;
     }
   };
 
