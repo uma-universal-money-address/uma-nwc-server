@@ -1,74 +1,88 @@
 import styled from "@emotion/styled";
-import { Button, Modal } from "@lightsparkdev/ui/components";
+import { Button } from "@lightsparkdev/ui/components";
 import { Body } from "@lightsparkdev/ui/components/typography/Body";
 import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
-import { ConnectionTable } from "src/components/ConnectionTable";
+import {
+  ConnectionTable,
+  LoadingConnectionRow,
+} from "src/components/ConnectionTable";
+import { LearnMoreModal } from "./LearnMoreModal";
+import { useConnections } from "./hooks/useConnections";
 
 function App() {
   const [isLearnMoreVisible, setIsLearnMoreVisible] = useState<boolean>(false);
+  const {
+    connections,
+    isLoading: isLoadingConnections,
+    error,
+  } = useConnections();
   const vasp = "Exchange";
 
   const handleLearnMore = () => {
     setIsLearnMoreVisible(true);
   };
 
+  const activeConnections = connections?.filter(
+    (connection) => connection.isActive,
+  );
+  const archivedConnections = connections?.filter(
+    (connection) => !connection.isActive,
+  );
+
   return (
     <Main>
-      <Intro>
-        <Title size="Large" content="Manage your UMA connections" />
-        <Description>
-          <Body content="Review permissions, edit spending limits, and view transactions for the third-party apps and services connected to your UMA. " />
-          <Button
-            text="Learn more"
-            kind="ghost"
-            onClick={handleLearnMore}
-            typography={{ type: "Body", color: "blue39" }}
-            size="Medium"
-          />
-        </Description>
-      </Intro>
-      <Content>
-        <ConnectionTable />
-      </Content>
-      <Modal
-        smKind="drawer"
-        visible={isLearnMoreVisible}
-        cancelText="Close"
-        onClose={() => setIsLearnMoreVisible(false)}
-        onCancel={() => setIsLearnMoreVisible(false)}
-        title={`How ${vasp} connects your UMA securely to third-party apps and services`}
-      >
-        <Section>
-          <Title content="How does it work?" size="Medium" />
-          <Body
-            color="grayBlue43"
-            content={`You can unlock payments experiences on the apps and services you use by connecting your ${vasp} UMA.`}
-          />
-          <Body
-            color="grayBlue43"
-            content={[
-              "UMA connections are powered by ",
-              {
-                text: "Nostr Wallet Connect",
-                externalLink: "https://nwc.dev/",
-                color: "blue39",
-              },
-              ", a standardized protocol that enables apps and services to securely interact with other UMAs or wallets.",
-            ]}
-          />
-        </Section>
+      <Section>
+        <Intro>
+          <Title size="Large" content="Manage your UMA connections" />
+          <Description>
+            <Body content="Review permissions, edit spending limits, and view transactions for the third-party apps and services connected to your UMA. " />
+            <Button
+              text="Learn more"
+              kind="ghost"
+              onClick={handleLearnMore}
+              typography={{ type: "Body", color: "blue39" }}
+              size="Medium"
+            />
+          </Description>
+        </Intro>
+        <Content>
+          {isLoadingConnections ? (
+            <>
+              <LoadingConnectionRow key="loader-1" shimmerWidth={30} />
+              <LoadingConnectionRow key="loader-2" shimmerWidth={10} />
+              <LoadingConnectionRow key="loader-3" shimmerWidth={20} />
+            </>
+          ) : (
+            <ConnectionTable connections={activeConnections} />
+          )}
+          {error ? (
+            <Container>{`Error loading connections: ${error}`}</Container>
+          ) : null}
+        </Content>
+      </Section>
 
+      {isLoadingConnections || !archivedConnections.length ? null : (
         <Section>
-          <Title content="You are in control" size="Medium" />
-          <Body
-            color="grayBlue43"
-            content="For each app or service that you connect to your UMA, you can review permissions, edit your spending limit, view transactions, or disconnect your UMA."
-          />
+          <Intro>
+            <Title size="Large" content="Archived connections" />
+            <Description>
+              <Body content="You can still review past transactions on connections" />
+            </Description>
+          </Intro>
+          <Content>
+            <ConnectionTable connections={archivedConnections} />
+          </Content>
         </Section>
-      </Modal>
+      )}
+
+      <LearnMoreModal
+        visible={isLearnMoreVisible}
+        vaspName={vasp}
+        onClose={() => setIsLearnMoreVisible(false)}
+      />
     </Main>
   );
 }
@@ -107,12 +121,6 @@ const Section = styled.section`
   flex-direction: column;
   gap: ${Spacing.xs};
   margin-top: ${Spacing["xl"]};
-`;
-
-const IntroSection = styled.section`
-  display: flex;
-  flex-direction: column;
-  gap: ${Spacing.xs};
 `;
 
 export default App;
