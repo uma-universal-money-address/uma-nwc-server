@@ -2,14 +2,17 @@ import styled from "@emotion/styled";
 import { Icon } from "@lightsparkdev/ui/components";
 import { Body } from "@lightsparkdev/ui/components/typography/Body";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
-import React from "react";
 import { Link } from "react-router-dom";
-import { useConnections, type Connection } from "src/hooks/useConnections";
+import { type Connection } from "src/hooks/useConnections";
 import { formatTimestamp } from "src/utils/formatTimestamp";
 import { Avatar } from "./Avatar";
 import { Shimmer } from "./Shimmer";
 
-const LoadingConnectionRow = ({ shimmerWidth }: { shimmerWidth: number }) => {
+export const LoadingConnectionRow = ({
+  shimmerWidth,
+}: {
+  shimmerWidth: number;
+}) => {
   return (
     <Row>
       <Avatar size={48} />
@@ -44,31 +47,26 @@ const ConnectionRow = ({ connection }: { connection: Connection }) => {
   );
 };
 
-export const ConnectionTable = () => {
-  const { connections, isLoading, error } = useConnections();
+interface ConnectionTableProps {
+  connections: Connection[];
+}
 
-  let connectionRows: React.ReactNode;
-  if (isLoading) {
-    connectionRows = [
-      <LoadingConnectionRow key="loader-1" shimmerWidth={30} />,
-      <LoadingConnectionRow key="loader-2" shimmerWidth={10} />,
-      <LoadingConnectionRow key="loader-3" shimmerWidth={20} />,
-    ];
-  } else if (error) {
-    return <Container>{`Error loading connections: ${error}`}</Container>;
-  } else if (!connections || !connections.length) {
+export const ConnectionTable = ({ connections }: ConnectionTableProps) => {
+  if (!connections.length) {
     return (
       <EmptyResults>
         <Body content="No connections yet." />
       </EmptyResults>
     );
-  } else {
-    connectionRows = connections.map((connection) => (
-      <ConnectionRow key={connection.appId} connection={connection} />
-    ));
   }
 
-  return <Container>{connectionRows}</Container>;
+  return (
+    <Container>
+      {connections.map((connection) => (
+        <ConnectionRow key={connection.appId} connection={connection} />
+      ))}
+    </Container>
+  );
 };
 
 const Container = styled.div`

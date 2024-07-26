@@ -67,7 +67,7 @@ export const fetchConnections = async () => {
         type: "fiat",
       },
       avatar: "/uma.svg",
-      isActive: true,
+      isActive: false,
     },
   ] as Connection[];
 };
