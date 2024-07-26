@@ -1,6 +1,5 @@
 import styled from "@emotion/styled";
 import { UnstyledButton } from "@lightsparkdev/ui/components";
-import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { LimitFrequency } from "src/types/Connection";
 
@@ -13,7 +12,7 @@ export const LimitFrequencyPicker = ({ frequency, setFrequency }: Props) => {
   const handleChooseFrequency = (frequency) => (e) => {
     setFrequency(frequency);
     e.preventDefault();
-  }
+  };
 
   return (
     <Container>
@@ -27,8 +26,8 @@ export const LimitFrequencyPicker = ({ frequency, setFrequency }: Props) => {
         </FrequencyButton>
       ))}
     </Container>
-  )
-}
+  );
+};
 
 const Container = styled.div`
   display: grid;
@@ -43,7 +42,7 @@ const FrequencyButton = styled(UnstyledButton)<{ selected: boolean }>`
   padding: ${Spacing.sm} ${Spacing.md};
   border-radius: 8px;
   border: 1px solid ${({ theme }) => theme.border};
-  opacity: ${({ selected }) => selected ? 1 : 0.4};
+  opacity: ${({ selected }) => (selected ? 1 : 0.4)};
   transition: opacity 0.2s;
 
   color: ${({ theme }) => theme.text};

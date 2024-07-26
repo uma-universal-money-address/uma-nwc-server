@@ -1,24 +1,41 @@
 import styled from "@emotion/styled";
 import { Modal } from "@lightsparkdev/ui/components";
+import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
+import { useState } from "react";
 import { Currency } from "src/types/Currency";
 import { EnableLimitToggle } from "./EnableLimitToggle";
-import { useState } from "react";
-import { LimitFrequencyPicker } from "./LimitFrequencyPicker";
-import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { LimitAmountInput } from "./LimitAmountInput";
+import { LimitFrequencyPicker } from "./LimitFrequencyPicker";
 
 interface Props {
-  visible: boolean,
-  amountInLowestDenom: number,
-  currency: Currency,
-  frequency: LimitFrequency,
-  enabled: boolean,
-  title: string,
-  handleSubmit: ({frequency, enabled, amountInLowestDenom}: { frequency: LimitFrequency, enabled: boolean, amountInLowestDenom: number }) => void,
-  handleCancel: () => void,
+  visible: boolean;
+  amountInLowestDenom: number;
+  currency: Currency;
+  frequency: LimitFrequency;
+  enabled: boolean;
+  title: string;
+  handleSubmit: ({
+    frequency,
+    enabled,
+    amountInLowestDenom,
+  }: {
+    frequency: LimitFrequency;
+    enabled: boolean;
+    amountInLowestDenom: number;
+  }) => void;
+  handleCancel: () => void;
 }
 
-export const EditLimit = ({ handleSubmit, handleCancel, visible, amountInLowestDenom, currency, frequency, enabled, title }: Props) => {
+export const EditLimit = ({
+  handleSubmit,
+  handleCancel,
+  visible,
+  amountInLowestDenom,
+  currency,
+  frequency,
+  enabled,
+  title,
+}: Props) => {
   const [isEnabled, setIsEnabled] = useState<boolean>(enabled);
   const [newAmount, setNewAmount] = useState<number>(amountInLowestDenom);
   const [newFrequency, setNewFrequency] = useState<LimitFrequency>(frequency);
@@ -29,21 +46,37 @@ export const EditLimit = ({ handleSubmit, handleCancel, visible, amountInLowestD
       cancelHidden
       submitText="Done"
       visible={visible}
-      onSubmit={() => handleSubmit({ frequency: newFrequency, enabled: isEnabled, amountInLowestDenom: newAmount })}
+      onSubmit={() =>
+        handleSubmit({
+          frequency: newFrequency,
+          enabled: isEnabled,
+          amountInLowestDenom: newAmount,
+        })
+      }
       onClose={handleCancel}
     >
       <Intro>
         <Title>{title}</Title>
-        <Description>Protect your UMA by setting a spending limit. You can always change this in settings.</Description>
+        <Description>
+          Protect your UMA by setting a spending limit. You can always change
+          this in settings.
+        </Description>
       </Intro>
       <Controls>
         <EnableLimitToggle isEnabled={isEnabled} setIsEnabled={setIsEnabled} />
-        <LimitFrequencyPicker frequency={newFrequency} setFrequency={setNewFrequency} />
-        <LimitAmountInput amount={newAmount} setAmount={setNewAmount} currency={currency} />
+        <LimitFrequencyPicker
+          frequency={newFrequency}
+          setFrequency={setNewFrequency}
+        />
+        <LimitAmountInput
+          amount={newAmount}
+          setAmount={setNewAmount}
+          currency={currency}
+        />
       </Controls>
     </Modal>
   );
-}
+};
 
 const Title = styled.h1`
   color: ${({ theme }) => theme.text};

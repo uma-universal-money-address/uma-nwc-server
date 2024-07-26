@@ -2,21 +2,22 @@ import styled from "@emotion/styled";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import dayjs from "dayjs";
 import { Connection, LimitFrequency } from "src/types/Connection";
-import { convertToLowestDenomination } from "src/utils/convertToLowestDenomination";
 import { convertToNormalDenomination } from "src/utils/convertToNormalDenomination";
 import { FREQUENCY_TO_SINGULAR_FORM } from "src/utils/formatConnectionString";
 
 const RENEWAL_DATE_FUNCTIONS = {
   [LimitFrequency.DAILY]: (createdAt: dayjs.Dayjs) => createdAt.add(1, "day"),
   [LimitFrequency.WEEKLY]: (createdAt: dayjs.Dayjs) => createdAt.add(1, "week"),
-  [LimitFrequency.MONTHLY]: (createdAt: dayjs.Dayjs) => createdAt.add(1, "month"),
+  [LimitFrequency.MONTHLY]: (createdAt: dayjs.Dayjs) =>
+    createdAt.add(1, "month"),
 };
 
 export const Limit = ({ connection }: { connection: Connection }) => {
   let renewsIn = "";
   if (connection.limitEnabled) {
     const createdAt = dayjs(connection.createdAt);
-    const renewalDate = RENEWAL_DATE_FUNCTIONS[connection.limitFrequency](createdAt);
+    const renewalDate =
+      RENEWAL_DATE_FUNCTIONS[connection.limitFrequency](createdAt);
     const daysUntilRenewal = renewalDate.diff(dayjs(), "days");
     if (daysUntilRenewal < 0) {
       // Shouldn't happen
@@ -102,13 +103,13 @@ const LimitBar = styled.div`
   width: 50%;
   height: 6px;
   border-radius: 999px;
-  background: #EBEEF2;
+  background: #ebeef2;
 `;
 
 const LimitBarFill = styled.div`
   height: 100%;
   border-radius: 999px;
-  background: #0068C9;
+  background: #0068c9;
 `;
 
 const Amounts = styled.div`

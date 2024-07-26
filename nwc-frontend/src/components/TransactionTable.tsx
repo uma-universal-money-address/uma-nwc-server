@@ -7,6 +7,7 @@ import {
 } from "src/hooks/useExchangeRates";
 import { useTransactions, type Transaction } from "src/hooks/useTransactions";
 import { convertCurrency } from "src/utils/convertCurrency";
+import { formatTimestamp } from "src/utils/formatTimestamp";
 import { Shimmer } from "./Shimmer";
 
 const LoadingTransactionRow = ({ shimmerWidth }: { shimmerWidth: number }) => {
@@ -67,7 +68,7 @@ const TransactionRow = ({
           {amount}
         </InfoRow>
         <InfoRowDetails>
-          <span>{transaction.createdAt}</span>
+          <span>{formatTimestamp(transaction.createdAt)}</span>
           <span>{estimateLocaleString}</span>
         </InfoRowDetails>
       </InfoRowContainer>

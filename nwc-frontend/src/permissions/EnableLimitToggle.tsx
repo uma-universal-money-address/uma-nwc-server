@@ -14,8 +14,8 @@ export const EnableLimitToggle = ({ isEnabled, setIsEnabled }: Props) => {
       <Text>Enable spending limit</Text>
       <Toggle on={isEnabled} onChange={setIsEnabled} />
     </Container>
-  )
-}
+  );
+};
 
 const Container = styled.div`
   display: flex;

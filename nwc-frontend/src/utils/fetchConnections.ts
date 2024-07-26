@@ -29,6 +29,7 @@ export const fetchConnections = async () => {
         type: "fiat",
       },
       avatar: "/uma.svg",
+      isActive: true,
     },
     {
       appId: "2",
@@ -47,6 +48,7 @@ export const fetchConnections = async () => {
         type: "fiat",
       },
       avatar: "/uma.svg",
+      isActive: true,
     },
     {
       appId: "3",
@@ -65,6 +67,7 @@ export const fetchConnections = async () => {
         type: "fiat",
       },
       avatar: "/uma.svg",
+      isActive: true,
     },
   ] as Connection[];
 };

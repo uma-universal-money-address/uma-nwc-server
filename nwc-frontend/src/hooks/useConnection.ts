@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Connection, LimitFrequency } from "src/types/Connection";
-import { Currency } from "src/types/Currency";
 
 export const useConnection = ({ appId }: { appId: string }) => {
   const [connection, setConnection] = useState<Connection>();
@@ -46,7 +45,7 @@ export const useConnection = ({ appId }: { appId: string }) => {
             decimals: 2,
             type: "fiat",
           },
-          isActive: false,
+          isActive: true,
         } as Connection;
         setConnection(connection);
       } catch (e) {
@@ -55,7 +54,7 @@ export const useConnection = ({ appId }: { appId: string }) => {
 
       setIsLoading(false);
     }
-      
+
     let ignore = false;
     fetchConnection();
     return () => {
@@ -64,17 +63,29 @@ export const useConnection = ({ appId }: { appId: string }) => {
   }, [appId]);
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  const updateConnection = async ({ amountInLowestDenom, limitFrequency, limitEnabled }: { amountInLowestDenom: number, limitFrequency: LimitFrequency, limitEnabled: boolean }) => {
+  const updateConnection = async ({
+    amountInLowestDenom,
+    limitFrequency,
+    limitEnabled,
+    isActive,
+  }: {
+    amountInLowestDenom: number;
+    limitFrequency: LimitFrequency;
+    limitEnabled: boolean;
+    isActive: boolean;
+  }) => {
     try {
-      // await fetch("/connection", {
+      // const response = await fetch("/connection", {
       //   method: "POST",
-      //   body: JSON.stringify({ appId: connection.appId, amountInLowestDenom, limitFrequency, limitEnabled }),
+      //   body: JSON.stringify({ appId: connection.appId, amountInLowestDenom, limitFrequency, limitEnabled, isActive }),
       // });
       setConnection({
         ...connection,
         amountInLowestDenom,
         limitFrequency,
         limitEnabled,
+        isActive,
+        disconnectedAt: isActive ? undefined : new Date().toISOString(),
       });
     } catch (e) {
       console.error(e);

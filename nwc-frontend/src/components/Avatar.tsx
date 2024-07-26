@@ -41,7 +41,7 @@ export const Avatar = (props: Props) => {
 };
 
 const AvatarContainer = styled.div<{ shadow?: boolean }>`
-  border-radius: 9999px;
+  border-radius: 12px;
   overflow: hidden;
   background: #fff;
   flex-shrink: 0;

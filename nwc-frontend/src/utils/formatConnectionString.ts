@@ -8,12 +8,26 @@ export const FREQUENCY_TO_SINGULAR_FORM: Record<LimitFrequency, string> = {
   [LimitFrequency.MONTHLY]: "month",
 };
 
-export const formatConnectionString = ({ currency, limitFrequency, amountInLowestDenom}: { currency: Currency, limitFrequency: LimitFrequency, amountInLowestDenom: number }) => {
+export const formatConnectionString = ({
+  currency,
+  limitFrequency,
+  amountInLowestDenom,
+}: {
+  currency: Currency;
+  limitFrequency: LimitFrequency;
+  amountInLowestDenom: number;
+}) => {
   const frequencyString = FREQUENCY_TO_SINGULAR_FORM[limitFrequency];
   const amountString = formatAmountString({ currency, amountInLowestDenom });
   return `${amountString}/${frequencyString}`;
-}
+};
 
-export const formatAmountString = ({ currency, amountInLowestDenom }: { currency: Currency, amountInLowestDenom: number }) => {
+export const formatAmountString = ({
+  currency,
+  amountInLowestDenom,
+}: {
+  currency: Currency;
+  amountInLowestDenom: number;
+}) => {
   return `${currency.symbol}${convertToNormalDenomination(amountInLowestDenom, currency)}`;
-}
+};

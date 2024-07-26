@@ -3,10 +3,11 @@ import { Icon } from "@lightsparkdev/ui/components";
 import { Body } from "@lightsparkdev/ui/components/typography/Body";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import React from "react";
+import { Link } from "react-router-dom";
 import { useConnections, type Connection } from "src/hooks/useConnections";
+import { formatTimestamp } from "src/utils/formatTimestamp";
 import { Avatar } from "./Avatar";
 import { Shimmer } from "./Shimmer";
-import { Link, redirect } from "react-router-dom";
 
 const LoadingConnectionRow = ({ shimmerWidth }: { shimmerWidth: number }) => {
   return (
@@ -35,7 +36,7 @@ const ConnectionRow = ({ connection }: { connection: Connection }) => {
           <span>{connection.name}</span>
         </InfoRow>
         <InfoRowDetails>
-          <span>{connection.lastUsed}</span>
+          <span>{formatTimestamp(connection.lastUsed)}</span>
         </InfoRowDetails>
       </InfoRowContainer>
       <Icon name="CaretRight" width={12} color="#686a72" />

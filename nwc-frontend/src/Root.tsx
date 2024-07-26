@@ -1,15 +1,14 @@
 import { ThemeProvider } from "@emotion/react";
 import styled from "@emotion/styled";
-import { setFonts, themes } from "@lightsparkdev/ui/styles/themes";
-import { type FontFamilies } from "@lightsparkdev/ui/styles/tokens/typography";
-import { GlobalStyles } from "./GlobalStyles";
+import { themes } from "@lightsparkdev/ui/styles/themes";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import GlobalNotificationContext from "src/hooks/useGlobalNotificationContext";
 import App from "./App";
 import ConnectionPage from "./connections/ConnectionPage";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { GlobalStyles } from "./GlobalStyles";
+import { LayoutInnerContent } from "./LayoutInnerContent";
 import { Nav } from "./Nav";
 import { NotificationLayout } from "./NotificationLayout";
-import { LayoutInnerContent } from "./LayoutInnerContent";
-import GlobalNotificationContext from "src/hooks/useGlobalNotificationContext";
 import { PermissionsPage } from "./permissions/PermissionsPage";
 
 const router = createBrowserRouter([
@@ -24,7 +23,7 @@ const router = createBrowserRouter([
   {
     path: "/permissions/:appId",
     element: <PermissionsPage />,
-  }
+  },
 ]);
 
 export function Root() {
@@ -35,10 +34,10 @@ export function Root() {
         <InnerContainer>
           <GlobalNotificationContext>
             <NotificationLayout>
-            <Nav />
-            <LayoutInnerContent>
-              <RouterProvider router={router} />
-            </LayoutInnerContent>
+              <Nav />
+              <LayoutInnerContent>
+                <RouterProvider router={router} />
+              </LayoutInnerContent>
             </NotificationLayout>
           </GlobalNotificationContext>
         </InnerContainer>
