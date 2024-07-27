@@ -2,18 +2,61 @@ import styled from "@emotion/styled";
 import { Button, Icon, UnstyledButton } from "@lightsparkdev/ui/components";
 import { Label } from "@lightsparkdev/ui/components/typography/Label";
 import { Title } from "@lightsparkdev/ui/components/typography/Title";
+import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
+import dayjs from "dayjs";
 import { useState } from "react";
 import { Avatar } from "src/components/Avatar";
 import { Uma } from "src/components/Uma";
-import { useConnection } from "src/hooks/useConnection";
+import { initializeConnection, useConnection } from "src/hooks/useConnection";
 import { useUma } from "src/hooks/useUma";
-import { LimitFrequency } from "src/types/Connection";
-import { formatConnectionString } from "src/utils/formatConnectionString";
-import { EditLimit } from "./EditLimit";
+import {
+  ExpirationPeriod,
+  LimitFrequency,
+  PermissionType,
+} from "src/types/Connection";
 import { PermissionsList } from "./PermissionsList";
+import { ConnectionSettings, PersonalizePage } from "./PersonalizePage";
 
-export const PermissionsPage = ({ appId }: { appId: string }) => {
+interface Props {
+  appId: string;
+  /** Defaults provided by the client app */
+  clientAppDefaultSettings?: ConnectionSettings;
+}
+
+const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
+  permissionStates: [
+    {
+      permission: {
+        type: PermissionType.SEND_PAYMENTS,
+        description: "Send payments from your UMA",
+      },
+      enabled: true,
+    },
+    {
+      permission: {
+        type: PermissionType.READ_BALANCE,
+        description: "Read your balance",
+        optional: true,
+      },
+      enabled: false,
+    },
+    {
+      permission: {
+        type: PermissionType.READ_TRANSACTIONS,
+        description: "Read transaction history",
+        optional: true,
+      },
+      enabled: false,
+    },
+  ],
+  amountInLowestDenom: 50000,
+  limitFrequency: LimitFrequency.MONTHLY,
+  limitEnabled: true,
+  expirationPeriod: ExpirationPeriod.YEAR,
+};
+
+export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
   const {
     connection,
     updateConnection,
@@ -21,7 +64,13 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
   } = useConnection({ appId });
   const { uma, isLoading: isLoadingUma } = useUma();
 
-  const [isEditLimitVisible, setIsEditLimitVisible] = useState<boolean>(false);
+  const [isPersonalizeVisible, setIsPersonalizeVisible] =
+    useState<boolean>(false);
+  const [connectionSettings, setConnectionSettings] =
+    useState<ConnectionSettings>(
+      clientAppDefaultSettings || DEFAULT_CONNECTION_SETTINGS,
+    );
+  const [isConnecting, setIsConnecting] = useState<boolean>(false);
 
   if (isLoadingConnection || isLoadingUma) {
     return (
@@ -34,10 +83,7 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
   const {
     name,
     domain,
-    createdAt,
-    lastUsed,
     avatar,
-    permissions,
     amountInLowestDenom,
     limitFrequency,
     limitEnabled,
@@ -45,26 +91,59 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
     verified,
   } = connection;
 
-  const handleEdit = () => {
-    setIsEditLimitVisible(true);
+  const handleShowPersonalize = () => {
+    setIsPersonalizeVisible(true);
   };
 
-  const handleSubmitEditLimit = ({
-    amountInLowestDenom,
-    frequency,
-    enabled,
-  }: {
-    amountInLowestDenom: number;
-    frequency: LimitFrequency;
-    enabled: boolean;
-  }) => {
-    updateConnection({
-      amountInLowestDenom,
-      limitFrequency: frequency,
-      limitEnabled: enabled,
-    });
-    setIsEditLimitVisible(false);
+  const handleUpdateConnectionSettings = (
+    connectionSettings: ConnectionSettings,
+  ) => {
+    setConnectionSettings(connectionSettings);
+    setIsPersonalizeVisible(false);
   };
+
+  const handleReset = () => {
+    setConnectionSettings(
+      clientAppDefaultSettings || DEFAULT_CONNECTION_SETTINGS,
+    );
+    setIsPersonalizeVisible(false);
+  };
+
+  const handleSubmit = () => {
+    const today = dayjs();
+    const expiration = today
+      .add(1, connectionSettings.expirationPeriod)
+      .toISOString();
+
+    async function submitConnection() {
+      setIsConnecting(true);
+      await initializeConnection({
+        ...connection,
+        permissions: connectionSettings.permissionStates
+          .filter((permissionState) => permissionState.enabled)
+          .map((permissionState) => permissionState.permission),
+        amountInLowestDenom: connectionSettings.amountInLowestDenom,
+        limitFrequency: connectionSettings.limitFrequency,
+        limitEnabled: connectionSettings.limitEnabled,
+        expiration: expiration,
+      });
+      setIsConnecting(false);
+    }
+
+    submitConnection();
+  };
+
+  if (isPersonalizeVisible) {
+    return (
+      <PersonalizePage
+        connection={connection}
+        connectionSettings={connectionSettings}
+        updateConnectionSettings={handleUpdateConnectionSettings}
+        onBack={() => setIsPersonalizeVisible(false)}
+        onReset={handleReset}
+      />
+    );
+  }
 
   const header = (
     <Header>
@@ -100,35 +179,36 @@ export const PermissionsPage = ({ appId }: { appId: string }) => {
           </AppSection>
           <Permissions>
             <Label size="Large" content="Would like to" />
-            <PermissionsList permissions={permissions} />
+            <PermissionsList
+              permissions={connectionSettings.permissionStates
+                .filter((permissionState) => permissionState.enabled)
+                .map((permissionState) => permissionState.permission)}
+            />
           </Permissions>
         </PermissionsDescription>
-        <Limit onClick={handleEdit}>
-          <LimitDescription>
-            {limitEnabled
-              ? `${formatConnectionString({ currency, limitFrequency, amountInLowestDenom })} spending limit`
-              : "No spending limit"}
-          </LimitDescription>
-          <Icon name="Pencil" width={12} />
-        </Limit>
+        <Personalize onClick={handleShowPersonalize}>
+          <PersonalizeDescription>
+            Personalize permissions
+          </PersonalizeDescription>
+          <Icon name="CaretRight" width={12} />
+        </Personalize>
       </PermissionsContainer>
 
       <ButtonSection>
-        <Button text="Connect UMA" kind="primary" fullWidth />
-        <Button text="Cancel" kind="secondary" fullWidth />
+        <Button
+          text="Connect UMA"
+          kind="primary"
+          fullWidth
+          onClick={handleSubmit}
+          loading={isConnecting}
+        />
+        <Button
+          text="Cancel"
+          kind="secondary"
+          fullWidth
+          disabled={isConnecting}
+        />
       </ButtonSection>
-
-      <EditLimit
-        title="Spending limit"
-        visible={isEditLimitVisible}
-        amountInLowestDenom={amountInLowestDenom}
-        currency={currency}
-        limitFrequency={limitFrequency}
-        frequency={limitFrequency}
-        enabled={limitEnabled}
-        handleSubmit={handleSubmitEditLimit}
-        handleCancel={() => setIsEditLimitVisible(false)}
-      />
     </Container>
   );
 };
@@ -169,6 +249,7 @@ const PermissionsContainer = styled.div`
   width: 100%;
   border: 0.5px solid #c0c9d6;
   border-radius: 8px;
+  background: ${colors.white};
 `;
 
 const PermissionsDescription = styled.div`
@@ -215,7 +296,7 @@ const Permissions = styled.div`
   gap: ${Spacing.sm};
 `;
 
-const Limit = styled.div`
+const Personalize = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -224,7 +305,7 @@ const Limit = styled.div`
   cursor: pointer;
 `;
 
-const LimitDescription = styled.div`
+const PersonalizeDescription = styled.div`
   color: #686a72;
   font-size: 16px;
 `;
