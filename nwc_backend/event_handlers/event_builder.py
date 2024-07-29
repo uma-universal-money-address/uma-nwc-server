@@ -5,9 +5,10 @@ import json
 from datetime import datetime, timezone
 from hashlib import sha256
 
-from nostr_sdk import Event, Keys, Kind, KindEnum
+from nostr_sdk import Event, Keys, Kind, KindEnum, PublicKey, nip04_encrypt
 
 from nwc_backend.configs.nostr_config import nostr_config
+from nwc_backend.exceptions import EventBuilderException
 
 
 class EventBuilder:
@@ -16,12 +17,34 @@ class EventBuilder:
         self.content = content
         self.created_at = int(datetime.now(timezone.utc).timestamp())
         self.tags: list[list[str]] = []
+        self.content_encrypted = False
 
     def add_tag(self, tag: list[str]) -> "EventBuilder":
         self.tags.append(tag)
         return self
 
+    def encrypt_content(self, recipient_pubkey: PublicKey) -> "EventBuilder":
+        if self.content_encrypted:
+            raise EventBuilderException("Content has already been encrypted.")
+
+        self.content = nip04_encrypt(
+            secret_key=nostr_config.identity_privkey,
+            public_key=recipient_pubkey,
+            content=self.content,
+        )
+        self.content_encrypted = True
+        return self
+
     def build(self) -> Event:
+        if (
+            self.kind.as_enum()
+            in (KindEnum.WALLET_CONNECT_REQUEST(), KindEnum.WALLET_CONNECT_RESPONSE())
+            and not self.content_encrypted
+        ):
+            raise EventBuilderException(
+                "Content must be encrypted using nip04 for nip47 request and response."
+            )
+
         event_id = self._compute_id()
         signature = self._sign(event_id)
         return Event.from_json(
