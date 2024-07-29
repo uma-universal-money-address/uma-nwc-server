@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { Connection, LimitFrequency } from "src/types/Connection";
+import {
+  Connection,
+  LimitFrequency,
+  PermissionType,
+} from "src/types/Connection";
 
 export const useConnection = ({ appId }: { appId: string }) => {
   const [connection, setConnection] = useState<Connection>();
@@ -22,16 +26,18 @@ export const useConnection = ({ appId }: { appId: string }) => {
           avatar: "/uma.svg",
           permissions: [
             {
-              type: "READ_BALANCE",
-              description: "Read your balance",
-            },
-            {
-              type: "READ_TRANSACTIONS",
-              description: "Read transaction history",
-            },
-            {
-              type: "SEND_PAYMENTS",
+              type: PermissionType.SEND_PAYMENTS,
               description: "Send payments from your UMA",
+            },
+            {
+              type: PermissionType.READ_BALANCE,
+              description: "Read your balance",
+              optional: true,
+            },
+            {
+              type: PermissionType.READ_TRANSACTIONS,
+              description: "Read transaction history",
+              optional: true,
             },
           ],
           amountInLowestDenom: 200,
@@ -99,4 +105,19 @@ export const useConnection = ({ appId }: { appId: string }) => {
     isLoading,
     updateConnection,
   };
+};
+
+// eslint-disable-next-line @typescript-eslint/require-await
+export const initializeConnection = async (connection: Connection) => {
+  try {
+    // const response = await fetch("/connection", {
+    //   method: "POST",
+    //   body: JSON.stringify({ ...connection, }),
+    // });
+    console.log("Connection initialized", connection);
+    return true;
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
 };
