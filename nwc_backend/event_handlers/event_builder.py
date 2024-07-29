@@ -4,10 +4,12 @@
 import json
 from datetime import datetime, timezone
 from hashlib import sha256
+from typing import Any, Optional
 
-from nostr_sdk import Event, Keys, Kind, KindEnum, PublicKey, nip04_encrypt
+from nostr_sdk import Event, Keys, Kind, KindEnum, Nip47Error, PublicKey, nip04_encrypt
 
 from nwc_backend.configs.nostr_config import nostr_config
+from nwc_backend.event_handlers.nip47_request_method import Nip47RequestMethod
 from nwc_backend.exceptions import EventBuilderException
 
 
@@ -76,3 +78,40 @@ class EventBuilder:
     def _sign(self, message: str) -> str:
         keys = Keys.parse(nostr_config.identity_privkey.to_hex())
         return keys.sign_schnorr(bytes.fromhex(message))
+
+
+def create_nip47_response(
+    event: Event, method: Nip47RequestMethod, result: dict[str, Any]
+) -> Event:
+    content = {"result_type": method.value, "result": result}
+    return (
+        EventBuilder(
+            kind=KindEnum.WALLET_CONNECT_RESPONSE(),  # pyre-ignore[6]
+            content=json.dumps(content),
+        )
+        .encrypt_content(event.author())
+        .add_tag(["p", nostr_config.identity_pubkey.to_hex()])
+        .add_tag(["e", event.id().to_hex()])
+        .build()
+    )
+
+
+def create_nip47_error_response(
+    event: Event, method: Optional[Nip47RequestMethod], error: Nip47Error
+) -> Event:
+    content = {
+        "error": {"code": error.code.name, "message": error.message},
+    }
+    if method:
+        content["result_type"] = method.value
+
+    return (
+        EventBuilder(
+            kind=KindEnum.WALLET_CONNECT_RESPONSE(),  # pyre-ignore[6]
+            content=json.dumps(content),
+        )
+        .encrypt_content(event.author())
+        .add_tag(["p", nostr_config.identity_pubkey.to_hex()])
+        .add_tag(["e", event.id().to_hex()])
+        .build()
+    )
