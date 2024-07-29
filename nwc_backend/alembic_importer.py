@@ -3,3 +3,4 @@
 # ruff: noqa: F401
 
 from nwc_backend.models.user import User
+from nwc_backend.models.app_connection import AppConnection
