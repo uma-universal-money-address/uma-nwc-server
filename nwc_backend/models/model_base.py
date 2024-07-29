@@ -1,5 +1,5 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
-# pyre-strict
+
 
 from typing import Any
 
@@ -10,7 +10,15 @@ from nwc_backend.db import UUID, Column
 
 
 class ModelBase(DeclarativeBase):
-    def __setitem__(self, key: str, value: Any) -> None:  # pyre-ignore[2]
+    def __setitem__(self, key: str, value: Any) -> None:
         return setattr(self, key, value)
 
-    id: sqlalchemy.Column = Column(UUID(), primary_key=True)
+    id = Column(UUID(), primary_key=True)
+    created_at = Column(
+        sqlalchemy.DateTime(timezone=True), server_default=sqlalchemy.func.now()
+    )
+    updated_at = Column(
+        sqlalchemy.DateTime(timezone=True),
+        server_default=sqlalchemy.func.now(),
+        onupdate=sqlalchemy.func.now(),
+    )
