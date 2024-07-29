@@ -13,12 +13,12 @@ class AppConnection(ModelBase):
     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     app_name = Column(String(255))
     description = Column(String(255))
-    nostr_pubkey = Column(Text)
+    nostr_pubkey = Column(String(255))
     required_commands = Column(Text)  # Store JSON as string
     optional_commands = Column(Text)  # Store JSON as string
-    max_budget = Column(Integer)
+    max_budget_per_month = Column(Integer)
     expires_at = Column(TIMESTAMP(timezone=True))
-    long_lived_vasp_token = Column(Text)
+    long_lived_vasp_token = Column(String(255))
 
     def set_required_commands(self, commands: list[NWCCommand]) -> None:
         commands_vals = [command.value for command in commands]

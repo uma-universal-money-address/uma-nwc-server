@@ -9,5 +9,5 @@ class User(ModelBase):
     __tablename__ = "user"
 
     email: Column[str] = Column(String(255), nullable=False, unique=True)
-    access_token: Column[str] = Column(Text)
-    refresh_token: Column[str] = Column(Text)
+    access_token: Column[str] = Column(String(255))
+    refresh_token: Column[str] = Column(String(255))
