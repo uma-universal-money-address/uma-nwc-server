@@ -12,6 +12,7 @@ import {
   PermissionState,
 } from "src/types/Connection";
 import { formatConnectionString } from "src/utils/formatConnectionString";
+import { EditExpiration } from "./EditExpiration";
 import { EditLimit } from "./EditLimit";
 import { PermissionsEditableList } from "./PermissionsEditableList";
 
@@ -39,13 +40,19 @@ export const PersonalizePage = ({
   onReset,
 }: Props) => {
   const [isEditLimitVisible, setIsEditLimitVisible] = useState<boolean>(false);
+  const [isEditExpirationVisible, setIsEditExpirationVisible] =
+    useState<boolean>(false);
   const [internalConnectionSettings, setInternalConnectionSettings] =
     useState<ConnectionSettings>(connectionSettings);
 
   const { name, domain, avatar, currency, verified } = connection;
 
-  const handleEdit = () => {
+  const handleEditLimit = () => {
     setIsEditLimitVisible(true);
+  };
+
+  const handleEditExpiration = () => {
+    setIsEditExpirationVisible(true);
   };
 
   const handleSubmitEditLimit = ({
@@ -64,6 +71,18 @@ export const PersonalizePage = ({
       limitEnabled: enabled,
     });
     setIsEditLimitVisible(false);
+  };
+
+  const handleSubmitEditExpiration = ({
+    expirationPeriod,
+  }: {
+    expirationPeriod: ExpirationPeriod;
+  }) => {
+    setInternalConnectionSettings({
+      ...internalConnectionSettings,
+      expirationPeriod,
+    });
+    setIsEditExpirationVisible(false);
   };
 
   const handleUpdatePermissionStates = (
@@ -105,11 +124,20 @@ export const PersonalizePage = ({
             />
           </Permissions>
         </PermissionsDescription>
-        <Limit onClick={handleEdit}>
+        <Limit onClick={handleEditLimit}>
           <LimitDescription>
             {internalConnectionSettings.limitEnabled
               ? `${formatConnectionString({ currency, limitFrequency: internalConnectionSettings.limitFrequency, amountInLowestDenom: internalConnectionSettings.amountInLowestDenom })} spending limit`
               : "No spending limit"}
+          </LimitDescription>
+          <Icon name="Pencil" width={12} />
+        </Limit>
+        <Limit onClick={handleEditExpiration}>
+          <LimitDescription>
+            {internalConnectionSettings.expirationPeriod ===
+            ExpirationPeriod.NONE
+              ? "Connection never expires"
+              : `Connection expires in 1 ${internalConnectionSettings.expirationPeriod.toLowerCase()}`}
           </LimitDescription>
           <Icon name="Pencil" width={12} />
         </Limit>
@@ -136,6 +164,14 @@ export const PersonalizePage = ({
         handleSubmit={handleSubmitEditLimit}
         handleCancel={() => setIsEditLimitVisible(false)}
       />
+
+      <EditExpiration
+        title="Expiration date"
+        visible={isEditExpirationVisible}
+        expirationPeriod={internalConnectionSettings.expirationPeriod}
+        handleSubmit={handleSubmitEditExpiration}
+        handleCancel={() => setIsEditExpirationVisible(false)}
+      />
     </Container>
   );
 };
@@ -160,6 +196,10 @@ const PermissionsContainer = styled.div`
   border: 0.5px solid #c0c9d6;
   border-radius: 8px;
   background: ${colors.white};
+
+  & > *:not(:last-child) {
+    border-bottom: 0.5px solid #c0c9d6;
+  }
 `;
 
 const PermissionsDescription = styled.div`
@@ -167,7 +207,6 @@ const PermissionsDescription = styled.div`
   flex-direction: column;
   gap: ${Spacing.xl};
   width: 100%;
-  border-bottom: 0.5px solid #c0c9d6;
   padding: ${Spacing.lg};
 `;
 

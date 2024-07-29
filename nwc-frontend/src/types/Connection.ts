@@ -27,6 +27,7 @@ export enum ExpirationPeriod {
   WEEK = "Week",
   MONTH = "Month",
   YEAR = "Year",
+  NONE = "None",
 }
 
 export interface Connection {
