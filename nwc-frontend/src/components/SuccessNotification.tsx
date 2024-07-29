@@ -1,4 +1,7 @@
 import styled from "@emotion/styled";
+import { Icon } from "@lightsparkdev/ui/components";
+import { LabelModerate } from "@lightsparkdev/ui/components/typography/LabelModerate";
+import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 
 export const SuccessNotification = ({
   successMessage,
@@ -7,18 +10,26 @@ export const SuccessNotification = ({
 }) => {
   return (
     <Container>
-      <img alt="success" src="/icons/success.svg" width={24} height={24} />
-      {successMessage}
+      <LabelModerate size="Large" content={successMessage} />
+      <Icon name="Close" width={8} />
     </Container>
   );
 };
 
 const Container = styled.div`
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: ${Spacing.md} 20px;
   background-color: #16171a;
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow:
+    0px 0px 0px 1px rgba(0, 0, 0, 0.06),
+    0px 1px 1px -0.5px rgba(0, 0, 0, 0.06),
+    0px 3px 3px -1.5px rgba(0, 0, 0, 0.06),
+    0px 6px 6px -3px rgba(0, 0, 0, 0.06),
+    0px 12px 12px -6px rgba(0, 0, 0, 0.06),
+    0px 24px 24px -12px rgba(0, 0, 0, 0.06);
 
   color: #fff;
   font-size: 15px;
@@ -27,33 +38,30 @@ const Container = styled.div`
   line-height: 20px; /* 133.333% */
   letter-spacing: -0.187px;
 
-  margin-bottom: 12px;
+  margin-top: ${Spacing.md};
   gap: 8px;
   width: 100%;
   max-width: 400px;
-  animation:
-    slide-up 0.5s ease-out,
-    slide-down 0.5s 4.5s ease-out;
-
-  @keyframes slide-up {
-    from {
-      transform: translateY(20%);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
+  animation: 6s ease-in-out forwards slide-down;
 
   @keyframes slide-down {
-    from {
-      transform: translateY(0);
+    0% {
+      transform: translateY(-20%);
+      opacity: 0;
+    }
+    10% {
+      transform: translateY(0%);
       opacity: 1;
     }
-    to {
-      transform: translateY(20%);
+    90% {
+      transform: translateY(0%);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-20%);
       opacity: 0;
     }
   }
+
+  cursor: pointer;
 `;

@@ -38,7 +38,7 @@ export const NotificationLayout = ({
 
 const NotificationContainer = styled.div`
   position: absolute;
-  bottom: 0;
+  top: 0;
   width: 100vw;
   display: flex;
   justify-content: center;

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Shimmer } from "src/components/Shimmer";
 import { TransactionTable } from "src/components/TransactionTable";
 import { useConnection } from "src/hooks/useConnection";
+import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
 import { EditLimit } from "src/permissions/EditLimit";
 import { PermissionsList } from "src/permissions/PermissionsList";
 import { Header } from "./Header";
@@ -19,6 +20,7 @@ export default function ConnectionPage({ appId }: { appId: string }) {
     isLoading: isLoadingConnection,
   } = useConnection({ appId });
   const [isEditLimitVisible, setIsEditLimitVisible] = useState<boolean>(false);
+  const { setSuccessMessage, setError } = useGlobalNotificationContext();
 
   const handleEdit = () => {
     setIsEditLimitVisible(true);
@@ -37,7 +39,18 @@ export default function ConnectionPage({ appId }: { appId: string }) {
       amountInLowestDenom,
       limitFrequency: frequency,
       limitEnabled: enabled,
-    });
+      isActive: connection?.isActive,
+    })
+      .then((succeeded) => {
+        if (succeeded) {
+          setSuccessMessage("Spending limit updated successfully");
+        } else {
+          setError(new Error("Failed to update spending limit"));
+        }
+      })
+      .catch((e) => {
+        setError(e);
+      });
     setIsEditLimitVisible(false);
   };
 
