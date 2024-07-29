@@ -2,7 +2,7 @@
 # pyre-strict
 
 from nwc_backend.models.model_base import ModelBase
-from sqlalchemy import Column, String, Text
+from sqlalchemy import Column, String
 
 
 class User(ModelBase):
