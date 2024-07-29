@@ -64,7 +64,7 @@ class EventBuilder:
     def _compute_id(self) -> str:
         data = [
             0,
-            nostr_config.identity_pubkey,
+            nostr_config.identity_pubkey.to_hex(),
             self.created_at,
             self.kind.as_u16(),
             self.tags,
