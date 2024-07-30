@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Connection,
+  InitialConnection,
   LimitFrequency,
   PermissionType,
 } from "src/types/Connection";
@@ -108,13 +109,15 @@ export const useConnection = ({ appId }: { appId: string }) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/require-await
-export const initializeConnection = async (connection: Connection) => {
+export const initializeConnection = async (
+  initialConnection: InitialConnection,
+) => {
   try {
     // const response = await fetch("/connection", {
     //   method: "POST",
-    //   body: JSON.stringify({ ...connection, }),
+    //   body: JSON.stringify({ ...initialConnection, }),
     // });
-    console.log("Connection initialized", connection);
+    console.log("Connection initialized", initialConnection);
     return true;
   } catch (e) {
     console.error(e);

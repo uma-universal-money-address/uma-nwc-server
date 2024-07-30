@@ -26,7 +26,7 @@ interface Props {
   clientAppDefaultSettings?: ConnectionSettings;
 }
 
-const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
+export const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
   permissionStates: [
     {
       permission: {
@@ -112,6 +112,10 @@ export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
   };
 
   const handleSubmit = () => {
+    if (!connection) {
+      return;
+    }
+
     const today = dayjs();
     const expiration = today
       .add(1, connectionSettings.expirationPeriod)
@@ -120,7 +124,9 @@ export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
     async function submitConnection() {
       setIsConnecting(true);
       await initializeConnection({
-        ...connection,
+        appId: connection.appId,
+        name: connection.name,
+        currency: connection.currency,
         permissions: connectionSettings.permissionStates
           .filter((permissionState) => permissionState.enabled)
           .map((permissionState) => permissionState.permission),
@@ -214,6 +220,7 @@ export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
           fullWidth
           onClick={handleSubmit}
           loading={isConnecting}
+          disabled={isLoadingConnection || !connection}
         />
         <Button
           text="Cancel"

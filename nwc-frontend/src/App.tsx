@@ -63,6 +63,12 @@ function App() {
           ) : null}
         </Content>
       </Section>
+      <Button
+        icon="Plus"
+        text="Manual connection"
+        kind="primary"
+        href="/connection/new"
+      />
 
       {isLoadingConnections || !archivedConnections.length ? null : (
         <Section>
