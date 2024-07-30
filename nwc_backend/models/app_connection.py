@@ -31,6 +31,10 @@ class AppConnection(ModelBase):
         command_vals = json.loads(self.supported_commands)
         return [Nip47RequestMethod(command) for command in command_vals]
 
+    def has_command_permission(self, command: Nip47RequestMethod) -> bool:
+        command_vals = json.loads(self.supported_commands)
+        return command in [Nip47RequestMethod(command) for command in command_vals]
+
     @staticmethod
     async def from_nostr_pubkey(nostr_pubkey: str) -> Optional["AppConnection"]:
         with Session(db.engine) as db_session:
