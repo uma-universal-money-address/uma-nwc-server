@@ -1,22 +1,31 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
+import asyncio
+import logging
 import os
+from typing import Any
 
+from nostr_sdk import Client, Filter, Kind, KindEnum
 from quart import (
     Quart,
-    send_from_directory,
-    redirect,
-    url_for,
-    request,
-    session,
     Response,
+    redirect,
+    request,
+    send_from_directory,
+    session,
+    url_for,
 )
 from werkzeug import Response as WerkzeugResponse
 
 import nwc_backend.alembic_importer  # noqa: F401
+from nwc_backend.configs.nostr_config import nostr_config
 from nwc_backend.db import db
-from typing import Any
+from nwc_backend.event_handlers.event_builder import EventBuilder
+from nwc_backend.event_handlers.nip47_request_method import Nip47RequestMethod
+from nwc_backend.exceptions import PublishEventFailedException
+from nwc_backend.nostr_client import nostr_client
+from nwc_backend.nostr_notification_handler import NotificationHandler
 
 
 def create_app() -> Quart:
@@ -26,6 +35,8 @@ def create_app() -> Quart:
     app.config.from_envvar("QUART_CONFIG")
     app.static_folder = app.config["FRONTEND_BUILD_PATH"]
     db.init_app(app)
+
+    # asyncio.run(init_nostr_client())
 
     @app.route("/hello", defaults={"path": ""})
     async def serve(path: str) -> dict[str, Any]:
@@ -71,3 +82,36 @@ def create_app() -> Quart:
         pass
 
     return app
+
+
+async def init_nostr_client() -> None:
+    await nostr_client.add_relay(nostr_config.relay_url)
+    await nostr_client.connect()
+
+    await _publish_nip47_info()
+
+    nip47_filter = (
+        Filter()
+        .pubkey(nostr_config.identity_pubkey)
+        .kind(Kind.from_enum(KindEnum.WALLET_CONNECT_REQUEST()))  # pyre-ignore[6]
+    )
+    await nostr_client.subscribe([nip47_filter])
+    await nostr_client.handle_notifications(NotificationHandler())
+
+
+async def _publish_nip47_info() -> None:
+    nip47_info_event = EventBuilder(
+        kind=KindEnum.WALLET_CONNECT_INFO(),  # pyre-ignore[6]
+        content=" ".join([method.value for method in list(Nip47RequestMethod)]),
+    ).build()
+    response = await nostr_client.send_event(nip47_info_event)
+
+    logging.debug(
+        "Nip47 info published %s: success %s, failed %s",
+        response.id.to_hex(),
+        str(response.output.success),
+        str(response.output.failed),
+    )
+
+    if not response.output.success:
+        raise PublishEventFailedException(nip47_info_event, response.output.failed)
