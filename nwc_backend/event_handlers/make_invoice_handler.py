@@ -3,6 +3,8 @@
 
 from typing import Any
 
+from nostr_sdk import Nip47Error
 
-async def make_invoice(params: dict[str, Any]) -> None:
-    pass
+
+async def make_invoice(params: dict[str, Any]) -> dict[str, Any] | Nip47Error:
+    raise NotImplementedError()
