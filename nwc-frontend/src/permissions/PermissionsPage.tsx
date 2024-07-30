@@ -13,8 +13,10 @@ import { useUma } from "src/hooks/useUma";
 import {
   ExpirationPeriod,
   LimitFrequency,
+  Permission,
   PermissionType,
 } from "src/types/Connection";
+import { formatConnectionString } from "src/utils/formatConnectionString";
 import { PermissionsList } from "./PermissionsList";
 import { ConnectionSettings, PersonalizePage } from "./PersonalizePage";
 
@@ -145,6 +147,21 @@ export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
     );
   }
 
+  const permissions: (Permission | string)[] =
+    connectionSettings.permissionStates
+      .filter((permissionState) => permissionState.enabled)
+      .map((permissionState) => permissionState.permission);
+  if (connectionSettings.limitEnabled) {
+    permissions.push(
+      `Set a ${formatConnectionString({ currency, limitFrequency: connectionSettings.limitFrequency, amountInLowestDenom: connectionSettings.amountInLowestDenom })} spend limit`,
+    );
+  }
+  if (connectionSettings.expirationPeriod !== ExpirationPeriod.NONE) {
+    permissions.push(
+      `Expire connection in 1 ${connectionSettings.expirationPeriod.toLowerCase()}`,
+    );
+  }
+
   const header = (
     <Header>
       <VaspLogo src="/vasp.svg" width={32} height={32} />
@@ -179,11 +196,7 @@ export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
           </AppSection>
           <Permissions>
             <Label size="Large" content="Would like to" />
-            <PermissionsList
-              permissions={connectionSettings.permissionStates
-                .filter((permissionState) => permissionState.enabled)
-                .map((permissionState) => permissionState.permission)}
-            />
+            <PermissionsList permissions={permissions} />
           </Permissions>
         </PermissionsDescription>
         <Personalize onClick={handleShowPersonalize}>
