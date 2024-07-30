@@ -3,6 +3,8 @@
 
 from typing import Any
 
+from nostr_sdk import Nip47Error
 
-async def get_balance(params: dict[str, Any]) -> None:
-    pass
+
+async def get_balance(params: dict[str, Any]) -> dict[str, Any] | Nip47Error:
+    raise NotImplementedError()

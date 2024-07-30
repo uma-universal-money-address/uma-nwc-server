@@ -8,7 +8,10 @@ from datetime import datetime, timezone
 from nostr_sdk import ErrorCode, Event, Nip47Error, TagKind, nip04_decrypt
 
 from nwc_backend.configs.nostr_config import nostr_config
-from nwc_backend.event_handlers.event_builder import create_nip47_error_response
+from nwc_backend.event_handlers.event_builder import (
+    create_nip47_error_response,
+    create_nip47_response,
+)
 from nwc_backend.event_handlers.execute_quote_handler import execute_quote
 from nwc_backend.event_handlers.fetch_quote_handler import fetch_quote
 from nwc_backend.event_handlers.get_balance_handler import get_balance
@@ -60,24 +63,36 @@ async def handle_nip47_event(event: Event) -> None:
     params = content["params"]
     match method:
         case Nip47RequestMethod.PAY_INVOICE:
-            await pay_invoice(params)
+            response = await pay_invoice(params)
         case Nip47RequestMethod.MAKE_INVOICE:
-            await make_invoice(params)
+            response = await make_invoice(params)
         case Nip47RequestMethod.LOOKUP_INVOICE:
-            await lookup_invoice(params)
+            response = await lookup_invoice(params)
         case Nip47RequestMethod.GET_BALANCE:
-            await get_balance(params)
+            response = await get_balance(params)
         case Nip47RequestMethod.GET_INFO:
-            await get_info(params)
+            response = await get_info(params)
         case Nip47RequestMethod.LIST_TRANSACTIONS:
-            await list_transactions(params)
+            response = await list_transactions(params)
         case Nip47RequestMethod.PAY_KEYSEND:
-            await pay_keysend(params)
+            response = await pay_keysend(params)
         case Nip47RequestMethod.LOOKUP_USER:
-            await lookup_user(params)
+            response = await lookup_user(params)
         case Nip47RequestMethod.FETCH_QUOTE:
-            await fetch_quote(params)
+            response = await fetch_quote(params)
         case Nip47RequestMethod.EXECUTE_QUOTE:
-            await execute_quote(params)
+            response = await execute_quote(params)
         case Nip47RequestMethod.PAY_TO_ADDRESS:
-            await pay_to_address(params)
+            response = await pay_to_address(params)
+        case _:
+            raise NotImplementedError()
+
+    if isinstance(response, Nip47Error):
+        response_event = create_nip47_error_response(
+            event=event, method=method, error=response
+        )
+    else:
+        response_event = create_nip47_response(
+            event=event, method=method, result=response
+        )
+    await nostr_client.send_event(response_event)
