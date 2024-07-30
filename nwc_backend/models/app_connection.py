@@ -1,6 +1,7 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 
 import json
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import TIMESTAMP, ForeignKey, Integer, String, Text, select
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Session
 from nwc_backend.db import Column, db
 from nwc_backend.event_handlers.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.model_base import ModelBase
+from nwc_backend.typing import none_throws
 
 
 class AppConnection(ModelBase):
@@ -34,6 +36,12 @@ class AppConnection(ModelBase):
     def has_command_permission(self, command: Nip47RequestMethod) -> bool:
         command_vals = json.loads(self.supported_commands)
         return command in [Nip47RequestMethod(command) for command in command_vals]
+
+    def getx_expires_at(self) -> datetime:
+        if self.expires_at and not self.expires_at.tzinfo:
+            return self.expires_at.replace(tzinfo=timezone.utc)
+
+        return none_throws(self.expires_at)
 
     @staticmethod
     async def from_nostr_pubkey(nostr_pubkey: str) -> Optional["AppConnection"]:

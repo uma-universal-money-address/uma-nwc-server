@@ -42,10 +42,21 @@ async def handle_nip47_event(event: Event) -> None:
         await nostr_client.send_event(error_response)
         return
 
+    now = datetime.now(timezone.utc)
+    if app_connection.getx_expires_at() < now:
+        error_response = create_nip47_error_response(
+            event=event,
+            method=None,
+            error=Nip47Error(
+                code=ErrorCode.UNAUTHORIZED,
+                message="The nwc connection secret has expired.",
+            ),
+        )
+        await nostr_client.send_event(error_response)
+        return
+
     expiration = event.get_tag_content(TagKind.EXPIRATION())  # pyre-ignore[6]
-    if expiration and datetime.fromtimestamp(
-        float(expiration), timezone.utc
-    ) < datetime.now(timezone.utc):
+    if expiration and datetime.fromtimestamp(float(expiration), timezone.utc) < now:
         logging.debug("Event ignored: expired at %s.", expiration)
         return
 
