@@ -6,12 +6,13 @@ import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 interface Props {
   isEnabled: boolean;
   setIsEnabled: (enabled: boolean) => void;
+  title: string;
 }
 
-export const EnableLimitToggle = ({ isEnabled, setIsEnabled }: Props) => {
+export const EnableToggle = ({ isEnabled, setIsEnabled, title }: Props) => {
   return (
     <Container>
-      <Text>Enable spending limit</Text>
+      <Text>{title}</Text>
       <Toggle on={isEnabled} onChange={setIsEnabled} />
     </Container>
   );
