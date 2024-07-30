@@ -58,7 +58,17 @@ async def handle_nip47_event(event: Event) -> None:
     )
 
     method = Nip47RequestMethod(content["method"])
-    # TODO (yunyu): verify method is allowed in permission
+    if not app_connection.has_command_permission(method):
+        error_response = create_nip47_error_response(
+            event=event,
+            method=None,
+            error=Nip47Error(
+                code=ErrorCode.UNAUTHORIZED,
+                message=f"No permission for request method {method.name}.",
+            ),
+        )
+        await nostr_client.send_event(error_response)
+        return
 
     params = content["params"]
     match method:
