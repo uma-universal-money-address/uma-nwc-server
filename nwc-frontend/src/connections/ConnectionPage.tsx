@@ -10,7 +10,7 @@ import { useConnection } from "src/hooks/useConnection";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
 import { EditLimit } from "src/permissions/EditLimit";
 import { PermissionsList } from "src/permissions/PermissionsList";
-import { Header } from "./Header";
+import { ConnectionHeader } from "./ConnectionHeader";
 import { Limit } from "./Limit";
 
 export default function ConnectionPage({ appId }: { appId: string }) {
@@ -57,7 +57,10 @@ export default function ConnectionPage({ appId }: { appId: string }) {
   return (
     <Main>
       {connection ? (
-        <Header connection={connection} updateConnection={updateConnection} />
+        <ConnectionHeader
+          connection={connection}
+          updateConnection={updateConnection}
+        />
       ) : null}
       <Content>
         {!isLoadingConnection && connection?.isActive ? (
@@ -125,6 +128,11 @@ const Content = styled.div`
 
   border-radius: 24px;
   background: ${colors.white};
+
+  & > *:not(:last-child) {
+    border-bottom: 1px solid ${colors.gray90};
+    padding-bottom: ${Spacing["xl"]};
+  }
 `;
 
 const Section = styled.section`
@@ -132,12 +140,7 @@ const Section = styled.section`
   flex-direction: column;
   gap: ${Spacing.lg};
   width: 100%;
-  padding: ${Spacing["xl"]} ${Spacing["xl"]};
-
-  &:not(:last-child) {
-    border-bottom: 1px solid ${colors.gray90};
-    padding-bottom: ${Spacing["xl"]};
-  }
+  padding: ${Spacing["xl"]};
 `;
 
 const SectionHeader = styled.div`

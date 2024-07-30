@@ -30,21 +30,32 @@ export enum ExpirationPeriod {
   NONE = "None",
 }
 
+export interface InitialConnection {
+  name: string;
+  permissions: Permission[];
+  currencyCode: string;
+  amountInLowestDenom: number;
+  limitEnabled: boolean;
+  limitFrequency?: LimitFrequency;
+  expiration?: string;
+  appId?: string;
+}
+
 export interface Connection {
   appId: string;
   name: string;
-  domain: string;
   verified: boolean;
   createdAt: string;
-  lastUsed: string;
-  disconnectedAt: string;
-  expiration: string;
-  avatar: string;
   permissions: Permission[];
   amountInLowestDenom: number;
   amountInLowestDenomUsed: number;
-  limitFrequency: LimitFrequency;
   limitEnabled: boolean;
   currency: Currency;
   isActive: boolean;
+  domain?: string;
+  limitFrequency?: LimitFrequency;
+  expiration?: string;
+  avatar?: string;
+  lastUsed?: string;
+  disconnectedAt?: string;
 }

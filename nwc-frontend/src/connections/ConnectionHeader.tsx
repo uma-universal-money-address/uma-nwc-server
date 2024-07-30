@@ -1,14 +1,14 @@
 import styled from "@emotion/styled";
-import { Button, Icon, Modal } from "@lightsparkdev/ui/components";
+import { Button, Modal } from "@lightsparkdev/ui/components";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { Avatar } from "src/components/Avatar";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
 import { Connection } from "src/types/Connection";
 import { formatTimestamp } from "src/utils/formatTimestamp";
+import { Nav } from "./Nav";
 
-export const Header = ({
+export const ConnectionHeader = ({
   connection,
   updateConnection,
 }: {
@@ -40,10 +40,7 @@ export const Header = ({
 
   return (
     <Container>
-      <Navigation to="/">
-        <Icon name="ChevronLeft" width={12} />
-        <HeaderText>Back to Connections</HeaderText>
-      </Navigation>
+      <Nav />
       <AppAndDisconnect>
         <AppSection>
           <Avatar size={72} src={connection.avatar} />
@@ -82,22 +79,6 @@ const Container = styled.div`
   flex-direction: column;
   gap: 8px;
   width: 100%;
-`;
-
-const Navigation = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const HeaderText = styled.span`
-  color: ${({ theme }) => theme.link};
-  text-align: center;
-  font-size: 17px;
-  font-style: normal;
-  font-weight: 400;
-  line-height: 22px; /* 129.412% */
-  letter-spacing: -0.212px;
 `;
 
 const AppAndDisconnect = styled.div`

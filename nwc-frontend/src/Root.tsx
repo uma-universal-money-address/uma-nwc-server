@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import GlobalNotificationContext from "src/hooks/useGlobalNotificationContext";
 import App from "./App";
 import ConnectionPage from "./connections/ConnectionPage";
+import ManualConnectionPage from "./connections/ManualConnectionPage";
 import { GlobalStyles } from "./GlobalStyles";
 import { LayoutInnerContent } from "./LayoutInnerContent";
 import { Nav } from "./Nav";
@@ -19,6 +20,10 @@ const router = createBrowserRouter([
   {
     path: "/connection/:appId",
     element: <ConnectionPage />,
+  },
+  {
+    path: "/connection/new",
+    element: <ManualConnectionPage />,
   },
   {
     path: "/permissions/:appId",
