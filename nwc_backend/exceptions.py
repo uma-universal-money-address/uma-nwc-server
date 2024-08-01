@@ -11,3 +11,7 @@ class PublishEventFailedException(Exception):
 
 class EventBuilderException(Exception):
     pass
+
+
+class InvalidClientIdException(Exception):
+    pass
