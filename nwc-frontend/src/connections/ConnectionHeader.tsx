@@ -6,7 +6,6 @@ import { Avatar } from "src/components/Avatar";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
 import { Connection } from "src/types/Connection";
 import { formatTimestamp } from "src/utils/formatTimestamp";
-import { Nav } from "./Nav";
 
 export const ConnectionHeader = ({
   connection,
@@ -40,7 +39,6 @@ export const ConnectionHeader = ({
 
   return (
     <Container>
-      <Nav />
       <AppAndDisconnect>
         <AppSection>
           <Avatar size={72} src={connection.avatar} />
@@ -74,7 +72,6 @@ export const ConnectionHeader = ({
 };
 
 const Container = styled.div`
-  padding: 16px 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;

@@ -7,9 +7,11 @@ import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import dayjs from "dayjs";
 import { useState } from "react";
+import { useLoaderData } from "react-router-dom";
 import { initializeConnection } from "src/hooks/useConnection";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
-import { useUserCurrencies } from "src/hooks/useUserCurrencies";
+import { LoaderData } from "src/loaders/LoaderData";
+import { userCurrencies } from "src/loaders/userCurrencies";
 import { EditExpiration } from "src/permissions/EditExpiration";
 import { EditLimit } from "src/permissions/EditLimit";
 import { PermissionsEditableList } from "src/permissions/PermissionsEditableList";
@@ -17,7 +19,6 @@ import { DEFAULT_CONNECTION_SETTINGS } from "src/permissions/PermissionsPage";
 import { ConnectionSettings } from "src/permissions/PersonalizePage";
 import { ExpirationPeriod, PermissionState } from "src/types/Connection";
 import { formatConnectionString } from "src/utils/formatConnectionString";
-import { Nav } from "./Nav";
 
 export default function ManualConnectionPage() {
   const [isHowItWorksVisible, setIsHowItWorksVisible] =
@@ -30,13 +31,9 @@ export default function ManualConnectionPage() {
     useState<ConnectionSettings>(DEFAULT_CONNECTION_SETTINGS);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [connectionName, setConnectionName] = useState<string>("");
-  const { defaultCurrency, isLoading: isLoadingUserCurrencies } =
-    useUserCurrencies();
-
-  // TODO: preload user currencies
-  if (isLoadingUserCurrencies) {
-    return <Main>Loading...</Main>;
-  }
+  const { defaultCurrency } = useLoaderData() as LoaderData<
+    typeof userCurrencies
+  >;
 
   const handleUpdatePermissionStates = (
     permissionStates: PermissionState[],
@@ -115,8 +112,7 @@ export default function ManualConnectionPage() {
   };
 
   return (
-    <Main>
-      <Nav />
+    <>
       <Intro>
         <Title size="Large" content="Manual connection" />
         <Description>
@@ -187,17 +183,9 @@ export default function ManualConnectionPage() {
         handleCancel={() => setIsEditExpirationVisible(false)}
         handleSubmit={handleSubmitEditExpiration}
       />
-    </Main>
+    </>
   );
 }
-
-const Main = styled.main`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  gap: ${Spacing["2xl"]};
-`;
 
 const Intro = styled.div`
   display: flex;

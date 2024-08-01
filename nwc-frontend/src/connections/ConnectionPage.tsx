@@ -55,7 +55,7 @@ export default function ConnectionPage({ appId }: { appId: string }) {
   };
 
   return (
-    <Main>
+    <>
       {connection ? (
         <ConnectionHeader
           connection={connection}
@@ -111,16 +111,9 @@ export default function ConnectionPage({ appId }: { appId: string }) {
           handleSubmit={handleSubmitEditLimit}
         />
       )}
-    </Main>
+    </>
   );
 }
-
-const Main = styled.main`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-`;
 
 const Content = styled.div`
   display: flex;
