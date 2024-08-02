@@ -52,14 +52,18 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["user_id"],
             ["user.id"],
+            name="nwc_connection_user_id_fkey",
         ),
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("app_connection", schema=None) as batch_op:
         batch_op.add_column(sa.Column("nwc_connection_id", UUID(), nullable=True))
-        batch_op.drop_constraint(None, type_="foreignkey")
+        batch_op.drop_constraint("app_connection_user_id_fkey", type_="foreignkey")
         batch_op.create_foreign_key(
-            None, "nwc_connection", ["nwc_connection_id"], ["id"]
+            "app_connection_nwc_connection_fkey",
+            "nwc_connection",
+            ["nwc_connection_id"],
+            ["id"],
         )
         batch_op.drop_column("supported_commands")
         batch_op.drop_column("max_budget_per_month")
@@ -118,8 +122,12 @@ def downgrade() -> None:
             sa.Column("max_budget_per_month", sa.INTEGER(), nullable=True)
         )
         batch_op.add_column(sa.Column("supported_commands", sa.TEXT(), nullable=True))
-        batch_op.drop_constraint(None, type_="foreignkey")
-        batch_op.create_foreign_key(None, "user", ["user_id"], ["id"])
+        batch_op.drop_constraint(
+            "app_connection_nwc_connection_fkey", type_="foreignkey"
+        )
+        batch_op.create_foreign_key(
+            "app_connection_user_id_fkey", "user", ["user_id"], ["id"]
+        )
         batch_op.drop_column("nwc_connection_id")
 
     op.drop_table("nwc_connection")
