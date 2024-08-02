@@ -1,12 +1,11 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import asyncio
 import logging
 import os
 from typing import Any
 
-from nostr_sdk import Client, Filter, Kind, KindEnum
+from nostr_sdk import Filter, Kind, KindEnum
 from quart import (
     Quart,
     Response,

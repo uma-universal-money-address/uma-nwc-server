@@ -4,3 +4,4 @@
 
 from nwc_backend.models.user import User
 from nwc_backend.models.app_connection import AppConnection
+from nwc_backend.models.nwc_connection import NWCConnection

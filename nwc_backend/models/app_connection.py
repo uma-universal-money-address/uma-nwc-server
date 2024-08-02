@@ -4,26 +4,30 @@ import json
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import TIMESTAMP, ForeignKey, Integer, String, Text, select
+from sqlalchemy import ForeignKey, String, select
 from sqlalchemy.orm import Session
 
-from nwc_backend.db import Column, db
+from nwc_backend.db import Column, db, UUID
 from nwc_backend.event_handlers.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.model_base import ModelBase
 from nwc_backend.typing import none_throws
+from sqlalchemy.orm import relationship
 
 
 class AppConnection(ModelBase):
+    """
+    Represents a connection to the NWC server and the client app.
+    """
+
     __tablename__ = "app_connection"
 
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    app_name = Column(String(255))
-    description = Column(String(255))
     nostr_pubkey = Column(String(255), unique=True)
-    supported_commands = Column(Text)  # Store JSON as string
-    max_budget_per_month = Column(Integer)
-    expires_at = Column(TIMESTAMP(timezone=True))
-    long_lived_vasp_token = Column(String(255))
+    nwc_connection_id = Column(UUID, ForeignKey("nwc_connection.id"))
+
+    nwc_connection = relationship(
+        "NWCConnection", back_populates="app_connection", uselist=False
+    )
+    user = relationship("User", back_populates="app_connections")
 
     def set_supported_commands(self, commands: list[Nip47RequestMethod]) -> None:
         commands_vals = [command.value for command in commands]
