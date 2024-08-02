@@ -4,16 +4,20 @@ import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
+import { useParams } from "react-router-dom";
 import { Shimmer } from "src/components/Shimmer";
 import { TransactionTable } from "src/components/TransactionTable";
 import { useConnection } from "src/hooks/useConnection";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
 import { EditLimit } from "src/permissions/EditLimit";
 import { PermissionsList } from "src/permissions/PermissionsList";
+import { ConnectionStatus } from "src/types/Connection";
 import { ConnectionHeader } from "./ConnectionHeader";
 import { Limit } from "./Limit";
+import { PendingConnectionPage } from "./PendingConnectionPage";
 
-export default function ConnectionPage({ appId }: { appId: string }) {
+export default function ConnectionPage() {
+  const { appId } = useParams<{ appId: string }>();
   const {
     connection,
     updateConnection,
@@ -39,7 +43,7 @@ export default function ConnectionPage({ appId }: { appId: string }) {
       amountInLowestDenom,
       limitFrequency: frequency,
       limitEnabled: enabled,
-      isActive: connection?.isActive,
+      status: connection?.status,
     })
       .then((succeeded) => {
         if (succeeded) {
@@ -54,6 +58,15 @@ export default function ConnectionPage({ appId }: { appId: string }) {
     setIsEditLimitVisible(false);
   };
 
+  if (connection?.status === ConnectionStatus.PENDING) {
+    return (
+      <PendingConnectionPage
+        name={connection.name}
+        permissions={connection.permissions}
+      />
+    );
+  }
+
   return (
     <>
       {connection ? (
@@ -63,7 +76,8 @@ export default function ConnectionPage({ appId }: { appId: string }) {
         />
       ) : null}
       <Content>
-        {!isLoadingConnection && connection?.isActive ? (
+        {!isLoadingConnection &&
+        connection?.status === ConnectionStatus.ACTIVE ? (
           <>
             <Section>
               <Title content="Permissions" />

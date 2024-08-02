@@ -12,6 +12,7 @@ import {
 } from "src/components/ConnectionTable";
 import { LearnMoreModal } from "./LearnMoreModal";
 import { useConnections } from "./hooks/useConnections";
+import { ConnectionStatus } from "./types/Connection";
 
 function App() {
   const navigate = useNavigate();
@@ -27,11 +28,11 @@ function App() {
     setIsLearnMoreVisible(true);
   };
 
-  const activeConnections = connections?.filter(
-    (connection) => connection.isActive,
+  const activeOrPendingConnections = connections?.filter(
+    (connection) => connection.status !== ConnectionStatus.INACTIVE,
   );
   const archivedConnections = connections?.filter(
-    (connection) => !connection.isActive,
+    (connection) => connection.status === ConnectionStatus.INACTIVE,
   );
 
   return (
@@ -58,7 +59,7 @@ function App() {
               <LoadingConnectionRow key="loader-3" shimmerWidth={20} />
             </>
           ) : (
-            <ConnectionTable connections={activeConnections} />
+            <ConnectionTable connections={activeOrPendingConnections} />
           )}
           {error ? (
             <Container>{`Error loading connections: ${error}`}</Container>
