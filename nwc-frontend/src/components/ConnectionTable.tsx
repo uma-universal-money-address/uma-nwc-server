@@ -4,6 +4,7 @@ import { Body } from "@lightsparkdev/ui/components/typography/Body";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { Link } from "react-router-dom";
 import { type Connection } from "src/hooks/useConnections";
+import { ConnectionStatus } from "src/types/Connection";
 import { formatTimestamp } from "src/utils/formatTimestamp";
 import { Avatar } from "./Avatar";
 import { Shimmer } from "./Shimmer";
@@ -39,7 +40,11 @@ const ConnectionRow = ({ connection }: { connection: Connection }) => {
           <span>{connection.name}</span>
         </InfoRow>
         <InfoRowDetails>
-          <span>{formatTimestamp(connection.lastUsed)}</span>
+          <span>
+            {connection.status === ConnectionStatus.PENDING
+              ? "Pending connection"
+              : formatTimestamp(connection.lastUsed)}
+          </span>
         </InfoRowDetails>
       </InfoRowContainer>
       <Icon name="CaretRight" width={12} color="#686a72" />
