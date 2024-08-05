@@ -19,6 +19,7 @@ import { DEFAULT_CONNECTION_SETTINGS } from "src/permissions/PermissionsPage";
 import { ConnectionSettings } from "src/permissions/PersonalizePage";
 import { ExpirationPeriod, PermissionState } from "src/types/Connection";
 import { formatConnectionString } from "src/utils/formatConnectionString";
+import { ManualConnectionHowItWorksModal } from "./ManualConnectionHowItWorksModal";
 import { PendingConnectionPage } from "./PendingConnectionPage";
 
 export default function ManualConnectionPage() {
@@ -205,6 +206,11 @@ export default function ManualConnectionPage() {
         expirationPeriod={connectionSettings.expirationPeriod}
         handleCancel={() => setIsEditExpirationVisible(false)}
         handleSubmit={handleSubmitEditExpiration}
+      />
+
+      <ManualConnectionHowItWorksModal
+        visible={isHowItWorksVisible}
+        onClose={() => setIsHowItWorksVisible(false)}
       />
     </>
   );
