@@ -33,7 +33,7 @@ export const LoadingConnectionRow = ({
 
 const ConnectionRow = ({ connection }: { connection: Connection }) => {
   return (
-    <Row to={`/connection/${connection.appId}`}>
+    <Row to={`/connection/${connection.connectionId}`}>
       <Avatar size={48} src={connection.avatar} />
       <InfoRowContainer>
         <InfoRow>
@@ -68,7 +68,7 @@ export const ConnectionTable = ({ connections }: ConnectionTableProps) => {
   return (
     <Container>
       {connections.map((connection) => (
-        <ConnectionRow key={connection.appId} connection={connection} />
+        <ConnectionRow key={connection.id} connection={connection} />
       ))}
     </Container>
   );

@@ -7,7 +7,8 @@ import {
 
 export const MOCKED_CONNECTIONS: Connection[] = [
   {
-    appId: "1",
+    connectionId: "1",
+    clientId: "1",
     name: "Test",
     createdAt: new Date().toISOString(),
     lastUsed: new Date().toISOString(),
@@ -42,7 +43,8 @@ export const MOCKED_CONNECTIONS: Connection[] = [
     status: ConnectionStatus.ACTIVE,
   },
   {
-    appId: "2",
+    connectionId: "2",
+    clientId: "2",
     name: "Test 2",
     createdAt: new Date().toISOString(),
     lastUsed: new Date().toISOString(),
@@ -77,7 +79,8 @@ export const MOCKED_CONNECTIONS: Connection[] = [
     status: ConnectionStatus.ACTIVE,
   },
   {
-    appId: "3",
+    connectionId: "3",
+    clientId: "3",
     name: "Test 3",
     createdAt: new Date().toISOString(),
     lastUsed: new Date().toISOString(),
@@ -112,7 +115,8 @@ export const MOCKED_CONNECTIONS: Connection[] = [
     status: ConnectionStatus.INACTIVE,
   },
   {
-    appId: "4",
+    connectionId: "4",
+    clientId: "4",
     name: "Test 4",
     createdAt: new Date().toISOString(),
     amountInLowestDenom: 200,

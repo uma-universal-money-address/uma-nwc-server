@@ -30,23 +30,23 @@ const hydrateTransactions = (
   });
 };
 
-export function useTransactions({ appId }: { appId: string }) {
+export function useTransactions({ connectionId }: { connectionId: string }) {
   const [transactions, setTransactions] = useState<Transaction[]>();
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/require-await
-    async function fetchTransactions(appId: string) {
+    async function fetchTransactions(connectionId: string) {
       setIsLoading(true);
       try {
-        // const response = await fetch(`${getBackendUrl()}/transactions/${appId}`, {
+        // const response = await fetch(`${getBackendUrl()}/transactions/${connectionId}`, {
         //   method: "GET",
         // }).then((res) => {
         //   if (res.ok) {
         //     return res.json() as Promise<RawTransaction[]>;
         //   } else {
-        //     throw new Error("Failed to fetch transactions.", { appId });
+        //     throw new Error("Failed to fetch transactions.", { connectionId });
         //   }
         // });
         const response = [
@@ -82,11 +82,11 @@ export function useTransactions({ appId }: { appId: string }) {
     }
 
     let ignore = false;
-    fetchTransactions(appId);
+    fetchTransactions(connectionId);
     return () => {
       ignore = true;
     };
-  }, [appId]);
+  }, [connectionId]);
 
   return {
     transactions,

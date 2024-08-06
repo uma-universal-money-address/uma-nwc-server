@@ -23,7 +23,7 @@ const router = createBrowserRouter([
     element: <ConnectionLayout />,
     children: [
       {
-        path: "/connection/:appId",
+        path: "/connection/:connectionId",
         element: <ConnectionPage />,
       },
       {
@@ -34,8 +34,9 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: "/permissions/:appId",
+    path: "/apps/new",
     element: <PermissionsPage />,
+    loader: userCurrencies,
   },
 ]);
 

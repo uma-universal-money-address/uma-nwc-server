@@ -1,10 +1,16 @@
 import { Currency } from "./Currency";
 
 export enum PermissionType {
-  SEND_PAYMENTS = "SEND_PAYMENTS",
-  READ_BALANCE = "READ_BALANCE",
-  READ_TRANSACTIONS = "READ_TRANSACTIONS",
+  SEND_PAYMENTS = "send_payments",
+  READ_BALANCE = "read_balance",
+  READ_TRANSACTIONS = "read_transactions",
 }
+
+export const PERMISSION_DESCRIPTIONS = {
+  [PermissionType.SEND_PAYMENTS]: "Send payments from your UMA",
+  [PermissionType.READ_BALANCE]: "Read your balance",
+  [PermissionType.READ_TRANSACTIONS]: "Read transaction history",
+};
 
 export interface Permission {
   type: PermissionType;
@@ -18,9 +24,10 @@ export interface PermissionState {
 }
 
 export enum LimitFrequency {
-  DAILY = "Daily",
-  WEEKLY = "Weekly",
-  MONTHLY = "Monthly",
+  DAILY = "daily",
+  WEEKLY = "weekly",
+  MONTHLY = "monthly",
+  NONE = "none",
 }
 
 export enum ExpirationPeriod {
@@ -44,13 +51,13 @@ export interface InitialConnection {
   limitEnabled: boolean;
   limitFrequency?: LimitFrequency;
   expiration?: string;
-  appId?: string;
+  clientId?: string;
 }
 
 export interface Connection {
-  appId: string;
+  connectionId: string;
+  clientId: string;
   name: string;
-  verified: boolean;
   createdAt: string;
   permissions: Permission[];
   amountInLowestDenom: number;
@@ -58,10 +65,8 @@ export interface Connection {
   limitEnabled: boolean;
   currency: Currency;
   status: ConnectionStatus;
-  domain?: string;
   limitFrequency?: LimitFrequency;
   expiration?: string;
-  avatar?: string;
   lastUsed?: string;
   disconnectedAt?: string;
 }

@@ -7,7 +7,7 @@ import {
 } from "src/types/Connection";
 import { MOCKED_CONNECTIONS } from "src/utils/fetchConnections";
 
-export const useConnection = ({ appId }: { appId: string }) => {
+export const useConnection = ({ connectionId }: { connectionId: string }) => {
   const [connection, setConnection] = useState<Connection>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -18,7 +18,9 @@ export const useConnection = ({ appId }: { appId: string }) => {
         // const response = await fetch("/connection");
         // const connection = await response.json();
         setIsLoading(true);
-        const connection = MOCKED_CONNECTIONS.find((c) => c.appId === appId);
+        const connection = MOCKED_CONNECTIONS.find(
+          (c) => c.connectionId === connectionId,
+        );
         setConnection(connection);
       } catch (e) {
         console.error(e);
@@ -32,7 +34,7 @@ export const useConnection = ({ appId }: { appId: string }) => {
     return () => {
       ignore = true;
     };
-  }, [appId]);
+  }, [connectionId]);
 
   // eslint-disable-next-line @typescript-eslint/require-await
   const updateConnection = async ({
@@ -49,7 +51,7 @@ export const useConnection = ({ appId }: { appId: string }) => {
     try {
       // const response = await fetch("/connection", {
       //   method: "POST",
-      //   body: JSON.stringify({ appId: connection.appId, amountInLowestDenom, limitFrequency, limitEnabled, status }),
+      //   body: JSON.stringify({ connectionId: connection.connectionId, amountInLowestDenom, limitFrequency, limitEnabled, status }),
       // });
       setConnection({
         ...connection,
@@ -87,7 +89,26 @@ export const initializeConnection = async (
     // });
     console.log("Connection initialized", initialConnection);
     return {
-      appId: "1",
+      code: "g0ZGZmNjVmOWI",
+      state: "dkZmYxMzE2",
+    };
+  } catch (e) {
+    return { error: e };
+  }
+};
+
+// eslint-disable-next-line @typescript-eslint/require-await
+export const initializeManualConnection = async (
+  initialConnection: InitialConnection,
+) => {
+  try {
+    // const response = await fetch("/manual-connection", {
+    //   method: "POST",
+    //   body: JSON.stringify({ ...initialConnection, }),
+    // });
+    console.log("Connection initialized", initialConnection);
+    return {
+      connectionId: "1",
       pairingUri:
         "nostr+walletconnect://test_id?relay=wss://relay.getalby.com/v1&secret=test_secret&lud16=$test@uma.me",
     };

@@ -4,9 +4,11 @@ import { Label } from "@lightsparkdev/ui/components/typography/Label";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
+import { useLoaderData } from "react-router-dom";
 import { Avatar } from "src/components/Avatar";
+import { userCurrencies } from "src/loaders/userCurrencies";
+import { AppInfo } from "src/types/AppInfo";
 import {
-  Connection,
   ExpirationPeriod,
   LimitFrequency,
   PermissionState,
@@ -25,7 +27,7 @@ export interface ConnectionSettings {
 }
 
 interface Props {
-  connection: Connection;
+  appInfo: AppInfo;
   connectionSettings: ConnectionSettings;
   updateConnectionSettings: (connectionSettings: ConnectionSettings) => void;
   onBack: () => void;
@@ -33,7 +35,7 @@ interface Props {
 }
 
 export const PersonalizePage = ({
-  connection,
+  appInfo,
   connectionSettings,
   updateConnectionSettings,
   onBack,
@@ -44,8 +46,11 @@ export const PersonalizePage = ({
     useState<boolean>(false);
   const [internalConnectionSettings, setInternalConnectionSettings] =
     useState<ConnectionSettings>(connectionSettings);
+  const { defaultCurrency } = useLoaderData() as LoaderData<
+    typeof userCurrencies
+  >;
 
-  const { name, domain, avatar, currency, verified } = connection;
+  const { name, domain, avatar, verified } = appInfo;
 
   const handleEditLimit = () => {
     setIsEditLimitVisible(true);
@@ -127,7 +132,7 @@ export const PersonalizePage = ({
         <Limit onClick={handleEditLimit}>
           <LimitDescription>
             {internalConnectionSettings.limitEnabled
-              ? `${formatConnectionString({ currency, limitFrequency: internalConnectionSettings.limitFrequency, amountInLowestDenom: internalConnectionSettings.amountInLowestDenom })} spending limit`
+              ? `${formatConnectionString({ currency: defaultCurrency, limitFrequency: internalConnectionSettings.limitFrequency, amountInLowestDenom: internalConnectionSettings.amountInLowestDenom })} spending limit`
               : "No spending limit"}
           </LimitDescription>
           <Icon name="Pencil" width={12} />
@@ -157,7 +162,7 @@ export const PersonalizePage = ({
         title="Spending limit"
         visible={isEditLimitVisible}
         amountInLowestDenom={internalConnectionSettings.amountInLowestDenom}
-        currency={currency}
+        currency={defaultCurrency}
         limitFrequency={internalConnectionSettings.limitFrequency}
         frequency={internalConnectionSettings.limitFrequency}
         enabled={internalConnectionSettings.limitEnabled}

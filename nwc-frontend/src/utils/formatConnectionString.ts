@@ -17,9 +17,12 @@ export const formatConnectionString = ({
   limitFrequency: LimitFrequency;
   amountInLowestDenom: number;
 }) => {
-  const frequencyString = FREQUENCY_TO_SINGULAR_FORM[limitFrequency];
+  const frequencyString =
+    FREQUENCY_TO_SINGULAR_FORM[limitFrequency.toLowerCase() as LimitFrequency];
   const amountString = formatAmountString({ currency, amountInLowestDenom });
-  return `${amountString}/${frequencyString}`;
+  return limitFrequency === LimitFrequency.NONE
+    ? amountString
+    : `${amountString}/${frequencyString}`;
 };
 
 export const formatAmountString = ({
