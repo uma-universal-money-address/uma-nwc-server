@@ -5,6 +5,7 @@ import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ConnectionTable,
   LoadingConnectionRow,
@@ -13,6 +14,7 @@ import { LearnMoreModal } from "./LearnMoreModal";
 import { useConnections } from "./hooks/useConnections";
 
 function App() {
+  const navigate = useNavigate();
   const [isLearnMoreVisible, setIsLearnMoreVisible] = useState<boolean>(false);
   const {
     connections,
@@ -67,7 +69,7 @@ function App() {
         icon="Plus"
         text="Manual connection"
         kind="primary"
-        href="/connection/new"
+        onClick={() => navigate("/connection/new")}
       />
 
       {isLoadingConnections || !archivedConnections.length ? null : (

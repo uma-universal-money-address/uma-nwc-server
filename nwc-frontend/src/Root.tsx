@@ -4,10 +4,12 @@ import { themes } from "@lightsparkdev/ui/styles/themes";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import GlobalNotificationContext from "src/hooks/useGlobalNotificationContext";
 import App from "./App";
+import { ConnectionLayout } from "./connections/ConnectionLayout";
 import ConnectionPage from "./connections/ConnectionPage";
 import ManualConnectionPage from "./connections/ManualConnectionPage";
 import { GlobalStyles } from "./GlobalStyles";
 import { LayoutInnerContent } from "./LayoutInnerContent";
+import { userCurrencies } from "./loaders/userCurrencies";
 import { Nav } from "./Nav";
 import { NotificationLayout } from "./NotificationLayout";
 import { PermissionsPage } from "./permissions/PermissionsPage";
@@ -18,12 +20,18 @@ const router = createBrowserRouter([
     element: <App />,
   },
   {
-    path: "/connection/:appId",
-    element: <ConnectionPage />,
-  },
-  {
-    path: "/connection/new",
-    element: <ManualConnectionPage />,
+    element: <ConnectionLayout />,
+    children: [
+      {
+        path: "/connection/:appId",
+        element: <ConnectionPage />,
+      },
+      {
+        path: "/connection/new",
+        element: <ManualConnectionPage />,
+        loader: userCurrencies,
+      },
+    ],
   },
   {
     path: "/permissions/:appId",
