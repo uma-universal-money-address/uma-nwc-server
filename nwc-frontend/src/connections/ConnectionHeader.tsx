@@ -4,7 +4,7 @@ import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
 import { Avatar } from "src/components/Avatar";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
-import { Connection } from "src/types/Connection";
+import { Connection, ConnectionStatus } from "src/types/Connection";
 import { formatTimestamp } from "src/utils/formatTimestamp";
 
 export const ConnectionHeader = ({
@@ -12,7 +12,7 @@ export const ConnectionHeader = ({
   updateConnection,
 }: {
   connection: Connection;
-  updateConnection: () => Promise<boolean>;
+  updateConnection: (connection: Connection) => Promise<boolean>;
 }) => {
   const [isDisconnectModalVisible, setIsDisconnectModalVisible] =
     useState<boolean>(false);
@@ -20,7 +20,11 @@ export const ConnectionHeader = ({
 
   const handleDisconnect = () => {
     setIsDisconnectModalVisible(false);
-    updateConnection({ ...connection, isActive: false })
+    updateConnection({
+      ...connection,
+      status: ConnectionStatus.INACTIVE,
+      disconnectedAt: new Date().toISOString(),
+    })
       .then((succeeded) => {
         if (succeeded) {
           setSuccessMessage(`${connection.name} disconnected successfully`);
@@ -33,9 +37,10 @@ export const ConnectionHeader = ({
       });
   };
 
-  const appDescription = connection.isActive
-    ? `Connected on ${formatTimestamp(connection.createdAt)}`
-    : `Disconnected on ${formatTimestamp(connection.disconnectedAt)}`;
+  const appDescription =
+    connection.status === ConnectionStatus.ACTIVE
+      ? `Connected on ${formatTimestamp(connection.createdAt)}`
+      : `Disconnected on ${formatTimestamp(connection.disconnectedAt)}`;
 
   return (
     <Container>
@@ -47,7 +52,7 @@ export const ConnectionHeader = ({
             <AppDescription>{appDescription}</AppDescription>
           </AppDetails>
         </AppSection>
-        {connection.isActive ? (
+        {connection.status === ConnectionStatus.ACTIVE ? (
           <Button
             text="Disconnect"
             icon="Remove"

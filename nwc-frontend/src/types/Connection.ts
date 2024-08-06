@@ -30,6 +30,12 @@ export enum ExpirationPeriod {
   NONE = "None",
 }
 
+export enum ConnectionStatus {
+  ACTIVE = "Active",
+  PENDING = "Pending",
+  INACTIVE = "Inactive",
+}
+
 export interface InitialConnection {
   name: string;
   permissions: Permission[];
@@ -51,7 +57,7 @@ export interface Connection {
   amountInLowestDenomUsed: number;
   limitEnabled: boolean;
   currency: Currency;
-  isActive: boolean;
+  status: ConnectionStatus;
   domain?: string;
   limitFrequency?: LimitFrequency;
   expiration?: string;

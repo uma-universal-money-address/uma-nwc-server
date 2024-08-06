@@ -1,4 +1,5 @@
 import styled from "@emotion/styled";
+import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Shimmer } from "./Shimmer";
 
 interface Props {
@@ -10,7 +11,7 @@ interface Props {
 }
 
 export const Avatar = (props: Props) => {
-  const avatarSrc = props.src || "/empty-avatar.svg";
+  const avatarSrc = props.src || "/default-app-logo.svg";
   const size = props.size || 48;
 
   if (props.uma && props.uma.length > 1) {
@@ -22,15 +23,21 @@ export const Avatar = (props: Props) => {
   }
 
   return (
-    <AvatarContainer shadow={props.shadow}>
+    <AvatarContainer
+      shadow={props.shadow}
+      background={props.src ? "" : colors.gray90}
+      padding={props.src ? "0px" : "9px"}
+      width={size}
+      height={size}
+    >
       {props.isLoading ? (
         <Shimmer height={size} width={size} />
       ) : (
         <img
           alt="avatar"
           src={avatarSrc}
-          width={size}
-          height={size}
+          width="100%"
+          height="100%"
           style={{
             objectFit: "cover",
           }}
@@ -40,7 +47,13 @@ export const Avatar = (props: Props) => {
   );
 };
 
-const AvatarContainer = styled.div<{ shadow?: boolean }>`
+const AvatarContainer = styled.div<{
+  shadow?: boolean;
+  background: string;
+  padding: string;
+  height: number;
+  width: number;
+}>`
   border-radius: 12px;
   overflow: hidden;
   background: #fff;
@@ -48,6 +61,10 @@ const AvatarContainer = styled.div<{ shadow?: boolean }>`
   display: flex;
   place-content: center;
   height: fit-content;
+  ${(props) => (props.background ? `background: ${props.background};` : "")}
+  padding: ${(props) => props.padding};
+  width: ${(props) => props.width}px;
+  height: ${(props) => props.height}px;
   box-shadow: ${(props) =>
     props.shadow
       ? `0px 0px 0px 1px rgba(0, 0, 0, 0.06),

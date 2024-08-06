@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import {
   Connection,
+  ConnectionStatus,
   InitialConnection,
   LimitFrequency,
-  PermissionType,
 } from "src/types/Connection";
+import { MOCKED_CONNECTIONS } from "src/utils/fetchConnections";
 
 export const useConnection = ({ appId }: { appId: string }) => {
   const [connection, setConnection] = useState<Connection>();
@@ -17,43 +18,7 @@ export const useConnection = ({ appId }: { appId: string }) => {
         // const response = await fetch("/connection");
         // const connection = await response.json();
         setIsLoading(true);
-        const connection = {
-          appId: "1",
-          name: "Cool App",
-          domain: "coolapp.com",
-          verified: true,
-          createdAt: new Date().toISOString(),
-          lastUsed: new Date().toISOString(),
-          avatar: "/uma.svg",
-          permissions: [
-            {
-              type: PermissionType.SEND_PAYMENTS,
-              description: "Send payments from your UMA",
-            },
-            {
-              type: PermissionType.READ_BALANCE,
-              description: "Read your balance",
-              optional: true,
-            },
-            {
-              type: PermissionType.READ_TRANSACTIONS,
-              description: "Read transaction history",
-              optional: true,
-            },
-          ],
-          amountInLowestDenom: 200,
-          amountInLowestDenomUsed: 40,
-          limitFrequency: LimitFrequency.MONTHLY,
-          limitEnabled: true,
-          currency: {
-            code: "USD",
-            name: "US Dollar",
-            symbol: "$",
-            decimals: 2,
-            type: "fiat",
-          },
-          isActive: true,
-        } as Connection;
+        const connection = MOCKED_CONNECTIONS.find((c) => c.appId === appId);
         setConnection(connection);
       } catch (e) {
         console.error(e);
@@ -74,25 +39,28 @@ export const useConnection = ({ appId }: { appId: string }) => {
     amountInLowestDenom,
     limitFrequency,
     limitEnabled,
-    isActive,
+    status,
   }: {
     amountInLowestDenom: number;
     limitFrequency: LimitFrequency;
     limitEnabled: boolean;
-    isActive: boolean;
+    status: ConnectionStatus;
   }) => {
     try {
       // const response = await fetch("/connection", {
       //   method: "POST",
-      //   body: JSON.stringify({ appId: connection.appId, amountInLowestDenom, limitFrequency, limitEnabled, isActive }),
+      //   body: JSON.stringify({ appId: connection.appId, amountInLowestDenom, limitFrequency, limitEnabled, status }),
       // });
       setConnection({
         ...connection,
         amountInLowestDenom,
         limitFrequency,
         limitEnabled,
-        isActive,
-        disconnectedAt: isActive ? undefined : new Date().toISOString(),
+        status,
+        disconnectedAt:
+          status === ConnectionStatus.INACTIVE
+            ? undefined
+            : new Date().toISOString(),
       });
       return true;
     } catch (e) {
@@ -118,9 +86,12 @@ export const initializeConnection = async (
     //   body: JSON.stringify({ ...initialConnection, }),
     // });
     console.log("Connection initialized", initialConnection);
-    return true;
+    return {
+      appId: "1",
+      pairingUri:
+        "nostr+walletconnect://test_id?relay=wss://relay.getalby.com/v1&secret=test_secret&lud16=$test@uma.me",
+    };
   } catch (e) {
-    console.error(e);
-    return false;
+    return { error: e };
   }
 };

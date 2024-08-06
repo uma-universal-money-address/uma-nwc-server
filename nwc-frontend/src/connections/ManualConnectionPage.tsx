@@ -7,7 +7,7 @@ import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import dayjs from "dayjs";
 import { useState } from "react";
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData, useNavigate } from "react-router-dom";
 import { initializeConnection } from "src/hooks/useConnection";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
 import { LoaderData } from "src/loaders/LoaderData";
@@ -19,8 +19,10 @@ import { DEFAULT_CONNECTION_SETTINGS } from "src/permissions/PermissionsPage";
 import { ConnectionSettings } from "src/permissions/PersonalizePage";
 import { ExpirationPeriod, PermissionState } from "src/types/Connection";
 import { formatConnectionString } from "src/utils/formatConnectionString";
+import { PendingConnectionPage } from "./PendingConnectionPage";
 
 export default function ManualConnectionPage() {
+  const navigate = useNavigate();
   const [isHowItWorksVisible, setIsHowItWorksVisible] =
     useState<boolean>(false);
   const [isEditLimitVisible, setIsEditLimitVisible] = useState<boolean>(false);
@@ -31,9 +33,24 @@ export default function ManualConnectionPage() {
     useState<ConnectionSettings>(DEFAULT_CONNECTION_SETTINGS);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [connectionName, setConnectionName] = useState<string>("");
+  const [pairingUri, setPairingUri] = useState<{ pairingUri: string } | null>(
+    null,
+  );
   const { defaultCurrency } = useLoaderData() as LoaderData<
     typeof userCurrencies
   >;
+
+  if (pairingUri) {
+    return (
+      <PendingConnectionPage
+        name={connectionName}
+        permissions={connectionSettings.permissionStates.map(
+          (permissionState) => permissionState.permission,
+        )}
+        pairingUri={pairingUri}
+      />
+    );
+  }
 
   const handleUpdatePermissionStates = (
     permissionStates: PermissionState[],
@@ -94,7 +111,7 @@ export default function ManualConnectionPage() {
 
     async function submitConnection() {
       setIsConnecting(true);
-      await initializeConnection({
+      const { pairingUri, error } = await initializeConnection({
         name: connectionName,
         permissions: connectionSettings.permissionStates
           .filter((permissionState) => permissionState.enabled)
@@ -106,6 +123,12 @@ export default function ManualConnectionPage() {
         expiration,
       });
       setIsConnecting(false);
+
+      if (error) {
+        setError(error);
+      }
+
+      setPairingUri(pairingUri);
     }
 
     submitConnection();
