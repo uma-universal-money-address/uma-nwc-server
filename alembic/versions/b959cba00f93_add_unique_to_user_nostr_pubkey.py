@@ -8,7 +8,6 @@ Create Date: 2024-07-29 16:43:05.385892
 
 from typing import Sequence, Union
 
-
 from alembic import op
 
 # revision identifiers, used by Alembic.
