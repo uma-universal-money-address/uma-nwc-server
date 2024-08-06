@@ -49,6 +49,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["user_id"],
             ["user.id"],
+            name="app_connection_user_id_fkey",
         ),
         sa.PrimaryKeyConstraint("id"),
     )
