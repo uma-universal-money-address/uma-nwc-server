@@ -34,7 +34,7 @@ class AppConnection(ModelBase):
     async def from_nostr_pubkey(nostr_pubkey: str) -> Optional["AppConnection"]:
         with Session(db.engine) as db_session:
             query = select(AppConnection).filter_by(nostr_pubkey=nostr_pubkey)
-            return await db_session.scalar(query)
+            return db_session.scalar(query)
 
     def get_expires_at(self) -> datetime:
         return (

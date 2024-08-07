@@ -3,15 +3,15 @@
 from typing import Any, Optional
 from uuid import UUID
 
-from nostr_sdk import ErrorCode
+from nostr_sdk import ErrorCode, Nip47Error
 from sqlalchemy import JSON
 from sqlalchemy import Enum as DBEnum
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql.json import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from nwc_backend.db import UUID as DBUUID
-from nwc_backend.db import Column
+from nwc_backend.db import Column, db
 from nwc_backend.event_handlers.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.model_base import ModelBase
 
@@ -36,3 +36,37 @@ class Nip47Request(ModelBase):
     response_error_code: Mapped[Optional[ErrorCode]] = mapped_column(
         DBEnum(ErrorCode, native_enum=False)
     )
+
+    @staticmethod
+    async def create_and_save(
+        app_connection_id: UUID,
+        event_id: str,
+        method: Nip47RequestMethod,
+        params: Optional[dict[str, Any]],
+    ) -> "Nip47Request":
+        with Session(db.engine) as db_session:
+            request = Nip47Request(
+                app_connection_id=app_connection_id,
+                event_id=event_id,
+                method=method,
+                params=params,
+                response_result=None,
+                response_event_id=None,
+            )
+            db_session.add(request)
+            db_session.commit()
+            return request
+
+    async def update_response_and_save(
+        self,
+        response_event_id: str,
+        response: dict[str, Any] | Nip47Error,
+    ) -> None:
+        with Session(db.engine) as db_session:
+            self.response_event_id = response_event_id
+            if isinstance(response, Nip47Error):
+                self.response_error_code = response.code
+            else:
+                self.response_result = response
+            db_session.add(self)
+            db_session.commit()
