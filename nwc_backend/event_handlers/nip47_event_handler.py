@@ -25,6 +25,7 @@ from nwc_backend.event_handlers.pay_invoice_handler import pay_invoice
 from nwc_backend.event_handlers.pay_keysend_handler import pay_keysend
 from nwc_backend.event_handlers.pay_to_address_handler import pay_to_address
 from nwc_backend.models.app_connection import AppConnection
+from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.nostr_client import nostr_client
 
 
@@ -82,6 +83,13 @@ async def handle_nip47_event(event: Event) -> None:
         return
 
     params = content["params"]
+
+    nip47_request = await Nip47Request.create_and_save(
+        app_connection_id=app_connection.id,
+        event_id=event.id().to_hex(),
+        method=method,
+        params=params,
+    )
     match method:
         case Nip47RequestMethod.PAY_INVOICE:
             response = await pay_invoice(params)
@@ -116,4 +124,8 @@ async def handle_nip47_event(event: Event) -> None:
         response_event = create_nip47_response(
             event=event, method=method, result=response
         )
-    await nostr_client.send_event(response_event)
+
+    output = await nostr_client.send_event(response_event)
+    await nip47_request.update_response_and_save(
+        response_event_id=output.id.to_hex(), response=response
+    )
