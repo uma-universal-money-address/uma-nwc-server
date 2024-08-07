@@ -15,7 +15,7 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
     // eslint-disable-next-line @typescript-eslint/require-await
     async function fetchConnection() {
       try {
-        // const response = await fetch("/connection");
+        // const response = await fetch(`/connection/${connectionId}`);
         // const connection = await response.json();
         setIsLoading(true);
         const connection = MOCKED_CONNECTIONS.find(
@@ -76,6 +76,33 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
     isLoading,
     updateConnection,
   };
+};
+
+// eslint-disable-next-line @typescript-eslint/require-await
+export const updateConnection = async ({
+  connectionId,
+  amountInLowestDenom,
+  limitFrequency,
+  limitEnabled,
+  expiration,
+  status,
+}: {
+  connectionId: string;
+  amountInLowestDenom: number;
+  limitFrequency: LimitFrequency;
+  limitEnabled: boolean;
+  expiration: string;
+  status: ConnectionStatus;
+}) => {
+  try {
+    // const response = await fetch("/connection", {
+    //   method: "POST",
+    //   body: JSON.stringify({ connectionId: connectionId, amountInLowestDenom, limitFrequency, limitEnabled, expiration, status }),
+    // });
+    return true;
+  } catch (e) {
+    return { error: e };
+  }
 };
 
 // eslint-disable-next-line @typescript-eslint/require-await

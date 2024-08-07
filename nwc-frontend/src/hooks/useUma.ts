@@ -1,5 +1,20 @@
 import { useEffect, useState } from "react";
 
+export const fetchUma = async () => {
+  // const uma = await fetch(`${getBackendUrl()}/uma`, {
+  //   method: "GET",
+  //   cache: "force-cache",
+  // }).then((res) => {
+  //   if (res.ok) {
+  //     return res.json() as Promise<{ uma: string }>;
+  //   } else {
+  //     throw new Error("Failed to fetch uma.");
+  //   }
+  // });
+  const response = { uma: "$test@vasp.com" };
+  return response.uma;
+};
+
 export function useUma() {
   const [uma, setUma] = useState<string>();
   const [error, setError] = useState<string>();
@@ -7,22 +22,12 @@ export function useUma() {
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/require-await
-    async function fetchUma() {
+    async function fetchUmaInternal() {
       setIsLoading(true);
       try {
-        // const response = await fetch(`${getBackendUrl()}/uma`, {
-        //   method: "GET",
-        //   cache: "force-cache",
-        // }).then((res) => {
-        //   if (res.ok) {
-        //     return res.json() as Promise<{ uma: string }>;
-        //   } else {
-        //     throw new Error("Failed to fetch uma.");
-        //   }
-        // });
-        const response = { uma: "$test@vasp.com" };
+        const uma = await fetchUma();
         if (!ignore) {
-          setUma(response.uma);
+          setUma(uma);
           setIsLoading(false);
         }
       } catch (e: unknown) {
@@ -33,7 +38,7 @@ export function useUma() {
     }
 
     let ignore = false;
-    fetchUma();
+    fetchUmaInternal();
     return () => {
       ignore = true;
     };
