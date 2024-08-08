@@ -10,6 +10,8 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from nwc_backend.db import UUID as DBUUID
+from nwc_backend.models.nip47_request_method import Nip47RequestMethod
+from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.model_base import ModelBase
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.user import User
@@ -25,8 +27,9 @@ class NWCConnection(ModelBase):
     user_id: Mapped[UUID] = mapped_column(
         DBUUID(), ForeignKey("user.id"), nullable=False
     )
-    app_name: Mapped[Optional[str]] = mapped_column(String(255))
-    description: Mapped[Optional[str]] = mapped_column(String(255))
+    client_app_id: Mapped[UUID] = mapped_column(
+        DBUUID(), ForeignKey("client_app.id"), nullable=False
+    )
     supported_commands: Mapped[str] = mapped_column(  # Store JSON as string
         Text(), nullable=False
     )
@@ -40,6 +43,7 @@ class NWCConnection(ModelBase):
     )
 
     user: Mapped[User] = relationship("User")
+    client_app: Mapped[ClientApp] = relationship("ClientApp")
 
     def set_supported_commands(self, commands: list[Nip47RequestMethod]) -> None:
         commands_vals = [command.value for command in commands]
