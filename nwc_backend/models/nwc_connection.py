@@ -34,9 +34,9 @@ class NWCConnection(ModelBase):
         DateTime(timezone=True), nullable=False
     )
     max_budget_per_month: Mapped[Optional[int]] = mapped_column(Integer())
-    long_lived_vasp_token: Mapped[str] = mapped_column(String(255), nullable=False)
+    long_lived_vasp_token: Mapped[str] = mapped_column(String(255), nullable=True)
     long_lived_vasp_token_expiration: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
+        DateTime(timezone=True), nullable=True
     )
 
     user: Mapped[User] = relationship("User")

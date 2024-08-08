@@ -8,12 +8,13 @@ alembic = "*"
 nostr-sdk = "*"
 python-dotenv = "*"
 quart = "*"
+requests = "*"
+pyjwt = "*"
 
 [dev-packages]
 black = "*"
 pyre-check = "*"
 ruff = "*"
-
 
 [requires]
 python_version = "3.11"
