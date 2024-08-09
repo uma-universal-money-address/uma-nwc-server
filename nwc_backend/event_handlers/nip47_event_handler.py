@@ -93,28 +93,28 @@ async def handle_nip47_event(event: Event) -> None:
 
     uma_access_token = app_connection.nwc_connection.long_lived_vasp_token
     match method:
-        case Nip47RequestMethod.PAY_INVOICE:
-            response = await pay_invoice(uma_access_token, nip47_request)
-        case Nip47RequestMethod.MAKE_INVOICE:
-            response = await make_invoice(params)
-        case Nip47RequestMethod.LOOKUP_INVOICE:
-            response = await lookup_invoice(params)
+        case Nip47RequestMethod.EXECUTE_QUOTE:
+            response = await execute_quote(params)
+        case Nip47RequestMethod.FETCH_QUOTE:
+            response = await fetch_quote(params)
         case Nip47RequestMethod.GET_BALANCE:
             response = await get_balance(params)
         case Nip47RequestMethod.GET_INFO:
             response = await get_info(params)
         case Nip47RequestMethod.LIST_TRANSACTIONS:
             response = await list_transactions(params)
-        case Nip47RequestMethod.PAY_KEYSEND:
-            response = await pay_keysend(params)
+        case Nip47RequestMethod.LOOKUP_INVOICE:
+            response = await lookup_invoice(params)
         case Nip47RequestMethod.LOOKUP_USER:
             response = await lookup_user(params)
-        case Nip47RequestMethod.FETCH_QUOTE:
-            response = await fetch_quote(params)
-        case Nip47RequestMethod.EXECUTE_QUOTE:
-            response = await execute_quote(params)
+        case Nip47RequestMethod.MAKE_INVOICE:
+            response = await make_invoice(params)
+        case Nip47RequestMethod.PAY_INVOICE:
+            response = await pay_invoice(uma_access_token, nip47_request)
+        case Nip47RequestMethod.PAY_KEYSEND:
+            response = await pay_keysend(params)
         case Nip47RequestMethod.PAY_TO_ADDRESS:
-            response = await pay_to_address(params)
+            response = await pay_to_address(uma_access_token, nip47_request)
         case _:
             raise NotImplementedError()
 
