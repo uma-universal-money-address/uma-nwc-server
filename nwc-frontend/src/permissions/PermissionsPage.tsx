@@ -6,160 +6,63 @@ import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import dayjs from "dayjs";
 import { useState } from "react";
-import { useLoaderData, useSearchParams } from "react-router-dom";
+import { useLoaderData, useNavigate } from "react-router-dom";
 import { Avatar } from "src/components/Avatar";
 import { Uma } from "src/components/Uma";
-import { useAppInfo } from "src/hooks/useAppInfo";
-import { initializeConnection } from "src/hooks/useConnection";
-import { useUma } from "src/hooks/useUma";
-import { userCurrencies } from "src/loaders/userCurrencies";
 import {
-  ExpirationPeriod,
-  LimitFrequency,
-  PERMISSION_DESCRIPTIONS,
-  Permission,
-  PermissionType,
-} from "src/types/Connection";
+  initializeConnection,
+  updateConnection,
+} from "src/hooks/useConnection";
+import { ExpirationPeriod, Permission } from "src/types/Connection";
+import { PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
 import { formatConnectionString } from "src/utils/formatConnectionString";
 import { PermissionsList } from "./PermissionsList";
 import { ConnectionSettings, PersonalizePage } from "./PersonalizePage";
 
-export const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
-  permissionStates: [
-    {
-      permission: {
-        type: PermissionType.SEND_PAYMENTS,
-        description: "Send payments from your UMA",
-      },
-      enabled: true,
-    },
-    {
-      permission: {
-        type: PermissionType.READ_BALANCE,
-        description: "Read your balance",
-        optional: true,
-      },
-      enabled: false,
-    },
-    {
-      permission: {
-        type: PermissionType.READ_TRANSACTIONS,
-        description: "Read transaction history",
-        optional: true,
-      },
-      enabled: false,
-    },
-  ],
-  amountInLowestDenom: 50000,
-  limitFrequency: LimitFrequency.NONE,
-  limitEnabled: true,
-  expirationPeriod: ExpirationPeriod.YEAR,
-};
-
-const getClientAppDefaultSettings = ({
-  requiredCommands,
-  optionalCommands,
-  budget,
-  expirationPeriod,
-}) => {
-  const requiredPermissionStates = requiredCommands
-    .split(",")
-    .map((command) => ({
-      permission: {
-        type: command.toUpperCase() as PermissionType,
-        description: PERMISSION_DESCRIPTIONS[command.toLowerCase()],
-        optional: false,
-      },
-      enabled: true,
-    }));
-  const optionalPermissionStates = optionalCommands
-    .split(",")
-    .map((command) => ({
-      permission: {
-        type: command.toUpperCase() as PermissionType,
-        description: PERMISSION_DESCRIPTIONS[command.toLowerCase()],
-        optional: true,
-      },
-      enabled: false,
-    }));
-  const permissionStates = requiredPermissionStates.concat(
-    optionalPermissionStates,
-  );
-  let [amountCurrency, limitFrequency] = budget.split("/");
-  let [amountInLowestDenom, currencyCode] = amountCurrency.split(".");
-
-  if (permissionStates.length === 0) {
-    permissionStates.concat(DEFAULT_CONNECTION_SETTINGS.permissionStates);
-  }
-
-  if (!amountInLowestDenom) {
-    amountInLowestDenom = DEFAULT_CONNECTION_SETTINGS.amountInLowestDenom;
-  }
-
-  if (!currencyCode) {
-    currencyCode = "SAT";
-  }
-
-  if (!limitFrequency) {
-    limitFrequency = DEFAULT_CONNECTION_SETTINGS.limitFrequency;
-  }
-
-  if (!expirationPeriod) {
-    expirationPeriod = DEFAULT_CONNECTION_SETTINGS.expirationPeriod;
-  }
-
-  // TODO: perform rough currency conversion to user's home currency
-
-  return {
-    permissionStates,
-    amountInLowestDenom,
-    limitFrequency,
-    limitEnabled: DEFAULT_CONNECTION_SETTINGS.limitEnabled,
-    expirationPeriod,
-  };
-};
+async function initConnection({
+  appInfo,
+  connectionSettings,
+  currencyCode,
+  redirectUri,
+  expiration,
+}: {
+  appInfo: AppInfo;
+  connectionSettings: ConnectionSettings;
+  currencyCode: string;
+  redirectUri: string;
+  expiration: string;
+}) {
+  const { code, state } = await initializeConnection({
+    clientId: appInfo.clientId,
+    name: appInfo.name,
+    currencyCode,
+    permissions: connectionSettings.permissionStates
+      .filter((permissionState) => permissionState.enabled)
+      .map((permissionState) => permissionState.permission),
+    amountInLowestDenom: connectionSettings.amountInLowestDenom,
+    limitFrequency: connectionSettings.limitFrequency,
+    limitEnabled: connectionSettings.limitEnabled,
+    expiration,
+  });
+  window.location.href = `${redirectUri}?code=${code}&state=${state}`;
+}
 
 export const PermissionsPage = () => {
-  const [params] = useSearchParams();
-  const oauthParams = {
-    clientId: params.get("client_id"),
-    redirectUri: params.get("redirect_uri"),
-    responseType: params.get("response_type"),
-    codeChallenge: params.get("code_challenge"),
-    codeChallengeMethod: params.get("code_challenge_method"),
-  };
-  const nwcParams = {
-    requiredCommands: params.get("required_commands"),
-    optionalCommands: params.get("optional_commands"),
-    budget: params.get("budget"),
-    expirationPeriod: params.get("expiration_period"),
-  };
-  const clientAppDefaultSettings = getClientAppDefaultSettings(nwcParams);
-
-  const { defaultCurrency } = useLoaderData() as LoaderData<
-    typeof userCurrencies
-  >;
-
-  const { appInfo, isLoading: isLoadingAppInfo } = useAppInfo({
-    clientId: oauthParams.clientId,
-  });
-  const { uma, isLoading: isLoadingUma } = useUma();
+  const {
+    appInfo,
+    uma,
+    oauthParams,
+    connection,
+    connectionSettings: initialConnectionSettings,
+    defaultCurrency,
+  } = useLoaderData() as PermissionPageLoaderData;
+  const navigate = useNavigate();
 
   const [isPersonalizeVisible, setIsPersonalizeVisible] =
     useState<boolean>(false);
   const [connectionSettings, setConnectionSettings] =
-    useState<ConnectionSettings>(
-      clientAppDefaultSettings || DEFAULT_CONNECTION_SETTINGS,
-    );
-  const [isConnecting, setIsConnecting] = useState<boolean>(false);
-
-  if (isLoadingAppInfo || isLoadingUma) {
-    return (
-      <Container>
-        <Title content="Loading..." />
-      </Container>
-    );
-  }
+    useState<ConnectionSettings>(initialConnectionSettings);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const { name, domain, avatar, verified } = appInfo;
 
@@ -175,39 +78,35 @@ export const PermissionsPage = () => {
   };
 
   const handleReset = () => {
-    setConnectionSettings(clientAppDefaultSettings);
+    setConnectionSettings(initialConnectionSettings);
     setIsPersonalizeVisible(false);
   };
 
   const handleSubmit = () => {
-    if (!appInfo) {
-      return;
-    }
-
     const today = dayjs();
     const expiration = today
       .add(1, connectionSettings.expirationPeriod)
       .toISOString();
 
-    async function submitConnection() {
-      setIsConnecting(true);
-      const { code, state } = await initializeConnection({
-        clientId: appInfo.clientId,
-        name: appInfo.name,
-        currency: defaultCurrency,
-        permissions: connectionSettings.permissionStates
-          .filter((permissionState) => permissionState.enabled)
-          .map((permissionState) => permissionState.permission),
+    setIsSubmitting(true);
+    if (oauthParams) {
+      initConnection({
+        appInfo,
+        connectionSettings,
+        currencyCode: defaultCurrency.code,
+        redirectUri: oauthParams.redirectUri,
+        expiration,
+      });
+    } else {
+      updateConnection({
+        connectionId: connection.connectionId,
         amountInLowestDenom: connectionSettings.amountInLowestDenom,
         limitFrequency: connectionSettings.limitFrequency,
         limitEnabled: connectionSettings.limitEnabled,
-        expiration: expiration,
+        status: connection.status,
       });
-      window.location.href = `${oauthParams.redirectUri}?code=${code}&state=${state}`;
-      setIsConnecting(false);
+      navigate(`/connection/${connection.connectionId}`);
     }
-
-    submitConnection();
   };
 
   if (isPersonalizeVisible) {
@@ -288,14 +187,13 @@ export const PermissionsPage = () => {
           kind="primary"
           fullWidth
           onClick={handleSubmit}
-          loading={isConnecting}
-          disabled={isLoadingAppInfo || !appInfo}
+          loading={isSubmitting}
         />
         <Button
           text="Cancel"
           kind="secondary"
           fullWidth
-          disabled={isConnecting}
+          disabled={isSubmitting}
         />
       </ButtonSection>
     </Container>

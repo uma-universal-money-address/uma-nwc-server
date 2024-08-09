@@ -70,3 +70,35 @@ export interface Connection {
   lastUsed?: string;
   disconnectedAt?: string;
 }
+
+export const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
+  permissionStates: [
+    {
+      permission: {
+        type: PermissionType.SEND_PAYMENTS,
+        description: "Send payments from your UMA",
+      },
+      enabled: true,
+    },
+    {
+      permission: {
+        type: PermissionType.READ_BALANCE,
+        description: "Read your balance",
+        optional: true,
+      },
+      enabled: false,
+    },
+    {
+      permission: {
+        type: PermissionType.READ_TRANSACTIONS,
+        description: "Read transaction history",
+        optional: true,
+      },
+      enabled: false,
+    },
+  ],
+  amountInLowestDenom: 50000,
+  limitFrequency: LimitFrequency.NONE,
+  limitEnabled: true,
+  expirationPeriod: ExpirationPeriod.YEAR,
+};

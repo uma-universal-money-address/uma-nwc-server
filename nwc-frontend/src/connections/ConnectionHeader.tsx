@@ -2,6 +2,7 @@ import styled from "@emotion/styled";
 import { Button, Modal } from "@lightsparkdev/ui/components";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Avatar } from "src/components/Avatar";
 import { useAppInfo } from "src/hooks/useAppInfo";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
@@ -15,12 +16,17 @@ export const ConnectionHeader = ({
   connection: Connection;
   updateConnection: (connection: Connection) => Promise<boolean>;
 }) => {
+  const navigate = useNavigate();
   const [isDisconnectModalVisible, setIsDisconnectModalVisible] =
     useState<boolean>(false);
   const { setSuccessMessage, setError } = useGlobalNotificationContext();
   const { appInfo, isLoading: isLoadingAppInfo } = useAppInfo({
     clientId: connection.clientId,
   });
+
+  const handleEdit = () => {
+    navigate(`/connection/update/${connection.connectionId}`);
+  };
 
   const handleDisconnect = () => {
     setIsDisconnectModalVisible(false);
@@ -61,11 +67,20 @@ export const ConnectionHeader = ({
           </AppDetails>
         </AppSection>
         {connection.status === ConnectionStatus.ACTIVE ? (
-          <Button
-            text="Disconnect"
-            icon="Remove"
-            onClick={() => setIsDisconnectModalVisible(true)}
-          />
+          <Buttons>
+            <Button
+              kind="primary"
+              icon="Restart"
+              iconSide="left"
+              text="Update"
+              onClick={handleEdit}
+            />
+            <Button
+              text="Disconnect"
+              icon="Remove"
+              onClick={() => setIsDisconnectModalVisible(true)}
+            />
+          </Buttons>
         ) : null}
       </AppAndDisconnect>
 
@@ -120,4 +135,10 @@ const AppDescription = styled.span`
   font-size: 16px;
   font-weight: 400;
   line-height: 24px;
+`;
+
+const Buttons = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: ${Spacing.sm};
 `;

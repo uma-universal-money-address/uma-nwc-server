@@ -15,9 +15,12 @@ import { userCurrencies } from "src/loaders/userCurrencies";
 import { EditExpiration } from "src/permissions/EditExpiration";
 import { EditLimit } from "src/permissions/EditLimit";
 import { PermissionsEditableList } from "src/permissions/PermissionsEditableList";
-import { DEFAULT_CONNECTION_SETTINGS } from "src/permissions/PermissionsPage";
 import { ConnectionSettings } from "src/permissions/PersonalizePage";
-import { ExpirationPeriod, PermissionState } from "src/types/Connection";
+import {
+  DEFAULT_CONNECTION_SETTINGS,
+  ExpirationPeriod,
+  PermissionState,
+} from "src/types/Connection";
 import { formatConnectionString } from "src/utils/formatConnectionString";
 import { ManualConnectionHowItWorksModal } from "./ManualConnectionHowItWorksModal";
 import { PendingConnectionPage } from "./PendingConnectionPage";

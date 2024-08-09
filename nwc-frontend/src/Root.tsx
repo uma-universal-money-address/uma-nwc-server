@@ -9,6 +9,8 @@ import ConnectionPage from "./connections/ConnectionPage";
 import ManualConnectionPage from "./connections/ManualConnectionPage";
 import { GlobalStyles } from "./GlobalStyles";
 import { LayoutInnerContent } from "./LayoutInnerContent";
+import { permissionsPageData } from "./loaders/permissionPageData";
+import { permissionsPageDataFromUrl } from "./loaders/permissionPageDataFromUrl";
 import { userCurrencies } from "./loaders/userCurrencies";
 import { Nav } from "./Nav";
 import { NotificationLayout } from "./NotificationLayout";
@@ -21,22 +23,28 @@ const router = createBrowserRouter([
   },
   {
     element: <ConnectionLayout />,
+    path: "/connection",
     children: [
       {
-        path: "/connection/:connectionId",
+        path: ":connectionId",
         element: <ConnectionPage />,
       },
       {
-        path: "/connection/new",
+        path: "new",
         element: <ManualConnectionPage />,
         loader: userCurrencies,
+      },
+      {
+        path: "update/:connectionId",
+        element: <PermissionsPage />,
+        loader: permissionsPageData,
       },
     ],
   },
   {
     path: "/apps/new",
     element: <PermissionsPage />,
-    loader: userCurrencies,
+    loader: permissionsPageDataFromUrl,
   },
 ]);
 
