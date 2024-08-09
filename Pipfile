@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 alembic = "*"
+aiohttp = "*"
 nostr-sdk = "*"
 pyjwt = "*"
 python-dotenv = "*"

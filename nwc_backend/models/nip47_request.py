@@ -12,8 +12,8 @@ from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from nwc_backend.db import UUID as DBUUID
 from nwc_backend.db import Column, db
-from nwc_backend.event_handlers.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.model_base import ModelBase
+from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 
 
 class Nip47Request(ModelBase):
@@ -26,8 +26,8 @@ class Nip47Request(ModelBase):
     method: Mapped[Nip47RequestMethod] = mapped_column(
         DBEnum(Nip47RequestMethod, native_enum=False), nullable=False
     )
-    params: Mapped[Optional[dict[str, Any]]] = mapped_column(
-        JSON().with_variant(JSONB(), "postgresql")
+    params: Mapped[dict[str, Any]] = mapped_column(
+        JSON().with_variant(JSONB(), "postgresql"), nullable=False
     )
     response_event_id: Mapped[Optional[str]] = mapped_column(String(length=255))
     response_result: Mapped[Optional[dict[str, Any]]] = mapped_column(

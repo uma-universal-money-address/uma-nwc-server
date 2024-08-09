@@ -20,12 +20,12 @@ from nwc_backend.event_handlers.list_transactions_handler import list_transactio
 from nwc_backend.event_handlers.lookup_invoice_handler import lookup_invoice
 from nwc_backend.event_handlers.lookup_user_handler import lookup_user
 from nwc_backend.event_handlers.make_invoice_handler import make_invoice
-from nwc_backend.event_handlers.nip47_request_method import Nip47RequestMethod
 from nwc_backend.event_handlers.pay_invoice_handler import pay_invoice
 from nwc_backend.event_handlers.pay_keysend_handler import pay_keysend
 from nwc_backend.event_handlers.pay_to_address_handler import pay_to_address
 from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.nip47_request import Nip47Request
+from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.nostr_client import nostr_client
 
 
@@ -90,9 +90,11 @@ async def handle_nip47_event(event: Event) -> None:
         method=method,
         params=params,
     )
+
+    uma_access_token = app_connection.nwc_connection.long_lived_vasp_token
     match method:
         case Nip47RequestMethod.PAY_INVOICE:
-            response = await pay_invoice(params)
+            response = await pay_invoice(uma_access_token, nip47_request)
         case Nip47RequestMethod.MAKE_INVOICE:
             response = await make_invoice(params)
         case Nip47RequestMethod.LOOKUP_INVOICE:
