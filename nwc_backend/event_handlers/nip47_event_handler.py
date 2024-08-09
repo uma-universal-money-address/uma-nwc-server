@@ -108,7 +108,7 @@ async def handle_nip47_event(event: Event) -> None:
         case Nip47RequestMethod.LOOKUP_USER:
             response = await lookup_user(params)
         case Nip47RequestMethod.MAKE_INVOICE:
-            response = await make_invoice(params)
+            response = await make_invoice(uma_access_token, nip47_request)
         case Nip47RequestMethod.PAY_INVOICE:
             response = await pay_invoice(uma_access_token, nip47_request)
         case Nip47RequestMethod.PAY_KEYSEND:

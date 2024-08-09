@@ -23,4 +23,5 @@ async def pay_to_address(
         return response.to_dict()
     except ClientResponseError as ex:
         logging.exception("Request pay_to_address %s failed", str(request.id))
+        # TODO: more granular error code
         return Nip47Error(code=ErrorCode.PAYMENT_FAILED, message=ex.message)
