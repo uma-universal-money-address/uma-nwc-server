@@ -8,7 +8,7 @@ import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import dayjs from "dayjs";
 import { useState } from "react";
 import { useLoaderData, useNavigate } from "react-router-dom";
-import { initializeConnection } from "src/hooks/useConnection";
+import { initializeManualConnection } from "src/hooks/useConnection";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
 import { LoaderData } from "src/loaders/LoaderData";
 import { userCurrencies } from "src/loaders/userCurrencies";
@@ -112,7 +112,7 @@ export default function ManualConnectionPage() {
 
     async function submitConnection() {
       setIsConnecting(true);
-      const { pairingUri, error } = await initializeConnection({
+      const { pairingUri, error } = await initializeManualConnection({
         name: connectionName,
         permissions: connectionSettings.permissionStates
           .filter((permissionState) => permissionState.enabled)

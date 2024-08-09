@@ -6,25 +6,23 @@ import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import dayjs from "dayjs";
 import { useState } from "react";
+import { useLoaderData, useSearchParams } from "react-router-dom";
 import { Avatar } from "src/components/Avatar";
 import { Uma } from "src/components/Uma";
-import { initializeConnection, useConnection } from "src/hooks/useConnection";
+import { useAppInfo } from "src/hooks/useAppInfo";
+import { initializeConnection } from "src/hooks/useConnection";
 import { useUma } from "src/hooks/useUma";
+import { userCurrencies } from "src/loaders/userCurrencies";
 import {
   ExpirationPeriod,
   LimitFrequency,
+  PERMISSION_DESCRIPTIONS,
   Permission,
   PermissionType,
 } from "src/types/Connection";
 import { formatConnectionString } from "src/utils/formatConnectionString";
 import { PermissionsList } from "./PermissionsList";
 import { ConnectionSettings, PersonalizePage } from "./PersonalizePage";
-
-interface Props {
-  appId: string;
-  /** Defaults provided by the client app */
-  clientAppDefaultSettings?: ConnectionSettings;
-}
 
 export const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
   permissionStates: [
@@ -53,17 +51,98 @@ export const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
     },
   ],
   amountInLowestDenom: 50000,
-  limitFrequency: LimitFrequency.MONTHLY,
+  limitFrequency: LimitFrequency.NONE,
   limitEnabled: true,
   expirationPeriod: ExpirationPeriod.YEAR,
 };
 
-export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
-  const {
-    connection,
-    updateConnection,
-    isLoading: isLoadingConnection,
-  } = useConnection({ appId });
+const getClientAppDefaultSettings = ({
+  requiredCommands,
+  optionalCommands,
+  budget,
+  expirationPeriod,
+}) => {
+  const requiredPermissionStates = requiredCommands
+    .split(",")
+    .map((command) => ({
+      permission: {
+        type: command.toUpperCase() as PermissionType,
+        description: PERMISSION_DESCRIPTIONS[command.toLowerCase()],
+        optional: false,
+      },
+      enabled: true,
+    }));
+  const optionalPermissionStates = optionalCommands
+    .split(",")
+    .map((command) => ({
+      permission: {
+        type: command.toUpperCase() as PermissionType,
+        description: PERMISSION_DESCRIPTIONS[command.toLowerCase()],
+        optional: true,
+      },
+      enabled: false,
+    }));
+  const permissionStates = requiredPermissionStates.concat(
+    optionalPermissionStates,
+  );
+  let [amountCurrency, limitFrequency] = budget.split("/");
+  let [amountInLowestDenom, currencyCode] = amountCurrency.split(".");
+
+  if (permissionStates.length === 0) {
+    permissionStates.concat(DEFAULT_CONNECTION_SETTINGS.permissionStates);
+  }
+
+  if (!amountInLowestDenom) {
+    amountInLowestDenom = DEFAULT_CONNECTION_SETTINGS.amountInLowestDenom;
+  }
+
+  if (!currencyCode) {
+    currencyCode = "SAT";
+  }
+
+  if (!limitFrequency) {
+    limitFrequency = DEFAULT_CONNECTION_SETTINGS.limitFrequency;
+  }
+
+  if (!expirationPeriod) {
+    expirationPeriod = DEFAULT_CONNECTION_SETTINGS.expirationPeriod;
+  }
+
+  // TODO: perform rough currency conversion to user's home currency
+
+  return {
+    permissionStates,
+    amountInLowestDenom,
+    limitFrequency,
+    limitEnabled: DEFAULT_CONNECTION_SETTINGS.limitEnabled,
+    expirationPeriod,
+  };
+};
+
+export const PermissionsPage = () => {
+  const [params] = useSearchParams();
+  const oauthParams = {
+    clientId: params.get("client_id"),
+    redirectUri: params.get("redirect_uri"),
+    responseType: params.get("response_type"),
+    codeChallenge: params.get("code_challenge"),
+    codeChallengeMethod: params.get("code_challenge_method"),
+  };
+  const nwcParams = {
+    requiredCommands: params.get("required_commands"),
+    optionalCommands: params.get("optional_commands"),
+    budget: params.get("budget"),
+    expirationPeriod: params.get("expiration_period"),
+  };
+  const clientAppDefaultSettings = getClientAppDefaultSettings(nwcParams);
+
+  const { defaultCurrency } = useLoaderData() as LoaderData<
+    typeof userCurrencies
+  >;
+
+  const { appInfo, isLoading: isLoadingAppInfo } = useAppInfo({
+    clientId: oauthParams.clientId,
+  });
   const { uma, isLoading: isLoadingUma } = useUma();
 
   const [isPersonalizeVisible, setIsPersonalizeVisible] =
@@ -74,7 +153,7 @@ export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
     );
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
 
-  if (isLoadingConnection || isLoadingUma) {
+  if (isLoadingAppInfo || isLoadingUma) {
     return (
       <Container>
         <Title content="Loading..." />
@@ -82,16 +161,7 @@ export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
     );
   }
 
-  const {
-    name,
-    domain,
-    avatar,
-    amountInLowestDenom,
-    limitFrequency,
-    limitEnabled,
-    currency,
-    verified,
-  } = connection;
+  const { name, domain, avatar, verified } = appInfo;
 
   const handleShowPersonalize = () => {
     setIsPersonalizeVisible(true);
@@ -105,14 +175,12 @@ export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
   };
 
   const handleReset = () => {
-    setConnectionSettings(
-      clientAppDefaultSettings || DEFAULT_CONNECTION_SETTINGS,
-    );
+    setConnectionSettings(clientAppDefaultSettings);
     setIsPersonalizeVisible(false);
   };
 
   const handleSubmit = () => {
-    if (!connection) {
+    if (!appInfo) {
       return;
     }
 
@@ -123,10 +191,10 @@ export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
 
     async function submitConnection() {
       setIsConnecting(true);
-      await initializeConnection({
-        appId: connection.appId,
-        name: connection.name,
-        currency: connection.currency,
+      const { code, state } = await initializeConnection({
+        clientId: appInfo.clientId,
+        name: appInfo.name,
+        currency: defaultCurrency,
         permissions: connectionSettings.permissionStates
           .filter((permissionState) => permissionState.enabled)
           .map((permissionState) => permissionState.permission),
@@ -135,6 +203,7 @@ export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
         limitEnabled: connectionSettings.limitEnabled,
         expiration: expiration,
       });
+      window.location.href = `${oauthParams.redirectUri}?code=${code}&state=${state}`;
       setIsConnecting(false);
     }
 
@@ -144,7 +213,7 @@ export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
   if (isPersonalizeVisible) {
     return (
       <PersonalizePage
-        connection={connection}
+        appInfo={appInfo}
         connectionSettings={connectionSettings}
         updateConnectionSettings={handleUpdateConnectionSettings}
         onBack={() => setIsPersonalizeVisible(false)}
@@ -159,7 +228,7 @@ export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
       .map((permissionState) => permissionState.permission);
   if (connectionSettings.limitEnabled) {
     permissions.push(
-      `Set a ${formatConnectionString({ currency, limitFrequency: connectionSettings.limitFrequency, amountInLowestDenom: connectionSettings.amountInLowestDenom })} spend limit`,
+      `Set a ${formatConnectionString({ currency: defaultCurrency, limitFrequency: connectionSettings.limitFrequency, amountInLowestDenom: connectionSettings.amountInLowestDenom })} spend limit`,
     );
   }
   if (connectionSettings.expirationPeriod !== ExpirationPeriod.NONE) {
@@ -220,7 +289,7 @@ export const PermissionsPage = ({ appId, clientAppDefaultSettings }: Props) => {
           fullWidth
           onClick={handleSubmit}
           loading={isConnecting}
-          disabled={isLoadingConnection || !connection}
+          disabled={isLoadingAppInfo || !appInfo}
         />
         <Button
           text="Cancel"

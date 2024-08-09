@@ -3,6 +3,7 @@ import { Button, Modal } from "@lightsparkdev/ui/components";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
 import { Avatar } from "src/components/Avatar";
+import { useAppInfo } from "src/hooks/useAppInfo";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
 import { Connection, ConnectionStatus } from "src/types/Connection";
 import { formatTimestamp } from "src/utils/formatTimestamp";
@@ -17,6 +18,9 @@ export const ConnectionHeader = ({
   const [isDisconnectModalVisible, setIsDisconnectModalVisible] =
     useState<boolean>(false);
   const { setSuccessMessage, setError } = useGlobalNotificationContext();
+  const { appInfo, isLoading: isLoadingAppInfo } = useAppInfo({
+    clientId: connection.clientId,
+  });
 
   const handleDisconnect = () => {
     setIsDisconnectModalVisible(false);
@@ -46,7 +50,11 @@ export const ConnectionHeader = ({
     <Container>
       <AppAndDisconnect>
         <AppSection>
-          <Avatar size={72} src={connection.avatar} />
+          <Avatar
+            size={72}
+            src={appInfo?.avatar}
+            isLoading={isLoadingAppInfo}
+          />
           <AppDetails>
             <AppName>{connection.name}</AppName>
             <AppDescription>{appDescription}</AppDescription>

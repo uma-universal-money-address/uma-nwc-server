@@ -16,15 +16,20 @@ export const LimitFrequencyPicker = ({ frequency, setFrequency }: Props) => {
 
   return (
     <Container>
-      {Object.values(LimitFrequency).map((frequencyOption) => (
-        <FrequencyButton
-          key={frequencyOption}
-          selected={frequencyOption === frequency}
-          onClick={handleChooseFrequency(frequencyOption)}
-        >
-          {frequencyOption}
-        </FrequencyButton>
-      ))}
+      {Object.values(LimitFrequency)
+        .filter(
+          (limitFrequencyOption) =>
+            limitFrequencyOption !== LimitFrequency.NONE,
+        )
+        .map((frequencyOption) => (
+          <FrequencyButton
+            key={frequencyOption}
+            selected={frequencyOption === frequency}
+            onClick={handleChooseFrequency(frequencyOption)}
+          >
+            {frequencyOption}
+          </FrequencyButton>
+        ))}
     </Container>
   );
 };

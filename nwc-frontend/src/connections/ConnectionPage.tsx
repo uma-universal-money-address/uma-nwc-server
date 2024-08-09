@@ -17,12 +17,12 @@ import { Limit } from "./Limit";
 import { PendingConnectionPage } from "./PendingConnectionPage";
 
 export default function ConnectionPage() {
-  const { appId } = useParams<{ appId: string }>();
+  const { connectionId } = useParams<{ connectionId: string }>();
   const {
     connection,
     updateConnection,
     isLoading: isLoadingConnection,
-  } = useConnection({ appId });
+  } = useConnection({ connectionId });
   const [isEditLimitVisible, setIsEditLimitVisible] = useState<boolean>(false);
   const { setSuccessMessage, setError } = useGlobalNotificationContext();
 
@@ -110,7 +110,7 @@ export default function ConnectionPage() {
         ) : null}
         <Section>
           <Title content="Transactions" />
-          <TransactionTable appId={appId} />
+          <TransactionTable connectionId={connectionId} />
         </Section>
       </Content>
       {isLoadingConnection ? null : (

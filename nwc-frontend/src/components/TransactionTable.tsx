@@ -76,8 +76,12 @@ const TransactionRow = ({
   );
 };
 
-export const TransactionTable = ({ appId }: { appId: string }) => {
-  const { transactions, isLoading, error } = useTransactions({ appId });
+export const TransactionTable = ({
+  connectionId,
+}: {
+  connectionId: string;
+}) => {
+  const { transactions, isLoading, error } = useTransactions({ connectionId });
   const {
     exchangeRates,
     error: exchangeRatesError,
