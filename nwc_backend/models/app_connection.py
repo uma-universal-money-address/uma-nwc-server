@@ -9,8 +9,8 @@ from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from nwc_backend.db import UUID as DBUUID
 from nwc_backend.db import db
-from nwc_backend.event_handlers.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.model_base import ModelBase
+from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 
 

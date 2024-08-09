@@ -9,8 +9,8 @@ from typing import Any, Optional
 from nostr_sdk import Event, Keys, Kind, KindEnum, Nip47Error, PublicKey, nip04_encrypt
 
 from nwc_backend.configs.nostr_config import nostr_config
-from nwc_backend.event_handlers.nip47_request_method import Nip47RequestMethod
 from nwc_backend.exceptions import EventBuilderException
+from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 
 
 class EventBuilder:

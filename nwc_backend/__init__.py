@@ -1,38 +1,30 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-from datetime import datetime, timedelta, timezone
 import json
 import logging
 import os
+from datetime import datetime, timedelta, timezone
 from typing import Any
-import requests
-import jwt
 
+import jwt
+import requests
 from nostr_sdk import Filter, Kind, KindEnum
-from quart import (
-    Quart,
-    Response,
-    redirect,
-    request,
-    send_from_directory,
-    session,
-)
+from quart import Quart, Response, redirect, request, send_from_directory, session
+from sqlalchemy.orm import Session
 from werkzeug import Response as WerkzeugResponse
 
 import nwc_backend.alembic_importer  # noqa: F401
 from nwc_backend.configs.nostr_config import nostr_config
 from nwc_backend.db import db
 from nwc_backend.event_handlers.event_builder import EventBuilder
-from nwc_backend.event_handlers.nip47_request_method import Nip47RequestMethod
 from nwc_backend.exceptions import PublishEventFailedException
+from nwc_backend.models.app_connection import AppConnection
+from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
+from nwc_backend.models.user import User
 from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_notification_handler import NotificationHandler
-from nwc_backend.models.app_connection import AppConnection
-from nwc_backend.models.user import User
-
-from sqlalchemy.orm import Session
 
 
 def create_app() -> Quart:
