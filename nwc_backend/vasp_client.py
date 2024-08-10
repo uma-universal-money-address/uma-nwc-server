@@ -8,6 +8,7 @@ from typing import Any, Optional
 
 import aiohttp
 from uma_auth.models.execute_quote_response import ExecuteQuoteResponse
+from uma_auth.models.get_balance_response import GetBalanceResponse
 from uma_auth.models.invoice import Invoice
 from uma_auth.models.lookup_user_response import LookupUserResponse
 from uma_auth.models.make_invoice_request import MakeInvoiceRequest
@@ -72,6 +73,17 @@ class VaspUmaClient:
             access_token=access_token,
         )
         return ExecuteQuoteResponse.from_json(result)
+
+    async def get_balance(
+        self, access_token: str, currency_code: Optional[str]
+    ) -> GetBalanceResponse:
+        params = {"currency_code": currency_code} if currency_code else None
+        result = await self._make_http_get(
+            path="/balance",
+            access_token=access_token,
+            params=params,
+        )
+        return GetBalanceResponse.from_json(result)
 
     async def lookup_user(
         self,
