@@ -4,6 +4,8 @@
 import os
 
 import aiohttp
+from uma_auth.models.invoice import Invoice
+from uma_auth.models.make_invoice_request import MakeInvoiceRequest
 from uma_auth.models.pay_invoice_request import PayInvoiceRequest
 from uma_auth.models.pay_invoice_response import PayInvoiceResponse
 from uma_auth.models.pay_to_address_request import PayToAddressRequest
@@ -27,6 +29,14 @@ class VaspUmaClient:
             ) as response:
                 response.raise_for_status()
                 return await response.text()
+
+    async def make_invoice(
+        self, access_token: str, request: MakeInvoiceRequest
+    ) -> Invoice:
+        result = await self._make_http_post(
+            path="/invoice", access_token=access_token, data=request.to_json()
+        )
+        return Invoice.from_json(result)
 
     async def pay_invoice(
         self, access_token: str, request: PayInvoiceRequest
