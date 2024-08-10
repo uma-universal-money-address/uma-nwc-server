@@ -94,7 +94,7 @@ async def handle_nip47_event(event: Event) -> None:
     uma_access_token = app_connection.nwc_connection.long_lived_vasp_token
     match method:
         case Nip47RequestMethod.EXECUTE_QUOTE:
-            response = await execute_quote(params)
+            response = await execute_quote(uma_access_token, nip47_request)
         case Nip47RequestMethod.FETCH_QUOTE:
             response = await fetch_quote(params)
         case Nip47RequestMethod.GET_BALANCE:
