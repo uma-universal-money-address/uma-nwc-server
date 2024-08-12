@@ -14,7 +14,7 @@ from nwc_backend.vasp_client import AddressType, ReceivingAddress, vasp_uma_clie
 async def lookup_user(
     access_token: str, request: Nip47Request
 ) -> dict[str, Any] | Nip47Error:
-    receiver = request.get("receiver")
+    receiver = request.params.get("receiver")
     if receiver is None:
         return Nip47Error(
             code=ErrorCode.OTHER,
