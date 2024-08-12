@@ -12,6 +12,7 @@ python-dotenv = "*"
 quart = "*"
 requests = "*"
 uma-auth-api = "*"
+authlib = "*"
 
 [dev-packages]
 black = "*"

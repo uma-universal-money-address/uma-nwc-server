@@ -22,12 +22,15 @@ class AppConnection(ModelBase):
     __tablename__ = "app_connection"
 
     nostr_pubkey: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    connection_expiration: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
     nwc_connection_id: Mapped[UUID] = mapped_column(
         DBUUID(), ForeignKey("nwc_connection.id"), nullable=False
     )
+    access_token: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    refresh_token: Mapped[str] = mapped_column(String(255), index=True)
+    connection_expiration: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
     nwc_connection: Mapped[NWCConnection] = relationship("NWCConnection")
 
     @staticmethod
@@ -45,3 +48,6 @@ class AppConnection(ModelBase):
 
     def has_command_permission(self, command: Nip47RequestMethod) -> bool:
         return self.nwc_connection.has_command_permission(command)
+
+    def is_expired(self) -> bool:
+        return self.connection_expiration < datetime.now(tz=timezone.utc)
