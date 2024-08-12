@@ -1,0 +1,41 @@
+name: Lint and Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: "Setup Python"
+        uses: "actions/setup-python@v4"
+        with:
+          python-version: "3.11"
+          cache: "pipenv"
+          cache-dependency-path: "Pipfile.lock"
+      - name: "Install pipenv"
+        run: "pip install pipenv wheel"
+      - name: "Install dependencies"
+        run: "pipenv install --dev"
+      - name: "Run pyre"
+        run: |
+          set -o pipefail
+          pipenv run pyre | tee >(sed 's, ,:,' | awk -F: '{sub(" ", "", $5); print "::error file=" ENVIRON["PWD"] "/" $1 ",line=" $2 ",col=" $3 ",title=" $4 "::" $5}')
+      - name: "Run ruff"
+        run: "pipenv run ruff check --output-format github ."
+      - name: "Run black"
+        run: |
+          set -o pipefail
+          pipenv run black --check --diff .
+      - name: Run tests
+        run: |
+          pipenv run pytest -n 4
