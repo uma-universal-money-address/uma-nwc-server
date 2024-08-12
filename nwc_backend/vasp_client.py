@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Any, Optional
 
 import aiohttp
+from uma_auth.models.execute_quote_response import ExecuteQuoteResponse
 from uma_auth.models.invoice import Invoice
 from uma_auth.models.lookup_user_response import LookupUserResponse
 from uma_auth.models.make_invoice_request import MakeInvoiceRequest
@@ -47,7 +48,9 @@ class VaspUmaClient:
                 response.raise_for_status()
                 return await response.text()
 
-    async def _make_http_post(self, path: str, access_token: str, data: str) -> str:
+    async def _make_http_post(
+        self, path: str, access_token: str, data: Optional[str] = None
+    ) -> str:
         async with aiohttp.ClientSession(base_url=self.base_url) as session:
             async with session.post(  # pyre-ignore[16]
                 url=path,
@@ -60,6 +63,15 @@ class VaspUmaClient:
             ) as response:
                 response.raise_for_status()
                 return await response.text()
+
+    async def execute_quote(
+        self, access_token: str, payment_hash: str
+    ) -> ExecuteQuoteResponse:
+        result = await self._make_http_post(
+            path=f"/quote/{payment_hash}",
+            access_token=access_token,
+        )
+        return ExecuteQuoteResponse.from_json(result)
 
     async def lookup_user(
         self,
