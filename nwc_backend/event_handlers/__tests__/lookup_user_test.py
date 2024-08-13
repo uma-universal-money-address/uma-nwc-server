@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 os.environ["NOSTR_PRIVKEY"] = (
     "nsec166ah7ez498kjl87a088yn34gvcjpzmy9eymuwwgtwcywh84j865s0qxnul"
@@ -10,29 +11,30 @@ import pytest
 from nwc_backend.models.nip47_request import Nip47Request, ErrorCode, Nip47Error
 from nwc_backend.vasp_client import ReceivingAddress, VaspUmaClient, LookupUserResponse
 from nwc_backend.event_handlers.lookup_user_handler import lookup_user
-from uma_auth.models.currency_preference import CurrencyPreference
 
 
 class MockVaspUmaClient(VaspUmaClient):
-    lookup_user_response = LookupUserResponse(
-        currencies=[
-            CurrencyPreference(
-                code="USD",
-                symbol="$",
-                name="US Dollar",
-                multiplier=1000,
-                decimals=2,
-                min=1000,
-                max=1000000,
-            )
-        ]
+    lookup_user_response = LookupUserResponse.from_dict(
+        {
+            "currencies": [
+                {
+                    "code": "USD",
+                    "symbol": "$",
+                    "name": "US Dollar",
+                    "multiplier": 1000,
+                    "decimals": 2,
+                    "min": 1000,
+                    "max": 1000000,
+                }
+            ]
+        }
     )
 
     async def lookup_user(
         self,
         access_token: str,
         receiving_address: ReceivingAddress,
-        base_sending_currency_code: str,
+        base_sending_currency_code: Optional[str],
     ) -> LookupUserResponse:
         return self.lookup_user_response
 
