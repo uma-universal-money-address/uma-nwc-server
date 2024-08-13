@@ -38,4 +38,4 @@ jobs:
           pipenv run black --check --diff .
       - name: Run tests
         run: |
-          pipenv run pytest
+          PYTHONPATH=. pipenv run pytest
