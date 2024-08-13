@@ -133,6 +133,18 @@ class VaspUmaClient:
         )
         return GetBalanceResponse.from_json(result)
 
+    async def lookup_invoice(
+        self,
+        access_token: str,
+        payment_hash: str,
+    ) -> Invoice:
+        result = await self._make_http_get(
+            path=f"/invoices/{payment_hash}",
+            access_token=access_token,
+        )
+        # TODO: return Transaction instead?
+        return Invoice.from_json(result)
+
     async def lookup_user(
         self,
         access_token: str,
