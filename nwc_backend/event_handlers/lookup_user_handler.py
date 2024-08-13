@@ -12,7 +12,7 @@ from nwc_backend.vasp_client import AddressType, ReceivingAddress, vasp_uma_clie
 
 
 async def lookup_user(
-    access_token: str, request: Nip47Request
+    access_token: str, request: Nip47Request, vasp_client=vasp_uma_client
 ) -> dict[str, Any] | Nip47Error:
     receiver = request.params.get("receiver")
     if receiver is None:
@@ -39,7 +39,7 @@ async def lookup_user(
         )
 
     try:
-        response = await vasp_uma_client.lookup_user(
+        response = await vasp_client.lookup_user(
             access_token=access_token,
             receiving_address=receiving_address,
             base_sending_currency_code=request.params.get("base_sending_currency_code"),
