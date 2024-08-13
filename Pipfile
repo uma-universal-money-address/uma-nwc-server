@@ -18,6 +18,8 @@ authlib = "*"
 black = "*"
 pyre-check = "*"
 ruff = "*"
+pytest = "*"
+pytest-asyncio = "*"
 
 [requires]
 python_version = "3.11"

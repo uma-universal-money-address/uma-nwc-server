@@ -8,13 +8,20 @@ from aiohttp import ClientResponseError
 from nostr_sdk import ErrorCode, Nip47Error
 
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.vasp_client import AddressType, ReceivingAddress, vasp_uma_client
+from nwc_backend.vasp_client import (
+    AddressType,
+    ReceivingAddress,
+    VaspUmaClient,
+    vasp_uma_client,
+)
 
 
 async def lookup_user(
-    access_token: str, request: Nip47Request
+    access_token: str,
+    request: Nip47Request,
+    vasp_client: VaspUmaClient = vasp_uma_client,
 ) -> dict[str, Any] | Nip47Error:
-    receiver = request.get("receiver")
+    receiver = request.params.get("receiver")
     if receiver is None:
         return Nip47Error(
             code=ErrorCode.OTHER,
@@ -39,7 +46,7 @@ async def lookup_user(
         )
 
     try:
-        response = await vasp_uma_client.lookup_user(
+        response = await vasp_client.lookup_user(
             access_token=access_token,
             receiving_address=receiving_address,
             base_sending_currency_code=request.params.get("base_sending_currency_code"),
