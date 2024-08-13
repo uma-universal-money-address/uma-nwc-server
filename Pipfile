@@ -21,6 +21,7 @@ pyre-check = "*"
 ruff = "*"
 pytest = "*"
 pytest-asyncio = "*"
+pytest-env = "*"
 
 [requires]
 python_version = "3.11"
