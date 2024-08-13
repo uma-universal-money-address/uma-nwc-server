@@ -16,6 +16,9 @@ from uma_auth.models.pay_invoice_request import PayInvoiceRequest
 from uma_auth.models.pay_invoice_response import PayInvoiceResponse
 from uma_auth.models.pay_to_address_request import PayToAddressRequest
 from uma_auth.models.pay_to_address_response import PayToAddressResponse
+from uma_auth.models.quote import Quote
+
+from nwc_backend.exceptions import InvalidInputException
 
 
 class AddressType(Enum):
@@ -27,6 +30,28 @@ class AddressType(Enum):
 class ReceivingAddress:
     address: str
     type: AddressType
+
+    @staticmethod
+    def from_dict(
+        receiving_address: dict[str, str], field_name: str
+    ) -> "ReceivingAddress":
+        if len(receiving_address) != 1:
+            raise InvalidInputException(
+                f"Expect {field_name} to contain exactly one address.",
+            )
+
+        address_type, address = receiving_address.popitem()
+        try:
+            return ReceivingAddress(address=address, type=AddressType(address_type))
+        except ValueError:
+            raise InvalidInputException(
+                f"Expect {field_name} to contain address type `bolt12` or `lud16`.",
+            )
+
+
+class LockedCurrencySide(Enum):
+    SENDING = "sending"
+    RECEIVING = "receiving"
 
 
 class VaspUmaClient:
@@ -73,6 +98,29 @@ class VaspUmaClient:
             access_token=access_token,
         )
         return ExecuteQuoteResponse.from_json(result)
+
+    async def fetch_quote(
+        self,
+        access_token: str,
+        sending_currency_code: str,
+        receiving_currency_code: str,
+        locked_currency_amount: int,
+        locked_currency_side: LockedCurrencySide,
+        receiving_address: ReceivingAddress,
+    ) -> Quote:
+        params = {
+            "sending_currency_code": sending_currency_code,
+            "receiving_currency_code": receiving_currency_code,
+            "locked_currency_amount": locked_currency_amount,
+            "locked_currency_side": locked_currency_side.value,
+            "receiving_address": receiving_address.address,
+        }
+        result = await self._make_http_get(
+            path=f"/quote/{receiving_address.type.value}",
+            access_token=access_token,
+            params=params,
+        )
+        return Quote.from_json(result)
 
     async def get_balance(
         self, access_token: str, currency_code: Optional[str]

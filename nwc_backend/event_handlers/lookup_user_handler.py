@@ -7,13 +7,9 @@ from typing import Any
 from aiohttp import ClientResponseError
 from nostr_sdk import ErrorCode, Nip47Error
 
+from nwc_backend.exceptions import InvalidInputException
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.vasp_client import (
-    AddressType,
-    ReceivingAddress,
-    VaspUmaClient,
-    vasp_uma_client,
-)
+from nwc_backend.vasp_client import ReceivingAddress, VaspUmaClient, vasp_uma_client
 
 
 async def lookup_user(
@@ -28,21 +24,12 @@ async def lookup_user(
             message="Require receiver in the request params.",
         )
 
-    if len(receiver) != 1:
-        return Nip47Error(
-            code=ErrorCode.OTHER,
-            message="Expect receiver to contain exactly one address.",
-        )
-
-    address_type, receiving_address = receiver.popitem()
     try:
-        receiving_address = ReceivingAddress(
-            address=receiving_address, type=AddressType(address_type)
-        )
-    except ValueError:
+        receiving_address = ReceivingAddress.from_dict(receiver, "receiver")
+    except InvalidInputException as ex:
         return Nip47Error(
             code=ErrorCode.OTHER,
-            message="Expect receiver to contain address type bolt12 or lud16.",
+            message=ex.error_message,
         )
 
     try:
