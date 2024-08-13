@@ -9,6 +9,7 @@ from typing import Any, Optional
 import aiohttp
 from uma_auth.models.execute_quote_response import ExecuteQuoteResponse
 from uma_auth.models.get_balance_response import GetBalanceResponse
+from uma_auth.models.get_info_response import GetInfoResponse
 from uma_auth.models.invoice import Invoice
 from uma_auth.models.lookup_user_response import LookupUserResponse
 from uma_auth.models.make_invoice_request import MakeInvoiceRequest
@@ -132,6 +133,13 @@ class VaspUmaClient:
             params=params,
         )
         return GetBalanceResponse.from_json(result)
+
+    async def get_info(self, access_token: str) -> GetInfoResponse:
+        result = await self._make_http_get(
+            path="/info",
+            access_token=access_token,
+        )
+        return GetInfoResponse.from_json(result)
 
     async def lookup_invoice(
         self,
