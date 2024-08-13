@@ -107,7 +107,7 @@ async def look_up_client_app_identity(client_id: str) -> Optional[ClientAppInfo]
         )
         .limit(2)
     )
-    events = await client.get_events_of(filters=[filter], timeout=None)
+    events = await client.get_events_of(filters=[filter], timeout=None)  # pyre-ignore
     await client.disconnect()
 
     if not events:

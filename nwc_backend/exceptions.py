@@ -34,3 +34,7 @@ class NotImplementedException(Nip47RequestException):
         super().__init__(
             error_code=ErrorCode.NOT_IMPLEMENTED, error_message=error_message
         )
+
+
+class AppConnectionNotFoundException(Exception):
+    pass

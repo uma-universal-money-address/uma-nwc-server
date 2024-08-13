@@ -46,7 +46,7 @@ async def handle_nip47_event(event: Event) -> None:
         return
 
     now = datetime.now(timezone.utc)
-    if app_connection.get_expires_at() < now:
+    if app_connection.is_access_token_expired():
         error_response = create_nip47_error_response(
             event=event,
             method=None,

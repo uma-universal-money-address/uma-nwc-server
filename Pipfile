@@ -13,10 +13,10 @@ pyjwt = "*"
 python-dotenv = "*"
 quart = "*"
 requests = "*"
-authlib = "*"
 uma-auth-api = "*"
 uvicorn-worker = "*"
 uvicorn = "*"
+aioauth = "*"
 
 [dev-packages]
 black = "*"
