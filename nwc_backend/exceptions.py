@@ -27,3 +27,10 @@ class Nip47RequestException(Exception):
 class InvalidInputException(Nip47RequestException):
     def __init__(self, error_message: str) -> None:
         super().__init__(error_code=ErrorCode.OTHER, error_message=error_message)
+
+
+class NotImplementedException(Nip47RequestException):
+    def __init__(self, error_message: str) -> None:
+        super().__init__(
+            error_code=ErrorCode.NOT_IMPLEMENTED, error_message=error_message
+        )

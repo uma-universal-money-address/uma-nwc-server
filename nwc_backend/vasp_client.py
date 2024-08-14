@@ -19,7 +19,7 @@ from uma_auth.models.pay_to_address_response import PayToAddressResponse
 from uma_auth.models.quote import Quote
 from uma_auth.models.transaction import Transaction
 
-from nwc_backend.exceptions import InvalidInputException
+from nwc_backend.exceptions import InvalidInputException, NotImplementedException
 
 
 class AddressType(Enum):
@@ -39,13 +39,18 @@ class ReceivingAddress:
                 "Expect `receiver` to contain exactly one address.",
             )
 
-        address_type, address = receiving_address.popitem()
+        address_type, address = next(iter(receiving_address.items()))
         try:
-            return ReceivingAddress(address=address, type=AddressType(address_type))
-        except ValueError:
+            address_type = AddressType(address_type)
+        except ValueError as ex:
             raise InvalidInputException(
                 "Expect `receiver` to contain address type `bolt12` or `lud16`.",
-            )
+            ) from ex
+
+        if address_type == AddressType.BOLT12:
+            raise NotImplementedException("Bolt12 is not yet supported.")
+
+        return ReceivingAddress(address=address, type=AddressType(address_type))
 
 
 class LockedCurrencySide(Enum):
@@ -105,17 +110,17 @@ class VaspUmaClient:
         receiving_currency_code: str,
         locked_currency_amount: int,
         locked_currency_side: LockedCurrencySide,
-        receiving_address: ReceivingAddress,
+        receiver_address: ReceivingAddress,
     ) -> Quote:
         params = {
             "sending_currency_code": sending_currency_code,
             "receiving_currency_code": receiving_currency_code,
             "locked_currency_amount": locked_currency_amount,
             "locked_currency_side": locked_currency_side.value,
-            "receiving_address": receiving_address.address,
+            "receiver_address": receiver_address.address,
         }
         result = await self._make_http_get(
-            path=f"/quote/{receiving_address.type.value}",
+            path=f"/quote/{receiver_address.type.value}",
             access_token=access_token,
             params=params,
         )

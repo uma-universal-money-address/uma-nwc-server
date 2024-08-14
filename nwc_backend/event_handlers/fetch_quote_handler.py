@@ -1,59 +1,38 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import logging
-from typing import Any
 
-from aiohttp import ClientResponseError
-from nostr_sdk import ErrorCode, Nip47Error
+from uma_auth.models.quote import Quote
 
-from nwc_backend.exceptions import InvalidInputException
+from nwc_backend.event_handlers.input_validator import get_required_field
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.vasp_client import (
-    AddressType,
     LockedCurrencySide,
     ReceivingAddress,
     vasp_uma_client,
 )
 
 
-async def fetch_quote(
-    access_token: str, request: Nip47Request
-) -> dict[str, Any] | Nip47Error:
-    try:
-        locked_currency_side = LockedCurrencySide(
-            request.params["locked_currency_side"].lower()
-        )
-    except ValueError:
-        return Nip47Error(
-            code=ErrorCode.OTHER,
-            message="Expect locked_currency_side to be either sending or receiving.",
-        )
-
-    try:
-        receiving_address = ReceivingAddress.from_dict(request.params["receiver"])
-    except InvalidInputException as ex:
-        return Nip47Error(
-            code=ErrorCode.OTHER,
-            message=ex.error_message,
-        )
-    if receiving_address.type == AddressType.BOLT12:
-        return Nip47Error(
-            code=ErrorCode.NOT_IMPLEMENTED,
-            message="Bolt12 is not yet supported.",
-        )
-
-    try:
-        response = await vasp_uma_client.fetch_quote(
-            access_token=access_token,
-            sending_currency_code=request.params["sending_currency_code"],
-            receiving_currency_code=request.params["receiving_currency_code"],
-            locked_currency_amount=request.params["locked_currency_amount"],
-            locked_currency_side=locked_currency_side,
-            receiving_address=receiving_address,
-        )
-        return response.to_dict()
-    except ClientResponseError as ex:
-        logging.exception("Request fetch_quote %s failed", str(request.id))
-        # TODO: more granular error code
-        return Nip47Error(code=ErrorCode.OTHER, message=ex.message)
+async def fetch_quote(access_token: str, request: Nip47Request) -> Quote:
+    sending_currency_code = get_required_field(
+        request.params, "sending_currency_code", str
+    )
+    receiving_currency_code = get_required_field(
+        request.params, "receiving_currency_code", str
+    )
+    locked_currency_amount = get_required_field(
+        request.params, "locked_currency_amount", int
+    )
+    locked_currency_side = get_required_field(
+        request.params, "locked_currency_side", LockedCurrencySide
+    )
+    receiver = get_required_field(request.params, "receiver", dict)
+    receiving_address = ReceivingAddress.from_dict(receiver)
+    return await vasp_uma_client.fetch_quote(
+        access_token=access_token,
+        sending_currency_code=sending_currency_code,
+        receiving_currency_code=receiving_currency_code,
+        locked_currency_amount=locked_currency_amount,
+        locked_currency_side=locked_currency_side,
+        receiver_address=receiving_address,
+    )
