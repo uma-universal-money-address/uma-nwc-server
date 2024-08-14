@@ -13,7 +13,9 @@ from nwc_backend.vasp_client import VaspUmaClient
 
 
 async def lookup_invoice(
-    access_token: str, request: Nip47Request
+    access_token: str,
+    request: Nip47Request,
+    vasp_client: VaspUmaClient,
 ) -> dict[str, Any] | Nip47Error:
     payment_hash = None
     if request.params.get("payment_hash"):
@@ -40,7 +42,7 @@ async def lookup_invoice(
         )
 
     try:
-        response = await VaspUmaClient.instance().lookup_invoice(
+        response = await vasp_client.lookup_invoice(
             access_token=access_token, payment_hash=payment_hash
         )
         return response.to_dict()
