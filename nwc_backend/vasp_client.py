@@ -10,7 +10,6 @@ import aiohttp
 from uma_auth.models.execute_quote_response import ExecuteQuoteResponse
 from uma_auth.models.get_balance_response import GetBalanceResponse
 from uma_auth.models.get_info_response import GetInfoResponse
-from uma_auth.models.invoice import Invoice
 from uma_auth.models.lookup_user_response import LookupUserResponse
 from uma_auth.models.make_invoice_request import MakeInvoiceRequest
 from uma_auth.models.pay_invoice_request import PayInvoiceRequest
@@ -18,6 +17,7 @@ from uma_auth.models.pay_invoice_response import PayInvoiceResponse
 from uma_auth.models.pay_to_address_request import PayToAddressRequest
 from uma_auth.models.pay_to_address_response import PayToAddressResponse
 from uma_auth.models.quote import Quote
+from uma_auth.models.transaction import Transaction
 
 from nwc_backend.exceptions import InvalidInputException
 
@@ -33,12 +33,10 @@ class ReceivingAddress:
     type: AddressType
 
     @staticmethod
-    def from_dict(
-        receiving_address: dict[str, str], field_name: str
-    ) -> "ReceivingAddress":
+    def from_dict(receiving_address: dict[str, str]) -> "ReceivingAddress":
         if len(receiving_address) != 1:
             raise InvalidInputException(
-                f"Expect {field_name} to contain exactly one address.",
+                "Expect `receiver` to contain exactly one address.",
             )
 
         address_type, address = receiving_address.popitem()
@@ -46,7 +44,7 @@ class ReceivingAddress:
             return ReceivingAddress(address=address, type=AddressType(address_type))
         except ValueError:
             raise InvalidInputException(
-                f"Expect {field_name} to contain address type `bolt12` or `lud16`.",
+                "Expect `receiver` to contain address type `bolt12` or `lud16`.",
             )
 
 
@@ -145,13 +143,12 @@ class VaspUmaClient:
         self,
         access_token: str,
         payment_hash: str,
-    ) -> Invoice:
+    ) -> Transaction:
         result = await self._make_http_get(
             path=f"/invoices/{payment_hash}",
             access_token=access_token,
         )
-        # TODO: return Transaction instead?
-        return Invoice.from_json(result)
+        return Transaction.from_json(result)
 
     async def lookup_user(
         self,
@@ -173,11 +170,11 @@ class VaspUmaClient:
 
     async def make_invoice(
         self, access_token: str, request: MakeInvoiceRequest
-    ) -> Invoice:
+    ) -> Transaction:
         result = await self._make_http_post(
             path="/invoice", access_token=access_token, data=request.to_json()
         )
-        return Invoice.from_json(result)
+        return Transaction.from_json(result)
 
     async def pay_invoice(
         self, access_token: str, request: PayInvoiceRequest
@@ -188,10 +185,12 @@ class VaspUmaClient:
         return PayInvoiceResponse.from_json(result)
 
     async def pay_to_address(
-        self, access_token: str, request: PayToAddressRequest
+        self, access_token: str, request: PayToAddressRequest, address_type: AddressType
     ) -> PayToAddressResponse:
         result = await self._make_http_post(
-            path="/payments/lnurl", access_token=access_token, data=request.to_json()
+            path=f"/payments/{address_type.value}",
+            access_token=access_token,
+            data=request.to_json(),
         )
         return PayToAddressResponse.from_json(result)
 

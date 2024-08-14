@@ -9,7 +9,12 @@ from nostr_sdk import ErrorCode, Nip47Error
 
 from nwc_backend.exceptions import InvalidInputException
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.vasp_client import ReceivingAddress, VaspUmaClient, vasp_uma_client
+from nwc_backend.vasp_client import (
+    AddressType,
+    ReceivingAddress,
+    VaspUmaClient,
+    vasp_uma_client,
+)
 
 
 async def lookup_user(
@@ -21,15 +26,20 @@ async def lookup_user(
     if receiver is None:
         return Nip47Error(
             code=ErrorCode.OTHER,
-            message="Require receiver in the request params.",
+            message="Require `receiver` in the request params.",
         )
 
     try:
-        receiving_address = ReceivingAddress.from_dict(receiver, "receiver")
+        receiving_address = ReceivingAddress.from_dict(receiver)
     except InvalidInputException as ex:
         return Nip47Error(
             code=ErrorCode.OTHER,
             message=ex.error_message,
+        )
+    if receiving_address.type == AddressType.BOLT12:
+        return Nip47Error(
+            code=ErrorCode.NOT_IMPLEMENTED,
+            message="Bolt12 is not yet supported.",
         )
 
     try:

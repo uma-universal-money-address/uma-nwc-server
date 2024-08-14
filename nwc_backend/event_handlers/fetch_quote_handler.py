@@ -10,6 +10,7 @@ from nostr_sdk import ErrorCode, Nip47Error
 from nwc_backend.exceptions import InvalidInputException
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.vasp_client import (
+    AddressType,
     LockedCurrencySide,
     ReceivingAddress,
     vasp_uma_client,
@@ -19,7 +20,6 @@ from nwc_backend.vasp_client import (
 async def fetch_quote(
     access_token: str, request: Nip47Request
 ) -> dict[str, Any] | Nip47Error:
-
     try:
         locked_currency_side = LockedCurrencySide(
             request.params["locked_currency_side"].lower()
@@ -31,13 +31,16 @@ async def fetch_quote(
         )
 
     try:
-        receiving_address = ReceivingAddress.from_dict(
-            request.params["receiving_address"], "receiving_address"
-        )
+        receiving_address = ReceivingAddress.from_dict(request.params["receiver"])
     except InvalidInputException as ex:
         return Nip47Error(
             code=ErrorCode.OTHER,
             message=ex.error_message,
+        )
+    if receiving_address.type == AddressType.BOLT12:
+        return Nip47Error(
+            code=ErrorCode.NOT_IMPLEMENTED,
+            message="Bolt12 is not yet supported.",
         )
 
     try:

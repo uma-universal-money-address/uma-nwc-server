@@ -66,7 +66,7 @@ async def test_lookup_user_missing_receiver(
 
     assert isinstance(result, Nip47Error)
     assert result.code == ErrorCode.OTHER
-    assert result.message == "Require receiver in the request params."
+    assert result.message == "Require `receiver` in the request params."
 
 
 async def test_lookup_user_multiple_receivers(
@@ -81,4 +81,4 @@ async def test_lookup_user_multiple_receivers(
 
     assert isinstance(result, Nip47Error)
     assert result.code == ErrorCode.OTHER
-    assert result.message == "Expect receiver to contain exactly one address."
+    assert result.message == "Expect `receiver` to contain exactly one address."
