@@ -12,8 +12,8 @@ pyjwt = "*"
 python-dotenv = "*"
 quart = "*"
 requests = "*"
-uma-auth-api = "*"
 authlib = "*"
+uma-auth-api = "*"
 
 [dev-packages]
 black = "*"

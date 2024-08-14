@@ -815,7 +815,6 @@
                 "sha256:71d5465162c13681bff01ad59b2cc68dd838ea1f10e51574bac27103f00c91a5",
                 "sha256:a0cb88a46f32dc874e04ee956e4c2764aba2aa228f650b06788ba6bda2962ab5"
             ],
-            "markers": "python_version >= '3.8'",
             "version": "==0.27.0"
         },
         "hypercorn": {
@@ -1558,10 +1557,11 @@
         },
         "uma-auth-api": {
             "hashes": [
-                "sha256:7b9b08de4078739461c80a0217a89565d3b6359b6f6e367062badd6d51b871dc"
+                "sha256:6894d6a4dc60ca9dee1f9ae2a5e1d58b4efee26f0face52928d2abde67d55de3",
+                "sha256:cc86a67a8f4e7831c3ac3f1b10156c18f5b6ae6cd1d5b6a4a73042d1110c8d14"
             ],
             "index": "pypi",
-            "version": "==0.0.3"
+            "version": "==0.0.4"
         },
         "urllib3": {
             "hashes": [
