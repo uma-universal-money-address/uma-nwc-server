@@ -64,10 +64,10 @@ class VaspUmaClient:
 
     @staticmethod
     def instance() -> "VaspUmaClient":
-        global _vasp_uma_client # noqa: PLW0603
+        global _vasp_uma_client  # noqa: PLW0603
         if _vasp_uma_client is None:
             _vasp_uma_client = VaspUmaClient()
-        
+
         return _vasp_uma_client
 
     async def _make_http_get(
