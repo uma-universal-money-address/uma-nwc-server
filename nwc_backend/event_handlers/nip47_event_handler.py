@@ -23,6 +23,7 @@ from nwc_backend.event_handlers.make_invoice_handler import make_invoice
 from nwc_backend.event_handlers.pay_invoice_handler import pay_invoice
 from nwc_backend.event_handlers.pay_keysend_handler import pay_keysend
 from nwc_backend.event_handlers.pay_to_address_handler import pay_to_address
+from nwc_backend.exceptions import Nip47RequestException
 from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
@@ -92,31 +93,49 @@ async def handle_nip47_event(event: Event) -> None:
     )
 
     uma_access_token = app_connection.nwc_connection.long_lived_vasp_token
-    match method:
-        case Nip47RequestMethod.EXECUTE_QUOTE:
-            response = await execute_quote(uma_access_token, nip47_request)
-        case Nip47RequestMethod.FETCH_QUOTE:
-            response = await fetch_quote(uma_access_token, nip47_request)
-        case Nip47RequestMethod.GET_BALANCE:
-            response = await get_balance(uma_access_token, nip47_request)
-        case Nip47RequestMethod.GET_INFO:
-            response = await get_info(uma_access_token, nip47_request)
-        case Nip47RequestMethod.LIST_TRANSACTIONS:
-            response = await list_transactions(params)
-        case Nip47RequestMethod.LOOKUP_INVOICE:
-            response = await lookup_invoice(uma_access_token, nip47_request)
-        case Nip47RequestMethod.LOOKUP_USER:
-            response = await lookup_user(uma_access_token, nip47_request)
-        case Nip47RequestMethod.MAKE_INVOICE:
-            response = await make_invoice(uma_access_token, nip47_request)
-        case Nip47RequestMethod.PAY_INVOICE:
-            response = await pay_invoice(uma_access_token, nip47_request)
-        case Nip47RequestMethod.PAY_KEYSEND:
-            response = await pay_keysend(params)
-        case Nip47RequestMethod.PAY_TO_ADDRESS:
-            response = await pay_to_address(uma_access_token, nip47_request)
-        case _:
-            raise NotImplementedError()
+    try:
+        match method:
+            case Nip47RequestMethod.EXECUTE_QUOTE:
+                response = (
+                    await execute_quote(uma_access_token, nip47_request)
+                ).to_dict()
+            case Nip47RequestMethod.FETCH_QUOTE:
+                response = await fetch_quote(uma_access_token, nip47_request)
+            case Nip47RequestMethod.GET_BALANCE:
+                response = await get_balance(uma_access_token, nip47_request)
+            case Nip47RequestMethod.GET_INFO:
+                response = await get_info(uma_access_token, nip47_request)
+            case Nip47RequestMethod.LIST_TRANSACTIONS:
+                response = await list_transactions(params)
+            case Nip47RequestMethod.LOOKUP_INVOICE:
+                response = await lookup_invoice(uma_access_token, nip47_request)
+            case Nip47RequestMethod.LOOKUP_USER:
+                response = await lookup_user(uma_access_token, nip47_request)
+            case Nip47RequestMethod.MAKE_INVOICE:
+                response = await make_invoice(uma_access_token, nip47_request)
+            case Nip47RequestMethod.PAY_INVOICE:
+                response = await pay_invoice(uma_access_token, nip47_request)
+            case Nip47RequestMethod.PAY_KEYSEND:
+                response = await pay_keysend(params)
+            case Nip47RequestMethod.PAY_TO_ADDRESS:
+                response = await pay_to_address(uma_access_token, nip47_request)
+            case _:
+                response = Nip47Error(
+                    code=ErrorCode.NOT_IMPLEMENTED,
+                    message=f"Method {method} is not supported.",
+                )
+    except Nip47RequestException as ex:
+        logging.exception("Request %s %s failed", method, str(nip47_request.id))
+        response = Nip47Error(
+            code=ex.error_code,
+            message=ex.error_message,
+        )
+    except Exception as ex:
+        logging.exception("Request %s %s failed", method, str(nip47_request.id))
+        response = Nip47Error(
+            code=ErrorCode.INTERNAL,
+            message=str(ex),
+        )
 
     if isinstance(response, Nip47Error):
         response_event = create_nip47_error_response(
