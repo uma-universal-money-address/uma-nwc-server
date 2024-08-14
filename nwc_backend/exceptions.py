@@ -1,7 +1,7 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-from nostr_sdk import Event
+from nostr_sdk import ErrorCode, Event
 
 
 class PublishEventFailedException(Exception):
@@ -17,7 +17,13 @@ class InvalidClientIdException(Exception):
     pass
 
 
-class InvalidInputException(Exception):
-    def __init__(self, error_message: str) -> None:
+class Nip47RequestException(Exception):
+    def __init__(self, error_code: ErrorCode, error_message: str) -> None:
+        self.error_code = error_code
         self.error_message = error_message
         super().__init__(error_message)
+
+
+class InvalidInputException(Nip47RequestException):
+    def __init__(self, error_message: str) -> None:
+        super().__init__(error_code=ErrorCode.OTHER, error_message=error_message)
