@@ -1,0 +1,13 @@
+services:
+  nwc:
+    build: .
+    ports:
+      - 5000:5000
+    environment:
+      - QUART_CONFIG=configs/local_docker.py
+      - QUART_APP=nwc_backend
+      - QUART_ENV=development
+      - QUART_DEBUG=True
+      - QUART_RUN_PORT=5000
+      - NOSTR_PRIVKEY=$(openssl rand -hex 32)
+      - RELAY=wss://relay.getalby.com/v1

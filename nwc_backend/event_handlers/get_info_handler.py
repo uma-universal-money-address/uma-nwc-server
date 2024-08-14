@@ -8,14 +8,14 @@ from aiohttp import ClientResponseError
 from nostr_sdk import ErrorCode, Nip47Error
 
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.vasp_client import vasp_uma_client
+from nwc_backend.vasp_client import VaspUmaClient
 
 
 async def get_info(
     access_token: str, request: Nip47Request
 ) -> dict[str, Any] | Nip47Error:
     try:
-        response = await vasp_uma_client.get_info(access_token=access_token)
+        response = await VaspUmaClient.instance().get_info(access_token=access_token)
         return response.to_dict()
     except ClientResponseError as ex:
         logging.exception("Request get_info %s failed", str(request.id))

@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from aiohttp import ClientResponseError
 from nostr_sdk import ErrorCode, Event, Nip47Error, TagKind, nip04_decrypt
 
-from nwc_backend.configs.nostr_config import nostr_config
+from nwc_backend.configs.nostr_config import NostrConfig
 from nwc_backend.event_handlers.event_builder import (
     create_nip47_error_response,
     create_nip47_response,
@@ -29,6 +29,7 @@ from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.nostr_client import nostr_client
+from nwc_backend.vasp_client import VaspUmaClient
 
 
 async def handle_nip47_event(event: Event) -> None:
@@ -65,7 +66,7 @@ async def handle_nip47_event(event: Event) -> None:
 
     content = json.loads(
         nip04_decrypt(
-            secret_key=nostr_config.identity_privkey,
+            secret_key=NostrConfig.instance().identity_privkey,
             public_key=event.author(),
             encrypted_content=event.content(),
         )
@@ -94,6 +95,7 @@ async def handle_nip47_event(event: Event) -> None:
     )
 
     uma_access_token = app_connection.nwc_connection.long_lived_vasp_token
+    vasp_client = VaspUmaClient.instance()
     try:
         match method:
             case Nip47RequestMethod.EXECUTE_QUOTE:
@@ -113,7 +115,7 @@ async def handle_nip47_event(event: Event) -> None:
             case Nip47RequestMethod.LOOKUP_INVOICE:
                 response = await lookup_invoice(uma_access_token, nip47_request)
             case Nip47RequestMethod.LOOKUP_USER:
-                response = await lookup_user(uma_access_token, nip47_request)
+                response = await lookup_user(uma_access_token, nip47_request, vasp_client)
             case Nip47RequestMethod.MAKE_INVOICE:
                 response = await make_invoice(uma_access_token, nip47_request)
             case Nip47RequestMethod.PAY_INVOICE:

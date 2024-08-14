@@ -9,7 +9,7 @@ from nostr_sdk import ErrorCode, Nip47Error
 from uma_auth.models.pay_invoice_request import PayInvoiceRequest
 
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.vasp_client import vasp_uma_client
+from nwc_backend.vasp_client import VaspUmaClient
 
 
 async def pay_invoice(
@@ -17,7 +17,7 @@ async def pay_invoice(
 ) -> dict[str, Any] | Nip47Error:
     pay_invoice_request = PayInvoiceRequest.from_dict(request.params)
     try:
-        response = await vasp_uma_client.pay_invoice(
+        response = await VaspUmaClient.instance().pay_invoice(
             access_token=access_token, request=pay_invoice_request
         )
         return response.to_dict()

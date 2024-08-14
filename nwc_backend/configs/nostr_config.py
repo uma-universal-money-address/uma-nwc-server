@@ -3,6 +3,7 @@
 
 import os
 from dataclasses import dataclass
+from typing import Optional
 
 from nostr_sdk import Keys, PublicKey, SecretKey
 
@@ -22,5 +23,13 @@ class NostrConfig:
             identity_pubkey=keys.public_key(),
         )
 
+    @staticmethod
+    def instance() -> "NostrConfig":
+        global _nostr_config  # noqa: PLW0603
+        if _nostr_config is None:
+            _nostr_config = NostrConfig.load()
 
-nostr_config: NostrConfig = NostrConfig.load()
+        return _nostr_config
+
+
+_nostr_config: Optional[NostrConfig] = None

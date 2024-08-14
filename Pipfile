@@ -7,6 +7,7 @@ name = "pypi"
 alembic = "*"
 aiohttp = "*"
 bolt11 = "*"
+gunicorn = "*"
 nostr-sdk = "*"
 pyjwt = "*"
 python-dotenv = "*"
@@ -14,6 +15,7 @@ quart = "*"
 requests = "*"
 authlib = "*"
 uma-auth-api = "*"
+a2wsgi = "<1.10.1"  # Causes gunicorn workers to hang
 
 [dev-packages]
 black = "*"

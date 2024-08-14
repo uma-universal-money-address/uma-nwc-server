@@ -9,7 +9,7 @@ from bolt11 import decode as bolt11_decode
 from nostr_sdk import ErrorCode, Nip47Error
 
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.vasp_client import vasp_uma_client
+from nwc_backend.vasp_client import VaspUmaClient
 
 
 async def lookup_invoice(
@@ -40,7 +40,7 @@ async def lookup_invoice(
         )
 
     try:
-        response = await vasp_uma_client.lookup_invoice(
+        response = await VaspUmaClient.instance().lookup_invoice(
             access_token=access_token, payment_hash=payment_hash
         )
         return response.to_dict()
