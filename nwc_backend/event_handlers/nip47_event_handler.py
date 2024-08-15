@@ -105,7 +105,9 @@ async def handle_nip47_event(event: Event) -> None:
                     await fetch_quote(uma_access_token, nip47_request)
                 ).to_dict()
             case Nip47RequestMethod.GET_BALANCE:
-                response = await get_balance(uma_access_token, nip47_request)
+                response = (
+                    await get_balance(uma_access_token, nip47_request)
+                ).to_dict()
             case Nip47RequestMethod.GET_INFO:
                 response = await get_info(uma_access_token, nip47_request)
             case Nip47RequestMethod.LIST_TRANSACTIONS:
