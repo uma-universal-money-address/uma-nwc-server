@@ -9,6 +9,7 @@ from unittest.mock import ANY, AsyncMock, Mock, patch
 import aiohttp
 import pytest
 
+from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
 from nwc_backend.event_handlers.fetch_quote_handler import fetch_quote
 from nwc_backend.exceptions import InvalidInputException, NotImplementedException
 from nwc_backend.models.nip47_request import Nip47Request
@@ -50,7 +51,7 @@ async def test_fetch_quote_success(mock_get: Mock) -> None:
     params["receiver_address"] = receiver_address
     mock_get.assert_called_once_with(url="/quote/lud16", params=params, headers=ANY)
 
-    assert quote.to_dict() == vasp_response
+    assert exclude_none_values(quote.to_dict()) == vasp_response
 
 
 async def test_fetch_quote_failure__invalid_input() -> None:

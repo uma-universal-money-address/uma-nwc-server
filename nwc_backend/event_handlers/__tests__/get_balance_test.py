@@ -9,6 +9,7 @@ from unittest.mock import ANY, AsyncMock, Mock, patch
 import aiohttp
 import pytest
 
+from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
 from nwc_backend.event_handlers.get_balance_handler import get_balance
 from nwc_backend.exceptions import InvalidInputException
 from nwc_backend.models.nip47_request import Nip47Request
@@ -44,8 +45,7 @@ async def test_get_balance_success(
         url="/balance", params=params if params else None, headers=ANY
     )
 
-    assert response.balance == vasp_response["balance"]
-    assert response.currency_code == currency_code
+    assert exclude_none_values(response.to_dict()) == vasp_response
 
 
 async def test_get_balance_failure__invalid_input() -> None:
