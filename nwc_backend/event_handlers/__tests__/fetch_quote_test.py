@@ -54,6 +54,40 @@ async def test_fetch_quote_success(mock_get: Mock) -> None:
     assert exclude_none_values(quote.to_dict()) == vasp_response
 
 
+async def test_fetch_quote_failure__no_receivers() -> None:
+    with pytest.raises(InvalidInputException):
+        await fetch_quote(
+            access_token=token_hex(),
+            request=Nip47Request(
+                params={
+                    "sending_currency_code": "SAT",
+                    "receiving_currency_code": "USD",
+                    "locked_currency_amount": 1_000_000,
+                    "locked_currency_side": "sending",
+                }
+            ),
+        )
+
+
+async def test_fetch_quote_failure__multiple_receivers() -> None:
+    with pytest.raises(InvalidInputException):
+        await fetch_quote(
+            access_token=token_hex(),
+            request=Nip47Request(
+                params={
+                    "receiver": {
+                        "lud16": "$alice@uma.me",
+                        "bolt12": "lno1qqszqfnjxapqxqrrzd9hxyarjwpzqarhdaexgmm9wejkgtm9venj2cmyde3x7urpwp8xgetr5fpqqg5w",
+                    },
+                    "sending_currency_code": "SAT",
+                    "receiving_currency_code": "USD",
+                    "locked_currency_amount": 1_000_000,
+                    "locked_currency_side": "sending",
+                }
+            ),
+        )
+
+
 async def test_fetch_quote_failure__invalid_input() -> None:
     with pytest.raises(InvalidInputException):
         await fetch_quote(
