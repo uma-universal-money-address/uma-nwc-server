@@ -15,7 +15,8 @@ quart = "*"
 requests = "*"
 authlib = "*"
 uma-auth-api = "*"
-a2wsgi = "<1.10.1"  # Causes gunicorn workers to hang
+uvicorn-worker = "*"
+uvicorn = "*"
 
 [dev-packages]
 black = "*"

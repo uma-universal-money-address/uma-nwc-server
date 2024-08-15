@@ -25,7 +25,7 @@ RUN pip install --upgrade pip wheel setuptools && \
 
 EXPOSE 5000
 ENTRYPOINT ["gunicorn"]
-CMD ["-b", "0.0.0.0:5000", "nwc_backend.server:wsgi"]
+CMD ["-b", "0.0.0.0:5000", "-k", "uvicorn.workers.UvicornWorker", "nwc_backend.server:app"]
 
 COPY alembic.ini /app
 COPY alembic /app/alembic

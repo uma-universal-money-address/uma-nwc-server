@@ -44,7 +44,6 @@ def create_app() -> Quart:
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     async def serve_frontend(path: str) -> Response:
-        print("path", path, send_from_directory)
         if not app.static_folder:
             return Response("No frontend build path provided", status=500)
         static_folder: str = app.static_folder
