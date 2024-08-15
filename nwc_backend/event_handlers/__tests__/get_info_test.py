@@ -7,6 +7,7 @@ from unittest.mock import ANY, AsyncMock, Mock, patch
 
 import aiohttp
 
+from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
 from nwc_backend.event_handlers.get_info_handler import get_info
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
@@ -45,4 +46,4 @@ async def test_get_info_success(mock_get: Mock) -> None:
     )
     mock_get.assert_called_once_with(url="/info", params=None, headers=ANY)
 
-    assert response.to_dict() == vasp_response
+    assert exclude_none_values(response.to_dict()) == vasp_response
