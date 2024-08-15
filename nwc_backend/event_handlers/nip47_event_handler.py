@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from aiohttp import ClientResponseError
 from nostr_sdk import ErrorCode, Event, Nip47Error, TagKind, nip04_decrypt
+from pydantic_core import ValidationError as PydanticValidationError
 
 from nwc_backend.configs.nostr_config import nostr_config
 from nwc_backend.event_handlers.event_builder import (
@@ -119,7 +120,9 @@ async def handle_nip47_event(event: Event) -> None:
             case Nip47RequestMethod.LOOKUP_USER:
                 response = await lookup_user(uma_access_token, nip47_request)
             case Nip47RequestMethod.MAKE_INVOICE:
-                response = await make_invoice(uma_access_token, nip47_request)
+                response = (
+                    await make_invoice(uma_access_token, nip47_request)
+                ).to_dict()
             case Nip47RequestMethod.PAY_INVOICE:
                 response = await pay_invoice(uma_access_token, nip47_request)
             case Nip47RequestMethod.PAY_KEYSEND:
@@ -134,7 +137,12 @@ async def handle_nip47_event(event: Event) -> None:
     except Exception as ex:
         logging.exception("Request %s %s failed", method, str(nip47_request.id))
 
-        if isinstance(ex, Nip47RequestException):
+        if isinstance(ex, PydanticValidationError):
+            response = Nip47Error(
+                code=ErrorCode.OTHER,
+                message=str(ex),
+            )
+        elif isinstance(ex, Nip47RequestException):
             response = Nip47Error(
                 code=ex.error_code,
                 message=ex.error_message,
