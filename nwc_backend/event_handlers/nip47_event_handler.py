@@ -5,6 +5,7 @@ import json
 import logging
 from datetime import datetime, timezone
 
+from aiohttp import ClientResponseError
 from nostr_sdk import ErrorCode, Event, Nip47Error, TagKind, nip04_decrypt
 
 from nwc_backend.configs.nostr_config import nostr_config
@@ -100,7 +101,9 @@ async def handle_nip47_event(event: Event) -> None:
                     await execute_quote(uma_access_token, nip47_request)
                 ).to_dict()
             case Nip47RequestMethod.FETCH_QUOTE:
-                response = await fetch_quote(uma_access_token, nip47_request)
+                response = (
+                    await fetch_quote(uma_access_token, nip47_request)
+                ).to_dict()
             case Nip47RequestMethod.GET_BALANCE:
                 response = await get_balance(uma_access_token, nip47_request)
             case Nip47RequestMethod.GET_INFO:
@@ -124,18 +127,24 @@ async def handle_nip47_event(event: Event) -> None:
                     code=ErrorCode.NOT_IMPLEMENTED,
                     message=f"Method {method} is not supported.",
                 )
-    except Nip47RequestException as ex:
-        logging.exception("Request %s %s failed", method, str(nip47_request.id))
-        response = Nip47Error(
-            code=ex.error_code,
-            message=ex.error_message,
-        )
     except Exception as ex:
         logging.exception("Request %s %s failed", method, str(nip47_request.id))
-        response = Nip47Error(
-            code=ErrorCode.INTERNAL,
-            message=str(ex),
-        )
+
+        if isinstance(ex, Nip47RequestException):
+            response = Nip47Error(
+                code=ex.error_code,
+                message=ex.error_message,
+            )
+        elif isinstance(ex, ClientResponseError):
+            response = Nip47Error(
+                code=ErrorCode.OTHER,
+                message=str(ex),
+            )
+        else:
+            response = Nip47Error(
+                code=ErrorCode.INTERNAL,
+                message=str(ex),
+            )
 
     if isinstance(response, Nip47Error):
         response_event = create_nip47_error_response(
