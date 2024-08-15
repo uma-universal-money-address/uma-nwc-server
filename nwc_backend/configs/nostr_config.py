@@ -16,7 +16,11 @@ class NostrConfig:
 
     @staticmethod
     def load() -> "NostrConfig":
-        keys = Keys.parse(os.environ["NOSTR_PRIVKEY"])
+        if "NOSRT_PRIVKEY_FILE" in os.environ:
+            with open(os.environ["NOSTR_PRIVKEY_FILE"], "r") as f:
+                keys = Keys.parse(f.read())
+        else:
+            keys = Keys.parse(os.environ["NOSTR_PRIVKEY"])
         return NostrConfig(
             relay_url=os.environ["RELAY"],
             identity_privkey=keys.secret_key(),
