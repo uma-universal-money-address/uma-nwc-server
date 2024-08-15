@@ -130,7 +130,9 @@ async def handle_nip47_event(event: Event) -> None:
             case Nip47RequestMethod.PAY_KEYSEND:
                 response = await pay_keysend(params)
             case Nip47RequestMethod.PAY_TO_ADDRESS:
-                response = await pay_to_address(uma_access_token, nip47_request)
+                response = (
+                    await pay_to_address(uma_access_token, nip47_request)
+                ).to_dict()
             case _:
                 response = Nip47Error(
                     code=ErrorCode.NOT_IMPLEMENTED,
