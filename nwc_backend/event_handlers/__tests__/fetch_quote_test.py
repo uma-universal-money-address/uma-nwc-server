@@ -50,14 +50,7 @@ async def test_fetch_quote_success(mock_get: Mock) -> None:
     params["receiver_address"] = receiver_address
     mock_get.assert_called_once_with(url="/quote/lud16", params=params, headers=ANY)
 
-    assert quote.sending_currency_code == vasp_response["sending_currency_code"]
-    assert quote.receiving_currency_code == vasp_response["receiving_currency_code"]
-    assert quote.payment_hash == vasp_response["payment_hash"]
-    assert quote.expires_at == vasp_response["expires_at"]
-    assert quote.multiplier == vasp_response["multiplier"]
-    assert quote.fees == vasp_response["fees"]
-    assert quote.total_sending_amount == vasp_response["total_sending_amount"]
-    assert quote.created_at == vasp_response["created_at"]
+    assert quote.to_dict() == vasp_response
 
 
 async def test_fetch_quote_failure__invalid_input() -> None:
