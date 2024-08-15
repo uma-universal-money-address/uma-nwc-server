@@ -1,57 +1,34 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import logging
-from typing import Any
-
 from aiohttp import ClientResponseError
-from nostr_sdk import ErrorCode, Nip47Error
+from nostr_sdk import ErrorCode
+from uma_auth.models.lookup_user_response import LookupUserResponse
 
-from nwc_backend.exceptions import InvalidInputException
-from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.vasp_client import (
-    AddressType,
-    ReceivingAddress,
-    VaspUmaClient,
+from nwc_backend.event_handlers.input_validator import (
+    get_optional_field,
+    get_required_field,
 )
+from nwc_backend.exceptions import Nip47RequestException
+from nwc_backend.models.nip47_request import Nip47Request
+from nwc_backend.vasp_client import ReceivingAddress, VaspUmaClient
 
 
-async def lookup_user(
-    access_token: str,
-    request: Nip47Request,
-    vasp_client: VaspUmaClient,
-) -> dict[str, Any] | Nip47Error:
-    receiver = request.params.get("receiver")
-    if receiver is None:
-        return Nip47Error(
-            code=ErrorCode.OTHER,
-            message="Require `receiver` in the request params.",
-        )
-
+async def lookup_user(access_token: str, request: Nip47Request) -> LookupUserResponse:
+    receiver = get_required_field(request.params, "receiver", dict)
+    receiver_address = ReceivingAddress.from_dict(receiver)
+    base_sending_currency_code = get_optional_field(
+        request.params, "base_sending_currency_code", str
+    )
     try:
-        receiving_address = ReceivingAddress.from_dict(receiver)
-    except InvalidInputException as ex:
-        return Nip47Error(
-            code=ErrorCode.OTHER,
-            message=ex.error_message,
-        )
-    if receiving_address.type == AddressType.BOLT12:
-        return Nip47Error(
-            code=ErrorCode.NOT_IMPLEMENTED,
-            message="Bolt12 is not yet supported.",
-        )
-
-    try:
-        response = await vasp_client.lookup_user(
+        return await VaspUmaClient().lookup_user(
             access_token=access_token,
-            receiving_address=receiving_address,
-            base_sending_currency_code=request.params.get("base_sending_currency_code"),
+            receiver_address=receiver_address,
+            base_sending_currency_code=base_sending_currency_code,
         )
-        return response.to_dict()
     except ClientResponseError as ex:
         if ex.status == 404:
-            return Nip47Error(code=ErrorCode.NOT_FOUND, message=ex.message)
-
-        logging.exception("Request lookup_user %s failed", str(request.id))
-        # TODO: more granular error code
-        return Nip47Error(code=ErrorCode.OTHER, message=ex.message)
+            raise Nip47RequestException(
+                error_code=ErrorCode.NOT_FOUND, error_message=ex.message
+            ) from ex
+        raise

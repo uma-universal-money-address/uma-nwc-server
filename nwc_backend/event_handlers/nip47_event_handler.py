@@ -30,7 +30,6 @@ from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.nostr_client import nostr_client
-from nwc_backend.vasp_client import VaspUmaClient
 
 
 async def handle_nip47_event(event: Event) -> None:
@@ -121,9 +120,9 @@ async def handle_nip47_event(event: Event) -> None:
                     await lookup_invoice(uma_access_token, nip47_request)
                 ).to_dict()
             case Nip47RequestMethod.LOOKUP_USER:
-                response = await lookup_user(
-                    uma_access_token, nip47_request, VaspUmaClient.instance()
-                )
+                response = (
+                    await lookup_user(uma_access_token, nip47_request)
+                ).to_dict()
             case Nip47RequestMethod.MAKE_INVOICE:
                 response = (
                     await make_invoice(uma_access_token, nip47_request)
