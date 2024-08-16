@@ -198,7 +198,7 @@ class VaspUmaClient:
     async def lookup_user(
         self,
         access_token: str,
-        receiving_address: ReceivingAddress,
+        receiver_address: ReceivingAddress,
         base_sending_currency_code: Optional[str],
     ) -> LookupUserResponse:
         params = (
@@ -207,7 +207,7 @@ class VaspUmaClient:
             else None
         )
         result = await self._make_http_get(
-            path=f"/receiver/{receiving_address.type.value}/{receiving_address.address}",
+            path=f"/receiver/{receiver_address.type.value}/{receiver_address.address}",
             access_token=access_token,
             params=params,
         )

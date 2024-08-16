@@ -6,13 +6,13 @@ from uma_auth.models.transaction import TransactionType
 
 from nwc_backend.event_handlers.input_validator import get_optional_field
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.vasp_client import vasp_uma_client
+from nwc_backend.vasp_client import VaspUmaClient
 
 
 async def list_transactions(
     access_token: str, request: Nip47Request
 ) -> ListTransactionsResponse:
-    return await vasp_uma_client.list_transactions(
+    return await VaspUmaClient.instance().list_transactions(
         access_token=access_token,
         from_timestamp=get_optional_field(request.params, "from", int),
         until_timestamp=get_optional_field(request.params, "until", int),
