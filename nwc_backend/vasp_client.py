@@ -62,6 +62,14 @@ class VaspUmaClient:
     def __init__(self) -> None:
         self.base_url: str = os.environ["VASP_UMA_API_BASE_URL"]
 
+    @staticmethod
+    def instance() -> "VaspUmaClient":
+        global _vasp_uma_client  # noqa: PLW0603
+        if _vasp_uma_client is None:
+            _vasp_uma_client = VaspUmaClient()
+
+        return _vasp_uma_client
+
     async def _make_http_get(
         self, path: str, access_token: str, params: Optional[dict[str, Any]] = None
     ) -> str:
@@ -200,4 +208,4 @@ class VaspUmaClient:
         return PayToAddressResponse.from_json(result)
 
 
-vasp_uma_client = VaspUmaClient()
+_vasp_uma_client: Optional[VaspUmaClient] = None

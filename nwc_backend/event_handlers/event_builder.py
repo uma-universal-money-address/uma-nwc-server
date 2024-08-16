@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 from nostr_sdk import Event, Keys, Kind, KindEnum, Nip47Error, PublicKey, nip04_encrypt
 
-from nwc_backend.configs.nostr_config import nostr_config
+from nwc_backend.configs.nostr_config import NostrConfig
 from nwc_backend.exceptions import EventBuilderException
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 
@@ -30,7 +30,7 @@ class EventBuilder:
             raise EventBuilderException("Content has already been encrypted.")
 
         self.content = nip04_encrypt(
-            secret_key=nostr_config.identity_privkey,
+            secret_key=NostrConfig.instance().identity_privkey,
             public_key=recipient_pubkey,
             content=self.content,
         )
@@ -53,7 +53,7 @@ class EventBuilder:
             json.dumps(
                 {
                     "id": event_id,
-                    "pubkey": nostr_config.identity_pubkey.to_hex(),
+                    "pubkey": NostrConfig.instance().identity_pubkey.to_hex(),
                     "created_at": self.created_at,
                     "kind": self.kind.as_u16(),
                     "tags": self.tags,
@@ -66,7 +66,7 @@ class EventBuilder:
     def _compute_id(self) -> str:
         data = [
             0,
-            nostr_config.identity_pubkey.to_hex(),
+            NostrConfig.instance().identity_pubkey.to_hex(),
             self.created_at,
             self.kind.as_u16(),
             self.tags,
@@ -76,7 +76,7 @@ class EventBuilder:
         return sha256(serialized_data.encode()).hexdigest()
 
     def _sign(self, message: str) -> str:
-        keys = Keys.parse(nostr_config.identity_privkey.to_hex())
+        keys = Keys.parse(NostrConfig.instance().identity_privkey.to_hex())
         return keys.sign_schnorr(bytes.fromhex(message))
 
 
@@ -90,7 +90,7 @@ def create_nip47_response(
             content=json.dumps(content),
         )
         .encrypt_content(event.author())
-        .add_tag(["p", nostr_config.identity_pubkey.to_hex()])
+        .add_tag(["p", NostrConfig.instance().identity_pubkey.to_hex()])
         .add_tag(["e", event.id().to_hex()])
         .build()
     )
@@ -111,7 +111,7 @@ def create_nip47_error_response(
             content=json.dumps(content),
         )
         .encrypt_content(event.author())
-        .add_tag(["p", nostr_config.identity_pubkey.to_hex()])
+        .add_tag(["p", NostrConfig.instance().identity_pubkey.to_hex()])
         .add_tag(["e", event.id().to_hex()])
         .build()
     )

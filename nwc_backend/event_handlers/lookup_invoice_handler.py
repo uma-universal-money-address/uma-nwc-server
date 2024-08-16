@@ -10,7 +10,7 @@ from uma_auth.models.transaction import Transaction
 from nwc_backend.event_handlers.input_validator import get_optional_field
 from nwc_backend.exceptions import InvalidInputException, Nip47RequestException
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.vasp_client import vasp_uma_client
+from nwc_backend.vasp_client import VaspUmaClient
 
 
 async def lookup_invoice(access_token: str, request: Nip47Request) -> Transaction:
@@ -30,7 +30,7 @@ async def lookup_invoice(access_token: str, request: Nip47Request) -> Transactio
             raise InvalidInputException("Cannot decode `invoice`.")
 
     try:
-        return await vasp_uma_client.lookup_invoice(
+        return await VaspUmaClient.instance().lookup_invoice(
             access_token=access_token, payment_hash=payment_hash
         )
     except ClientResponseError as ex:

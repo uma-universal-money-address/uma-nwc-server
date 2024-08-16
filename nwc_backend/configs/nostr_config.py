@@ -3,6 +3,7 @@
 
 import os
 from dataclasses import dataclass
+from typing import Optional
 
 from nostr_sdk import Keys, PublicKey, SecretKey
 
@@ -15,12 +16,24 @@ class NostrConfig:
 
     @staticmethod
     def load() -> "NostrConfig":
-        keys = Keys.parse(os.environ["NOSTR_PRIVKEY"])
+        if "NOSRT_PRIVKEY_FILE" in os.environ:
+            with open(os.environ["NOSTR_PRIVKEY_FILE"], "r") as f:
+                keys = Keys.parse(f.read())
+        else:
+            keys = Keys.parse(os.environ["NOSTR_PRIVKEY"])
         return NostrConfig(
             relay_url=os.environ["RELAY"],
             identity_privkey=keys.secret_key(),
             identity_pubkey=keys.public_key(),
         )
 
+    @staticmethod
+    def instance() -> "NostrConfig":
+        global _nostr_config  # noqa: PLW0603
+        if _nostr_config is None:
+            _nostr_config = NostrConfig.load()
 
-nostr_config: NostrConfig = NostrConfig.load()
+        return _nostr_config
+
+
+_nostr_config: Optional[NostrConfig] = None

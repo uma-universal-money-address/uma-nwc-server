@@ -9,13 +9,13 @@ from uma_auth.models.pay_invoice_response import PayInvoiceResponse
 
 from nwc_backend.exceptions import Nip47RequestException
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.vasp_client import vasp_uma_client
+from nwc_backend.vasp_client import VaspUmaClient
 
 
 async def pay_invoice(access_token: str, request: Nip47Request) -> PayInvoiceResponse:
     pay_invoice_request = PayInvoiceRequest.from_dict(request.params)
     try:
-        return await vasp_uma_client.pay_invoice(
+        return await VaspUmaClient.instance().pay_invoice(
             access_token=access_token, request=pay_invoice_request
         )
     except ClientResponseError as ex:

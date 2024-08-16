@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from werkzeug import Response as WerkzeugResponse
 
 import nwc_backend.alembic_importer  # noqa: F401
-from nwc_backend.configs.nostr_config import nostr_config
+from nwc_backend.configs.nostr_config import NostrConfig
 from nwc_backend.db import db
 from nwc_backend.event_handlers.event_builder import EventBuilder
 from nwc_backend.exceptions import PublishEventFailedException
@@ -44,7 +44,6 @@ def create_app() -> Quart:
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     async def serve_frontend(path: str) -> Response:
-        print("path", path, send_from_directory)
         if not app.static_folder:
             return Response("No frontend build path provided", status=500)
         static_folder: str = app.static_folder
@@ -186,14 +185,14 @@ def create_app() -> Quart:
 
 
 async def init_nostr_client() -> None:
-    await nostr_client.add_relay(nostr_config.relay_url)
+    await nostr_client.add_relay(NostrConfig.instance().relay_url)
     await nostr_client.connect()
 
     await _publish_nip47_info()
 
     nip47_filter = (
         Filter()
-        .pubkey(nostr_config.identity_pubkey)
+        .pubkey(NostrConfig.instance().identity_pubkey)
         .kind(Kind.from_enum(KindEnum.WALLET_CONNECT_REQUEST()))  # pyre-ignore[6]
     )
     await nostr_client.subscribe([nip47_filter])

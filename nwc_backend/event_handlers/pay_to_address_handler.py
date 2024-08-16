@@ -11,7 +11,7 @@ from uma_auth.models.pay_to_address_response import PayToAddressResponse
 from nwc_backend.event_handlers.input_validator import get_required_field
 from nwc_backend.exceptions import Nip47RequestException
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.vasp_client import ReceivingAddress, vasp_uma_client
+from nwc_backend.vasp_client import ReceivingAddress, VaspUmaClient
 
 
 async def pay_to_address(
@@ -25,7 +25,7 @@ async def pay_to_address(
 
     pay_to_address_request = PayToAddressRequest.from_dict(params)
     try:
-        return await vasp_uma_client.pay_to_address(
+        return await VaspUmaClient.instance().pay_to_address(
             access_token=access_token,
             request=pay_to_address_request,
             address_type=receiving_address.type,

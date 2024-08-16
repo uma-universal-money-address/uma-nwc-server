@@ -9,7 +9,7 @@ from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.vasp_client import (
     LockedCurrencySide,
     ReceivingAddress,
-    vasp_uma_client,
+    VaspUmaClient,
 )
 
 
@@ -28,7 +28,7 @@ async def fetch_quote(access_token: str, request: Nip47Request) -> Quote:
     )
     receiver = get_required_field(request.params, "receiver", dict)
     receiving_address = ReceivingAddress.from_dict(receiver)
-    return await vasp_uma_client.fetch_quote(
+    return await VaspUmaClient.instance().fetch_quote(
         access_token=access_token,
         sending_currency_code=sending_currency_code,
         receiving_currency_code=receiving_currency_code,

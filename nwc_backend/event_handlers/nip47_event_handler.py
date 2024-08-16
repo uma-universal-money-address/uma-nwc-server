@@ -9,7 +9,7 @@ from aiohttp import ClientResponseError
 from nostr_sdk import ErrorCode, Event, Nip47Error, TagKind, nip04_decrypt
 from pydantic_core import ValidationError as PydanticValidationError
 
-from nwc_backend.configs.nostr_config import nostr_config
+from nwc_backend.configs.nostr_config import NostrConfig
 from nwc_backend.event_handlers.event_builder import (
     create_nip47_error_response,
     create_nip47_response,
@@ -30,6 +30,7 @@ from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.nostr_client import nostr_client
+from nwc_backend.vasp_client import VaspUmaClient
 
 
 async def handle_nip47_event(event: Event) -> None:
@@ -66,7 +67,7 @@ async def handle_nip47_event(event: Event) -> None:
 
     content = json.loads(
         nip04_decrypt(
-            secret_key=nostr_config.identity_privkey,
+            secret_key=NostrConfig.instance().identity_privkey,
             public_key=event.author(),
             encrypted_content=event.content(),
         )
@@ -118,7 +119,9 @@ async def handle_nip47_event(event: Event) -> None:
                     await lookup_invoice(uma_access_token, nip47_request)
                 ).to_dict()
             case Nip47RequestMethod.LOOKUP_USER:
-                response = await lookup_user(uma_access_token, nip47_request)
+                response = await lookup_user(
+                    uma_access_token, nip47_request, VaspUmaClient.instance()
+                )
             case Nip47RequestMethod.MAKE_INVOICE:
                 response = (
                     await make_invoice(uma_access_token, nip47_request)
