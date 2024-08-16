@@ -9,6 +9,7 @@ from unittest.mock import ANY, AsyncMock, Mock, patch
 import aiohttp
 import pytest
 
+from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
 from nwc_backend.event_handlers.fetch_quote_handler import fetch_quote
 from nwc_backend.exceptions import InvalidInputException, NotImplementedException
 from nwc_backend.models.nip47_request import Nip47Request
@@ -50,14 +51,41 @@ async def test_fetch_quote_success(mock_get: Mock) -> None:
     params["receiver_address"] = receiver_address
     mock_get.assert_called_once_with(url="/quote/lud16", params=params, headers=ANY)
 
-    assert quote.sending_currency_code == vasp_response["sending_currency_code"]
-    assert quote.receiving_currency_code == vasp_response["receiving_currency_code"]
-    assert quote.payment_hash == vasp_response["payment_hash"]
-    assert quote.expires_at == vasp_response["expires_at"]
-    assert quote.multiplier == vasp_response["multiplier"]
-    assert quote.fees == vasp_response["fees"]
-    assert quote.total_sending_amount == vasp_response["total_sending_amount"]
-    assert quote.created_at == vasp_response["created_at"]
+    assert exclude_none_values(quote.to_dict()) == vasp_response
+
+
+async def test_fetch_quote_failure__no_receivers() -> None:
+    with pytest.raises(InvalidInputException):
+        await fetch_quote(
+            access_token=token_hex(),
+            request=Nip47Request(
+                params={
+                    "sending_currency_code": "SAT",
+                    "receiving_currency_code": "USD",
+                    "locked_currency_amount": 1_000_000,
+                    "locked_currency_side": "sending",
+                }
+            ),
+        )
+
+
+async def test_fetch_quote_failure__multiple_receivers() -> None:
+    with pytest.raises(InvalidInputException):
+        await fetch_quote(
+            access_token=token_hex(),
+            request=Nip47Request(
+                params={
+                    "receiver": {
+                        "lud16": "$alice@uma.me",
+                        "bolt12": "lno1qqszqfnjxapqxqrrzd9hxyarjwpzqarhdaexgmm9wejkgtm9venj2cmyde3x7urpwp8xgetr5fpqqg5w",
+                    },
+                    "sending_currency_code": "SAT",
+                    "receiving_currency_code": "USD",
+                    "locked_currency_amount": 1_000_000,
+                    "locked_currency_side": "sending",
+                }
+            ),
+        )
 
 
 async def test_fetch_quote_failure__invalid_input() -> None:

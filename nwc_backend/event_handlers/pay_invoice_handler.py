@@ -1,27 +1,25 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import logging
-from typing import Any
 
 from aiohttp import ClientResponseError
-from nostr_sdk import ErrorCode, Nip47Error
+from nostr_sdk import ErrorCode
 from uma_auth.models.pay_invoice_request import PayInvoiceRequest
+from uma_auth.models.pay_invoice_response import PayInvoiceResponse
 
+from nwc_backend.exceptions import Nip47RequestException
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.vasp_client import VaspUmaClient
 
 
-async def pay_invoice(
-    access_token: str, request: Nip47Request
-) -> dict[str, Any] | Nip47Error:
+async def pay_invoice(access_token: str, request: Nip47Request) -> PayInvoiceResponse:
     pay_invoice_request = PayInvoiceRequest.from_dict(request.params)
     try:
-        response = await VaspUmaClient.instance().pay_invoice(
+        return await VaspUmaClient.instance().pay_invoice(
             access_token=access_token, request=pay_invoice_request
         )
-        return response.to_dict()
     except ClientResponseError as ex:
-        logging.exception("Request pay_invoice %s failed", str(request.id))
         # TODO: more granular error code
-        return Nip47Error(code=ErrorCode.PAYMENT_FAILED, message=ex.message)
+        raise Nip47RequestException(
+            error_code=ErrorCode.PAYMENT_FAILED, error_message=ex.message
+        ) from ex

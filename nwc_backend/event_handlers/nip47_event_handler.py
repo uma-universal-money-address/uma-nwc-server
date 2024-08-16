@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from aiohttp import ClientResponseError
 from nostr_sdk import ErrorCode, Event, Nip47Error, TagKind, nip04_decrypt
+from pydantic_core import ValidationError as PydanticValidationError
 
 from nwc_backend.configs.nostr_config import NostrConfig
 from nwc_backend.event_handlers.event_builder import (
@@ -95,7 +96,6 @@ async def handle_nip47_event(event: Event) -> None:
     )
 
     uma_access_token = app_connection.nwc_connection.long_lived_vasp_token
-    vasp_client = VaspUmaClient.instance()
     try:
         match method:
             case Nip47RequestMethod.EXECUTE_QUOTE:
@@ -107,27 +107,35 @@ async def handle_nip47_event(event: Event) -> None:
                     await fetch_quote(uma_access_token, nip47_request)
                 ).to_dict()
             case Nip47RequestMethod.GET_BALANCE:
-                response = await get_balance(uma_access_token, nip47_request)
+                response = (
+                    await get_balance(uma_access_token, nip47_request)
+                ).to_dict()
             case Nip47RequestMethod.GET_INFO:
-                response = await get_info(uma_access_token, nip47_request, vasp_client)
+                response = (await get_info(uma_access_token, nip47_request)).to_dict()
             case Nip47RequestMethod.LIST_TRANSACTIONS:
                 response = await list_transactions(params)
             case Nip47RequestMethod.LOOKUP_INVOICE:
-                response = await lookup_invoice(
-                    uma_access_token, nip47_request, vasp_client
-                )
+                response = (
+                    await lookup_invoice(uma_access_token, nip47_request)
+                ).to_dict()
             case Nip47RequestMethod.LOOKUP_USER:
                 response = await lookup_user(
-                    uma_access_token, nip47_request, vasp_client
+                    uma_access_token, nip47_request, VaspUmaClient.instance()
                 )
             case Nip47RequestMethod.MAKE_INVOICE:
-                response = await make_invoice(uma_access_token, nip47_request)
+                response = (
+                    await make_invoice(uma_access_token, nip47_request)
+                ).to_dict()
             case Nip47RequestMethod.PAY_INVOICE:
-                response = await pay_invoice(uma_access_token, nip47_request)
+                response = (
+                    await pay_invoice(uma_access_token, nip47_request)
+                ).to_dict()
             case Nip47RequestMethod.PAY_KEYSEND:
                 response = await pay_keysend(params)
             case Nip47RequestMethod.PAY_TO_ADDRESS:
-                response = await pay_to_address(uma_access_token, nip47_request)
+                response = (
+                    await pay_to_address(uma_access_token, nip47_request)
+                ).to_dict()
             case _:
                 response = Nip47Error(
                     code=ErrorCode.NOT_IMPLEMENTED,
@@ -136,7 +144,12 @@ async def handle_nip47_event(event: Event) -> None:
     except Exception as ex:
         logging.exception("Request %s %s failed", method, str(nip47_request.id))
 
-        if isinstance(ex, Nip47RequestException):
+        if isinstance(ex, PydanticValidationError):
+            response = Nip47Error(
+                code=ErrorCode.OTHER,
+                message=str(ex),
+            )
+        elif isinstance(ex, Nip47RequestException):
             response = Nip47Error(
                 code=ex.error_code,
                 message=ex.error_message,

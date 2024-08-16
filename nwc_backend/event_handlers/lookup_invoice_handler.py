@@ -1,13 +1,14 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import logging
-from typing import Any
 
 from aiohttp import ClientResponseError
 from bolt11 import decode as bolt11_decode
-from nostr_sdk import ErrorCode, Nip47Error
+from nostr_sdk import ErrorCode
+from uma_auth.models.transaction import Transaction
 
+from nwc_backend.event_handlers.input_validator import get_optional_field
+from nwc_backend.exceptions import InvalidInputException, Nip47RequestException
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.vasp_client import VaspUmaClient
 
@@ -16,40 +17,29 @@ async def lookup_invoice(
     access_token: str,
     request: Nip47Request,
     vasp_client: VaspUmaClient,
-) -> dict[str, Any] | Nip47Error:
-    payment_hash = None
-    if request.params.get("payment_hash"):
-        payment_hash = request.params["payment_hash"]
-
-    if request.params.get("invoice"):
-        if payment_hash:
-            return Nip47Error(
-                code=ErrorCode.OTHER,
-                message="One of `payment_hash` or `invoice` is required, found both.",
-            )
-        try:
-            payment_hash = bolt11_decode(request.params["invoice"]).payment_hash
-        except Exception:
-            return Nip47Error(
-                code=ErrorCode.OTHER,
-                message="Cannot decode `invoice`.",
-            )
+) -> Transaction:
+    payment_hash = get_optional_field(request.params, "payment_hash", str)
+    invoice = get_optional_field(request.params, "invoice", str)
+    if payment_hash and invoice:
+        raise InvalidInputException(
+            "Only one of `payment_hash` or `invoice` is required, found both."
+        )
+    if not payment_hash and not invoice:
+        raise InvalidInputException("One of `payment_hash` or `invoice` is required.")
 
     if not payment_hash:
-        return Nip47Error(
-            code=ErrorCode.OTHER,
-            message="One of `payment_hash` or `invoice` is required.",
-        )
+        try:
+            payment_hash = bolt11_decode(invoice).payment_hash
+        except Exception:
+            raise InvalidInputException("Cannot decode `invoice`.")
 
     try:
-        response = await vasp_client.lookup_invoice(
+        return await vasp_client.lookup_invoice(
             access_token=access_token, payment_hash=payment_hash
         )
-        return response.to_dict()
     except ClientResponseError as ex:
         if ex.status == 404:
-            return Nip47Error(code=ErrorCode.NOT_FOUND, message=ex.message)
-
-        logging.exception("Request lookup_invoice %s failed", str(request.id))
-        # TODO: more granular error code
-        return Nip47Error(code=ErrorCode.OTHER, message=ex.message)
+            raise Nip47RequestException(
+                error_code=ErrorCode.NOT_FOUND, error_message=ex.message
+            ) from ex
+        raise
