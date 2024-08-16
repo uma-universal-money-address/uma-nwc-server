@@ -23,7 +23,6 @@ from nwc_backend.event_handlers.lookup_invoice_handler import lookup_invoice
 from nwc_backend.event_handlers.lookup_user_handler import lookup_user
 from nwc_backend.event_handlers.make_invoice_handler import make_invoice
 from nwc_backend.event_handlers.pay_invoice_handler import pay_invoice
-from nwc_backend.event_handlers.pay_keysend_handler import pay_keysend
 from nwc_backend.event_handlers.pay_to_address_handler import pay_to_address
 from nwc_backend.exceptions import Nip47RequestException
 from nwc_backend.models.app_connection import AppConnection
@@ -98,45 +97,25 @@ async def handle_nip47_event(event: Event) -> None:
     try:
         match method:
             case Nip47RequestMethod.EXECUTE_QUOTE:
-                response = (
-                    await execute_quote(uma_access_token, nip47_request)
-                ).to_dict()
+                response = await execute_quote(uma_access_token, nip47_request)
             case Nip47RequestMethod.FETCH_QUOTE:
-                response = (
-                    await fetch_quote(uma_access_token, nip47_request)
-                ).to_dict()
+                response = await fetch_quote(uma_access_token, nip47_request)
             case Nip47RequestMethod.GET_BALANCE:
-                response = (
-                    await get_balance(uma_access_token, nip47_request)
-                ).to_dict()
+                response = await get_balance(uma_access_token, nip47_request)
             case Nip47RequestMethod.GET_INFO:
-                response = (await get_info(uma_access_token, nip47_request)).to_dict()
+                response = await get_info(uma_access_token, nip47_request)
             case Nip47RequestMethod.LIST_TRANSACTIONS:
-                response = (
-                    await list_transactions(uma_access_token, nip47_request)
-                ).to_dict()
+                response = await list_transactions(uma_access_token, nip47_request)
             case Nip47RequestMethod.LOOKUP_INVOICE:
-                response = (
-                    await lookup_invoice(uma_access_token, nip47_request)
-                ).to_dict()
+                response = await lookup_invoice(uma_access_token, nip47_request)
             case Nip47RequestMethod.LOOKUP_USER:
-                response = (
-                    await lookup_user(uma_access_token, nip47_request)
-                ).to_dict()
+                response = await lookup_user(uma_access_token, nip47_request)
             case Nip47RequestMethod.MAKE_INVOICE:
-                response = (
-                    await make_invoice(uma_access_token, nip47_request)
-                ).to_dict()
+                response = await make_invoice(uma_access_token, nip47_request)
             case Nip47RequestMethod.PAY_INVOICE:
-                response = (
-                    await pay_invoice(uma_access_token, nip47_request)
-                ).to_dict()
-            case Nip47RequestMethod.PAY_KEYSEND:
-                response = await pay_keysend(params)
+                response = await pay_invoice(uma_access_token, nip47_request)
             case Nip47RequestMethod.PAY_TO_ADDRESS:
-                response = (
-                    await pay_to_address(uma_access_token, nip47_request)
-                ).to_dict()
+                response = await pay_to_address(uma_access_token, nip47_request)
             case _:
                 response = Nip47Error(
                     code=ErrorCode.NOT_IMPLEMENTED,
@@ -171,6 +150,7 @@ async def handle_nip47_event(event: Event) -> None:
             event=event, method=method, error=response
         )
     else:
+        response = response.to_dict()
         response_event = create_nip47_response(
             event=event, method=method, result=response
         )
