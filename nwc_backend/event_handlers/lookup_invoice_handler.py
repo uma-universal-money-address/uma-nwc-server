@@ -13,11 +13,7 @@ from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.vasp_client import VaspUmaClient
 
 
-async def lookup_invoice(
-    access_token: str,
-    request: Nip47Request,
-    vasp_client: VaspUmaClient,
-) -> Transaction:
+async def lookup_invoice(access_token: str, request: Nip47Request) -> Transaction:
     payment_hash = get_optional_field(request.params, "payment_hash", str)
     invoice = get_optional_field(request.params, "invoice", str)
     if payment_hash and invoice:
@@ -34,7 +30,7 @@ async def lookup_invoice(
             raise InvalidInputException("Cannot decode `invoice`.")
 
     try:
-        return await vasp_client.lookup_invoice(
+        return await VaspUmaClient.instance().lookup_invoice(
             access_token=access_token, payment_hash=payment_hash
         )
     except ClientResponseError as ex:
