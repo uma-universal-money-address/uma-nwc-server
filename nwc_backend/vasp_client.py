@@ -10,6 +10,7 @@ import aiohttp
 from uma_auth.models.execute_quote_response import ExecuteQuoteResponse
 from uma_auth.models.get_balance_response import GetBalanceResponse
 from uma_auth.models.get_info_response import GetInfoResponse
+from uma_auth.models.list_transactions_response import ListTransactionsResponse
 from uma_auth.models.lookup_user_response import LookupUserResponse
 from uma_auth.models.make_invoice_request import MakeInvoiceRequest
 from uma_auth.models.pay_invoice_request import PayInvoiceRequest
@@ -17,7 +18,7 @@ from uma_auth.models.pay_invoice_response import PayInvoiceResponse
 from uma_auth.models.pay_to_address_request import PayToAddressRequest
 from uma_auth.models.pay_to_address_response import PayToAddressResponse
 from uma_auth.models.quote import Quote
-from uma_auth.models.transaction import Transaction
+from uma_auth.models.transaction import Transaction, TransactionType
 
 from nwc_backend.exceptions import InvalidInputException, NotImplementedException
 
@@ -151,6 +152,37 @@ class VaspUmaClient:
             access_token=access_token,
         )
         return GetInfoResponse.from_json(result)
+
+    async def list_transactions(
+        self,
+        access_token: str,
+        from_timestamp: Optional[int] = None,
+        until_timestamp: Optional[int] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        unpaid: Optional[bool] = None,
+        type: Optional[TransactionType] = None,
+    ) -> ListTransactionsResponse:
+        params = {}
+        if from_timestamp is not None:
+            params["from"] = from_timestamp
+        if until_timestamp is not None:
+            params["until"] = until_timestamp
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+        if unpaid is not None:
+            params["unpaid"] = unpaid
+        if type is not None:
+            params["type"] = type
+
+        result = await self._make_http_get(
+            path="/transactions",
+            access_token=access_token,
+            params=params if params else None,
+        )
+        return ListTransactionsResponse.from_json(result)
 
     async def lookup_invoice(
         self,

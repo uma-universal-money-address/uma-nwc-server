@@ -113,7 +113,9 @@ async def handle_nip47_event(event: Event) -> None:
             case Nip47RequestMethod.GET_INFO:
                 response = (await get_info(uma_access_token, nip47_request)).to_dict()
             case Nip47RequestMethod.LIST_TRANSACTIONS:
-                response = await list_transactions(params)
+                response = (
+                    await list_transactions(uma_access_token, nip47_request)
+                ).to_dict()
             case Nip47RequestMethod.LOOKUP_INVOICE:
                 response = (
                     await lookup_invoice(uma_access_token, nip47_request)
