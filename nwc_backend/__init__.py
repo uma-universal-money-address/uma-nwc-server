@@ -41,6 +41,14 @@ def create_app() -> Quart:
     async def serve(path: str) -> dict[str, Any]:
         return {"hello": "world"}
 
+    @app.route("/-/alive")
+    def alive() -> str:
+        return "ok"
+
+    @app.route("/-/ready")
+    def ready() -> str:
+        return "ok"
+
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     async def serve_frontend(path: str) -> Response:
