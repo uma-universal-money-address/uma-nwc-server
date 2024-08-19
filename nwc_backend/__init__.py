@@ -42,11 +42,11 @@ def create_app() -> Quart:
         return {"hello": "world"}
 
     @app.route("/-/alive")
-    def alive():
+    def alive() -> str:
         return "ok"
 
     @app.route("/-/ready")
-    def ready():
+    def ready() -> str:
         return "ok"
 
     @app.route("/", defaults={"path": ""})
