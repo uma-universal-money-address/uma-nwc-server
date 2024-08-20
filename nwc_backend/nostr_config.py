@@ -4,26 +4,21 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from nostr_sdk import Keys, PublicKey, SecretKey
+from nostr_sdk import Keys
 from quart import Quart, current_app
 
 
 @dataclass
 class NostrConfig:
     relay_url: str
-    identity_privkey: SecretKey
-    identity_pubkey: PublicKey
+    identity_keys: Keys
 
     @staticmethod
     def load(app: Optional[Quart] = None) -> "NostrConfig":
         if app is None:
             app = current_app
         keys = Keys.parse(app.config["NOSTR_PRIVKEY"])
-        return NostrConfig(
-            relay_url=app.config["RELAY"],
-            identity_privkey=keys.secret_key(),
-            identity_pubkey=keys.public_key(),
-        )
+        return NostrConfig(relay_url=app.config["RELAY"], identity_keys=keys)
 
     @staticmethod
     def instance(app: Optional[Quart] = None) -> "NostrConfig":
