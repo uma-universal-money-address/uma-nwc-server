@@ -8,6 +8,7 @@ from nostr_sdk import Keys
 
 from nwc_backend.db import db
 from nwc_backend.models.app_connection import AppConnection
+from nwc_backend.models.app_connection_status import AppConnectionStatus
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
@@ -28,7 +29,7 @@ def create_client_app() -> ClientApp:
         id=uuid4(),
         client_id=f"{nostr_pubkey} {identity_relay}",
         app_name="Blue Drink",
-        description="An instant messaging app",
+        display_name="Blue Drink",
     )
     db.session.add(client_app)
     db.session.commit()
@@ -77,6 +78,7 @@ def create_app_connection(
         refresh_token_expires_at=int((now + timedelta(days=120)).timestamp()),
         authorization_code=token_hex(),
         authorization_code_expires_at=int((now + timedelta(minutes=10)).timestamp()),
+        status=AppConnectionStatus.ACTIVE,
     )
 
     db.session.add(app_connection)

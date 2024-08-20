@@ -11,9 +11,13 @@ from aioauth.utils import generate_token
 from nostr_sdk import Keys
 from quart import Response
 from werkzeug.datastructures import Headers
+from sqlalchemy.exc import IntegrityError
 
 from nwc_backend.db import db
+from nwc_backend.exceptions import ActiveAppConnectionAlreadyExistsException
 from nwc_backend.models.app_connection import AppConnection
+from nwc_backend.models.app_connection_status import AppConnectionStatus
+
 
 ACCESS_TOKEN_EXPIRES_IN = 30 * 24 * 60 * 60
 REFRESH_TOKEN_EXPIRES_IN = 120 * 24 * 60 * 60
@@ -53,20 +57,26 @@ class OauthStorage:
         new_nostr_pubkey = new_key_pair.public_key
         new_refresh_token = generate_refresh_token()
 
-        app_connection = AppConnection(
-            id=uuid4(),
-            nwc_connection_id=nwc_connection_id,
-            authorization_code=auth_code,
-            access_token=new_access_token,
-            nostr_pubkey=new_nostr_pubkey,
-            refresh_token=new_refresh_token,
-            access_token_expires_at=int(time()) + ACCESS_TOKEN_EXPIRES_IN,
-            refresh_token_expires_at=int(time()) + REFRESH_TOKEN_EXPIRES_IN,
-            authorization_code_expires_at=int(time()) + AUTHORIZATION_CODE_EXPIRES_IN,
-        )
-
-        db.session.add(app_connection)
-        db.session.commit()
+        try:
+            app_connection = AppConnection(
+                id=uuid4(),
+                nwc_connection_id=nwc_connection_id,
+                authorization_code=auth_code,
+                access_token=new_access_token,
+                nostr_pubkey=new_nostr_pubkey,
+                refresh_token=new_refresh_token,
+                access_token_expires_at=int(time()) + ACCESS_TOKEN_EXPIRES_IN,
+                refresh_token_expires_at=int(time()) + REFRESH_TOKEN_EXPIRES_IN,
+                authorization_code_expires_at=int(time())
+                + AUTHORIZATION_CODE_EXPIRES_IN,
+                status=AppConnectionStatus.ACTIVE,
+            )
+            db.session.add(app_connection)
+            db.session.commit()
+        except IntegrityError as e:
+            raise ActiveAppConnectionAlreadyExistsException(
+                "App connection already exists", e
+            )
 
         return app_connection
 
