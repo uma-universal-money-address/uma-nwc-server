@@ -32,8 +32,9 @@ class NWCConnection(ModelBase):
     supported_commands: Mapped[str] = mapped_column(  # Store JSON as string
         Text(), nullable=False
     )
-    connection_expiration: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
+    connection_expires_at: Mapped[int] = mapped_column(
+        Integer(),
+        nullable=False,
     )
     max_budget_per_month: Mapped[Optional[int]] = mapped_column(Integer())
     long_lived_vasp_token: Mapped[str] = mapped_column(String(255), nullable=True)

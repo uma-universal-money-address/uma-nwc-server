@@ -10,12 +10,11 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-import nwc_backend.db
-
+from nwc_backend.db import UUID
 
 # revision identifiers, used by Alembic.
 revision: str = "0fc63b5c0f6c"
-down_revision: Union[str, None] = "556f426aa133"
+down_revision: Union[str, None] = "15d5b0a9bde9"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -28,7 +27,7 @@ def upgrade() -> None:
         sa.Column("app_name", sa.String(length=255), nullable=False),
         sa.Column("description", sa.String(length=255), nullable=False),
         sa.Column("client_metadata", sa.Text(), nullable=True),
-        sa.Column("id", nwc_backend.db.UUID(), nullable=False),
+        sa.Column("id", UUID(), nullable=False),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -59,9 +58,7 @@ def upgrade() -> None:
         batch_op.create_unique_constraint("unique_access_token", ["access_token"])
 
     with op.batch_alter_table("nwc_connection", schema=None) as batch_op:
-        batch_op.add_column(
-            sa.Column("client_app_id", nwc_backend.db.UUID(), nullable=False)
-        )
+        batch_op.add_column(sa.Column("client_app_id", UUID(), nullable=False))
         batch_op.create_foreign_key(
             "nwc_connection_client_app_fk", "client_app", ["client_app_id"], ["id"]
         )

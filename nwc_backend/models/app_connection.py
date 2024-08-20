@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, String, select
+from sqlalchemy import ForeignKey, String, select, Boolean, Integer
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
 from nwc_backend.db import UUID as DBUUID
@@ -21,15 +21,27 @@ class AppConnection(ModelBase):
 
     __tablename__ = "app_connection"
 
-    nostr_pubkey: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    client_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    user_id: Mapped[UUID] = mapped_column(
+        DBUUID(), ForeignKey("user.id"), nullable=False
+    )
     nwc_connection_id: Mapped[UUID] = mapped_column(
         DBUUID(), ForeignKey("nwc_connection.id"), nullable=False
     )
+    nostr_pubkey: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     access_token: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    refresh_token: Mapped[str] = mapped_column(String(255), index=True)
-    connection_expiration: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
+    refresh_token: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    authorization_code: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False
     )
+    # Expiration times for the tokens are stored as Unix timestamps
+    access_token_expires_at: Mapped[int] = mapped_column(Integer(), nullable=False)
+    refresh_token_expires_at: Mapped[int] = mapped_column(Integer(), nullable=False)
+    authorization_code_expires_at: Mapped[int] = mapped_column(
+        Integer(),
+        nullable=False,
+    )
+    revoked: Mapped[bool] = mapped_column(Boolean(), default=False)
 
     nwc_connection: Mapped[NWCConnection] = relationship("NWCConnection")
 
@@ -39,15 +51,8 @@ class AppConnection(ModelBase):
             query = select(AppConnection).filter_by(nostr_pubkey=nostr_pubkey)
             return db_session.scalar(query)
 
-    def get_expires_at(self) -> datetime:
-        return (
-            self.connection_expiration.replace(tzinfo=timezone.utc)
-            if not self.connection_expiration.tzinfo
-            else self.connection_expiration
-        )
-
     def has_command_permission(self, command: Nip47RequestMethod) -> bool:
         return self.nwc_connection.has_command_permission(command)
 
-    def is_expired(self) -> bool:
-        return self.connection_expiration < datetime.now(tz=timezone.utc)
+    def is_access_token_expired(self) -> bool:
+        return datetime.now(timezone.utc).timestamp() >= self.access_token_expires_at

@@ -19,12 +19,12 @@ from nwc_backend.configs.nostr_config import NostrConfig
 from nwc_backend.db import db
 from nwc_backend.event_handlers.event_builder import EventBuilder
 from nwc_backend.exceptions import PublishEventFailedException
-from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.user import User
 from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_notification_handler import NotificationHandler
+from nwc_backend.oauth import OauthStorage, authorization_server
 
 
 def create_app() -> Quart:
@@ -114,18 +114,12 @@ def create_app() -> Quart:
                 )
                 db_session.add(user)
 
-            # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
-            long_lived_vasp_token_expiration = datetime.now(timezone.utc) + timedelta(
-                days=365
-            )
-
             nwc_connection = NWCConnection(
                 user_id=user.id,
                 app_name=app_name,
                 description=description,
                 max_budget_per_month=budget,
                 supported_commands=json.dumps(supported_commands),
-                long_lived_vasp_token_expiration=long_lived_vasp_token_expiration,
             )
 
             db_session.add(nwc_connection)
@@ -133,61 +127,85 @@ def create_app() -> Quart:
 
         session["short_lived_vasp_token"] = short_lived_vasp_token
         session["nw_connection_id"] = nwc_connection.id
+        session["user_id"] = user.id
+        session["client_id"] = request.args.get("client_id")
         session["client_redirect_uri"] = request.args.get("redirect_uri")
-        nwc_frontend_new_app = app.config["NWC_FRONTEND_NEW_APP_PAGE"]
 
+        nwc_frontend_new_app = app.config["NWC_FRONTEND_NEW_APP_PAGE"]
         return redirect(nwc_frontend_new_app)
 
     @app.route("/apps/new", methods=["POST"])
     async def register_new_app_connection() -> WerkzeugResponse:
-        # exhange the short lived jwt for a long lived jwt
         uma_vasp_token_exchange_url = app.config["UMA_VASP_TOKEN_EXCHANGE_URL"]
         short_lived_vasp_token = session["short_lived_vasp_token"]
-        response = requests.post(
-            uma_vasp_token_exchange_url, json={"token": short_lived_vasp_token}
-        )
-        response.raise_for_status()
-        long_lived_vasp_token = response.json()["token"]
+        client_id = session["client_id"]
+        user_id = session["user_id"]
+        nw_connection_id = session["nw_connection_id"]
 
         # save the long lived token in the db and create the app connection
-        nw_connection_id = session["nw_connection_id"]
         with Session(db.engine) as db_session:
             nwc_connection: NWCConnection = db_session.query(NWCConnection).get(
                 nw_connection_id
             )
+
+            # exhange the short lived jwt for a long lived jwt
+            permissions = nwc_connection.supported_commands
+            expiration = nwc_connection.connection_expires_at
+            response = requests.post(
+                uma_vasp_token_exchange_url,
+                json={
+                    "token": short_lived_vasp_token,
+                    "permissions": permissions,
+                    "expiration": expiration,
+                },
+            )
+            response.raise_for_status()
+            long_lived_vasp_token = response.json()["token"]
+            # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
+            long_lived_vasp_token_expiration = datetime.now(timezone.utc) + timedelta(
+                days=365
+            )
+
             nwc_connection.long_lived_vasp_token = long_lived_vasp_token
-
-            # TODO: generate the oauth code, token, and nostr_pubkey for the app connection
-            nostr_pubkey = "nostr_pubkey"
-            auth_code = "auth_code"
-            expiration_for_token_refresh = datetime.now(timezone.utc) + timedelta(
-                days=30
+            nwc_connection.long_lived_vasp_token_expiration = (
+                long_lived_vasp_token_expiration
             )
-            app_connection = AppConnection(
-                nostr_pubkey=nostr_pubkey,
-                nwc_connection_id=nw_connection_id,
-                connection_expiration=expiration_for_token_refresh,
-            )
-
-            db_session.add(app_connection)
             db_session.commit()
 
-        # redirect back to the redirect_uri provided by the client app with the app connection id and auth code
-        added_parms = {
-            "connection_details": {
-                "app_connection_id": app_connection.id,
-                "code": auth_code,
-            },
-        }
-        redirect_uri = session["client_redirect_uri"]
-        return redirect(
-            redirect_uri + "?" + "&".join([f"{k}={v}" for k, v in added_parms.items()])
-        )
+            oauth_storage = OauthStorage()
+            app_connection = await oauth_storage.create_app_connection(
+                client_id=client_id,
+                user_id=user_id,
+                nwc_connection_id=nw_connection_id,
+            )
+            # redirect back to the redirect_uri provided by the client app with the auth code and state
+            added_parms = {
+                "code": app_connection.authorization_code,
+                "state": "success",
+            }
+            redirect_uri = session["client_redirect_uri"]
+            return redirect(
+                redirect_uri
+                + "?"
+                + "&".join([f"{k}={v}" for k, v in added_parms.items()])
+            )
 
     @app.route("/oauth/token", methods=["GET"])
-    def oauth_exchange() -> Response:
-        # TODO: Implement this - authenticate the the oauth code for the access token + details
-        return Response(status=200)
+    async def oauth_exchange() -> Response:
+        # authenticate the the oauth code for the access token + details
+        client_id = request.args.get("client_id")
+        grant_type = request.args.get("grant_type")
+
+        if grant_type == "authorization_code":
+            code = request.args.get("code")
+            response = await authorization_server.get_exchange_token_response(
+                client_id=client_id, code=code
+            )
+            return response
+        elif grant_type == "refresh_token":
+            return await authorization_server.get_refresh_token_response()
+        else:
+            return Response(status=400, response="Invalid grant type")
 
     return app
 
