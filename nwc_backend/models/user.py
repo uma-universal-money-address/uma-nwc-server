@@ -1,4 +1,5 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
+# pyre-strict
 
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
