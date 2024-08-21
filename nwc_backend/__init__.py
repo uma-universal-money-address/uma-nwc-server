@@ -140,8 +140,6 @@ def create_app() -> Quart:
     async def register_new_app_connection() -> WerkzeugResponse:
         uma_vasp_token_exchange_url = app.config["UMA_VASP_TOKEN_EXCHANGE_URL"]
         short_lived_vasp_token = session["short_lived_vasp_token"]
-        client_id = session["client_id"]
-        user_id = session["user_id"]
         nw_connection_id = session["nw_connection_id"]
 
         # save the long lived token in the db and create the app connection
@@ -173,8 +171,6 @@ def create_app() -> Quart:
 
             oauth_storage = OauthStorage()
             app_connection = await oauth_storage.create_app_connection(
-                client_id=client_id,
-                user_id=user_id,
                 nwc_connection_id=nw_connection_id,
             )
             # redirect back to the redirect_uri provided by the client app with the auth code and state
