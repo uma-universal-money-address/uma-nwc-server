@@ -1,8 +1,12 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
+# pyre-strict
 
-import json
-from sqlalchemy import String, Text
+from typing import Any, Optional
+
+from sqlalchemy import JSON, String
+from sqlalchemy.dialects.postgresql.json import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
+
 from nwc_backend.models.model_base import ModelBase
 
 
@@ -12,23 +16,18 @@ class ClientApp(ModelBase):
     client_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     app_name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(String(255), nullable=False)
-    client_metadata: Mapped[str] = mapped_column(Text(), nullable=True)
-
-    def get_client_metadata(self):
-        if self.client_metadata:
-            data = json.loads(self.client_metadata)
-            return data
-        return {}
-
-    def set_client_metadata(self, value):
-        self.client_metadata = json.dumps(value)
+    client_metadata: Mapped[Optional[dict[str, Any]]] = mapped_column(
+        JSON().with_variant(JSONB(), "postgresql")
+    )
 
     @property
-    def logo_uri(self):
-        return self.get_client_metadata().get("logo_uri")
+    def logo_uri(self) -> Optional[str]:
+        return self.client_metadata.get("logo_uri") if self.client_metadata else None
 
-    def get_nostr_pubkey(self):
+    @property
+    def nostr_pubkey(self) -> str:
         return self.client_id.split()[0]
 
-    def get_identity_relay(self):
+    @property
+    def identity_relay(self) -> str:
         return self.client_id.split()[1]
