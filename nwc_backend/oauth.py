@@ -112,6 +112,7 @@ class OauthAuthorizationServer:
                 "commands": nwc_connection.supported_commands,
                 "budget": nwc_connection.max_budget_per_month,
                 "nwc_expires_at": nwc_connection.connection_expires_at,
+                "uma_address": nwc_connection.user.uma_address,
             }
             return Response(
                 json.dumps(response),
