@@ -29,6 +29,7 @@ from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
+from nwc_backend.typing import none_throws
 
 
 async def handle_nip47_event(event: Event) -> None:
@@ -93,7 +94,7 @@ async def handle_nip47_event(event: Event) -> None:
         params=params,
     )
 
-    uma_access_token = app_connection.nwc_connection.long_lived_vasp_token
+    uma_access_token = none_throws(app_connection.nwc_connection.long_lived_vasp_token)
     try:
         match method:
             case Nip47RequestMethod.EXECUTE_QUOTE:

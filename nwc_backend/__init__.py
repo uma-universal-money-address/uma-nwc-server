@@ -1,7 +1,6 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import json
 import logging
 import os
 from datetime import datetime, timedelta, timezone
@@ -122,7 +121,7 @@ def create_app() -> Quart:
                 app_name=app_name,
                 description=description,
                 max_budget_per_month=budget,
-                supported_commands=json.dumps(supported_commands),
+                supported_commands=supported_commands,
             )
 
             db_session.add(nwc_connection)
@@ -153,26 +152,23 @@ def create_app() -> Quart:
 
             # exhange the short lived jwt for a long lived jwt
             permissions = nwc_connection.supported_commands
-            expiration = nwc_connection.connection_expires_at
+            # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
+            connection_expires_at = int(
+                (datetime.now(timezone.utc) + timedelta(days=365)).timestamp()
+            )
             response = requests.post(
                 uma_vasp_token_exchange_url,
                 json={
                     "token": short_lived_vasp_token,
                     "permissions": permissions,
-                    "expiration": expiration,
+                    "expiration": connection_expires_at,
                 },
             )
             response.raise_for_status()
             long_lived_vasp_token = response.json()["token"]
-            # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
-            long_lived_vasp_token_expiration = datetime.now(timezone.utc) + timedelta(
-                days=365
-            )
 
             nwc_connection.long_lived_vasp_token = long_lived_vasp_token
-            nwc_connection.long_lived_vasp_token_expiration = (
-                long_lived_vasp_token_expiration
-            )
+            nwc_connection.connection_expires_at = connection_expires_at
             db_session.commit()
 
             oauth_storage = OauthStorage()
