@@ -11,6 +11,3 @@ class User(ModelBase):
 
     vasp_user_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     uma_address: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-
-    def get_user_id(self):
-        return self.id

@@ -6,6 +6,7 @@ import logging
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from uuid import uuid4
 
 import jwt
 import requests
@@ -15,7 +16,6 @@ from sqlalchemy.orm import Session
 from werkzeug import Response as WerkzeugResponse
 
 import nwc_backend.alembic_importer  # noqa: F401
-from nwc_backend.configs.nostr_config import NostrConfig
 from nwc_backend.db import db
 from nwc_backend.event_handlers.event_builder import EventBuilder
 from nwc_backend.exceptions import PublishEventFailedException
@@ -23,6 +23,7 @@ from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.user import User
 from nwc_backend.nostr_client import nostr_client
+from nwc_backend.nostr_config import NostrConfig
 from nwc_backend.nostr_notification_handler import NotificationHandler
 from nwc_backend.oauth import OauthStorage, authorization_server
 
@@ -109,12 +110,14 @@ def create_app() -> Quart:
             user = db_session.query(User).filter_by(vasp_user_id=vasp_user_id).first()
             if not user:
                 user = User(
+                    id=uuid4(),
                     vasp_user_id=vasp_user_id,
                     uma_address=uma_address,
                 )
                 db_session.add(user)
 
             nwc_connection = NWCConnection(
+                id=uuid4(),
                 user_id=user.id,
                 app_name=app_name,
                 description=description,
