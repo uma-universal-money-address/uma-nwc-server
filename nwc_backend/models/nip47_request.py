@@ -1,7 +1,7 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 
 from typing import Any, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from nostr_sdk import ErrorCode, Nip47Error
 from sqlalchemy import JSON
@@ -46,6 +46,7 @@ class Nip47Request(ModelBase):
     ) -> "Nip47Request":
         with Session(db.engine) as db_session:
             request = Nip47Request(
+                id=uuid4(),
                 app_connection_id=app_connection_id,
                 event_id=event_id,
                 method=method,

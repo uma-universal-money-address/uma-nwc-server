@@ -9,7 +9,6 @@ from aiohttp import ClientResponseError
 from nostr_sdk import ErrorCode, Event, Nip47Error, TagKind, nip04_decrypt
 from pydantic_core import ValidationError as PydanticValidationError
 
-from nwc_backend.configs.nostr_config import NostrConfig
 from nwc_backend.event_handlers.event_builder import (
     create_nip47_error_response,
     create_nip47_response,
@@ -29,10 +28,11 @@ from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.nostr_client import nostr_client
+from nwc_backend.nostr_config import NostrConfig
 
 
 async def handle_nip47_event(event: Event) -> None:
-    app_connection = await AppConnection.from_nostr_pubkey(event.author().to_hex())
+    app_connection = AppConnection.from_nostr_pubkey(event.author().to_hex())
     if not app_connection:
         error_response = create_nip47_error_response(
             event=event,
