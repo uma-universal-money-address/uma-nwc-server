@@ -5,9 +5,4 @@ export QUART_ENV=development
 export QUART_DEBUG=True
 export QUART_RUN_PORT=5000
 
-# nostr environment variables
-export NOSTR_PRIVKEY=$(openssl rand -hex 32)
-export RELAY="wss://relay.getalby.com/v1" 
-export VASP_UMA_API_BASE_URL="https://fake.vasp.uma.api.url"
-
 pipenv run quart run

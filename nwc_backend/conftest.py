@@ -1,6 +1,7 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
+from typing import AsyncGenerator
 from pytest import fixture
 from quart.typing import TestClientProtocol
 
@@ -10,7 +11,8 @@ from nwc_backend.models.model_base import ModelBase
 
 
 @fixture()
-def test_client() -> TestClientProtocol:
+async def test_client() -> AsyncGenerator[TestClientProtocol, None]:
     app = create_app()
     ModelBase.metadata.create_all(db.engine)
-    return app.test_app().test_client()
+    async with app.test_app() as t_app:
+        yield t_app.test_client()
