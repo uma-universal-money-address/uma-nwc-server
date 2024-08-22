@@ -10,7 +10,7 @@ from nwc_backend.db import db
 from nwc_backend.models.model_base import ModelBase
 
 
-@fixture(autouse=True)
+@fixture()
 async def test_client() -> AsyncGenerator[TestClientProtocol, None]:
     app = create_app()
     ModelBase.metadata.create_all(db.engine)
