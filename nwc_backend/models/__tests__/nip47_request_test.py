@@ -38,7 +38,7 @@ async def test_nip47_request_model(test_client: QuartClient) -> None:
         db_session.commit()
 
     with Session(db.engine) as db_session:
-        nip47_request = db_session.query(Nip47Request).get(id)
+        nip47_request = db_session.get(Nip47Request, id)
         assert isinstance(nip47_request, Nip47Request)
         assert nip47_request.event_id == event_id
         assert nip47_request.app_connection_id == app_connection_id

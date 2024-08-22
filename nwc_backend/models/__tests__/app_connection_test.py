@@ -41,7 +41,7 @@ async def test_app_connection_model(test_client: QuartClient) -> None:
         db_session.commit()
 
     with Session(db.engine) as db_session:
-        app_connection = db_session.query(AppConnection).get(id)
+        app_connection = db_session.get(AppConnection, id)
         assert isinstance(app_connection, AppConnection)
         assert app_connection.has_command_permission(Nip47RequestMethod.FETCH_QUOTE)
         assert not app_connection.has_command_permission(
