@@ -11,6 +11,7 @@ from uma_auth.models.execute_quote_response import ExecuteQuoteResponse
 from uma_auth.models.get_balance_response import GetBalanceResponse
 from uma_auth.models.get_info_response import GetInfoResponse
 from uma_auth.models.list_transactions_response import ListTransactionsResponse
+from uma_auth.models.locked_currency_side import LockedCurrencySide
 from uma_auth.models.lookup_user_response import LookupUserResponse
 from uma_auth.models.make_invoice_request import MakeInvoiceRequest
 from uma_auth.models.pay_invoice_request import PayInvoiceRequest
@@ -52,11 +53,6 @@ class ReceivingAddress:
             raise NotImplementedException("Bolt12 is not yet supported.")
 
         return ReceivingAddress(address=address, type=AddressType(address_type))
-
-
-class LockedCurrencySide(Enum):
-    SENDING = "sending"
-    RECEIVING = "receiving"
 
 
 class VaspUmaClient:
