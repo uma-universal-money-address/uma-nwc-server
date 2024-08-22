@@ -1,7 +1,6 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import os
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional
