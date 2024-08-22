@@ -4,13 +4,13 @@
 from typing import Any, Type
 
 import pytest
+from uma_auth.models.locked_currency_side import LockedCurrencySide
 
 from nwc_backend.event_handlers.input_validator import (
     get_optional_field,
     get_required_field,
 )
 from nwc_backend.exceptions import InvalidInputException
-from nwc_backend.vasp_client import LockedCurrencySide
 
 
 async def test_get_required_field__succeeded() -> None:

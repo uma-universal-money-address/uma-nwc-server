@@ -2,15 +2,12 @@
 # pyre-strict
 
 
+from uma_auth.models.locked_currency_side import LockedCurrencySide
 from uma_auth.models.quote import Quote
 
 from nwc_backend.event_handlers.input_validator import get_required_field
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.vasp_client import (
-    LockedCurrencySide,
-    ReceivingAddress,
-    VaspUmaClient,
-)
+from nwc_backend.vasp_client import ReceivingAddress, VaspUmaClient
 
 
 async def fetch_quote(access_token: str, request: Nip47Request) -> Quote:
