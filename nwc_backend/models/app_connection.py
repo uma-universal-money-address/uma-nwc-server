@@ -21,14 +21,10 @@ class AppConnection(ModelBase):
 
     __tablename__ = "app_connection"
 
-    client_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    user_id: Mapped[UUID] = mapped_column(
-        DBUUID(), ForeignKey("user.id"), nullable=False
-    )
     nwc_connection_id: Mapped[UUID] = mapped_column(
         DBUUID(), ForeignKey("nwc_connection.id"), nullable=False
     )
-    nostr_pubkey: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    nostr_pubkey: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     access_token: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     refresh_token: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
     authorization_code: Mapped[str] = mapped_column(

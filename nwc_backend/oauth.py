@@ -46,8 +46,6 @@ def generate_refresh_token() -> str:
 class OauthStorage:
     async def create_app_connection(
         self,
-        client_id: str,
-        user_id: UUID,
         nwc_connection_id: UUID,
     ) -> AppConnection:
         with Session(db.engine) as db_session:
@@ -59,10 +57,8 @@ class OauthStorage:
 
             app_connection = AppConnection(
                 id=uuid4(),
-                client_id=client_id,
-                user_id=user_id,
-                authorization_code=auth_code,
                 nwc_connection_id=nwc_connection_id,
+                authorization_code=auth_code,
                 access_token=new_access_token,
                 nostr_pubkey=new_nostr_pubkey,
                 refresh_token=new_refresh_token,
@@ -95,10 +91,13 @@ class OauthAuthorizationServer:
         with Session(db.engine) as db_session:
             app_connection: Optional[AppConnection] = (
                 db_session.query(AppConnection)
-                .filter_by(client_id=client_id, authorization_code=code)
+                .filter_by(authorization_code=code)
                 .first()
             )
-            if not app_connection:
+            if (
+                not app_connection
+                or app_connection.nwc_connection.client_app.client_id != client_id
+            ):
                 return Response(status=401, response="Invalid authorization code")
 
             nwc_connection = app_connection.nwc_connection
