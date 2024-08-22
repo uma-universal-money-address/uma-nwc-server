@@ -1,14 +1,14 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
+from datetime import datetime, timedelta, timezone
+import json
 import logging
 import os
-from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
 
 import jwt
-import json
 import requests
 from nostr_sdk import Filter, Kind, KindEnum
 from quart import Quart, Response, redirect, request, send_from_directory, session
@@ -27,6 +27,7 @@ from nwc_backend.models.app_connection_status import AppConnectionStatus
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
+from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.models.user import User
 from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
@@ -93,7 +94,6 @@ def create_app() -> Quart:
             else []
         )
         optional_commands = request.args.get("optional_commands")
-        budget = request.args.get("budget")
         client_id = request.args.get("client_id")
 
         vasp_token_payload = jwt.decode(
@@ -168,9 +168,39 @@ def create_app() -> Quart:
         nwc_connection = NWCConnection(
             user_id=user.id,
             client_app_id=client_app.id,
-            max_budget_per_month=budget,
             supported_commands=supported_commands,
         )
+
+        # budget format is <max_amount>.<currency>/<period>
+        budget = request.args.get("budget")
+        # assert budget is in the correct format
+        if budget:
+            if len(budget.split(".")) != 2 and len(budget.split("/")) != 2:
+                return WerkzeugResponse(
+                    "Budget should be in the format <max_amount>.<currency>/<period>",
+                    status=400,
+                )
+            spending_limit_amount = int(budget.split(".")[0])
+            spending_limit_currency_code = budget.split(".")[1].split("/")[0]
+            period = budget.split("/")[1].lower()
+
+            nwc_connection.spending_limit_amount = spending_limit_amount
+            # if currency code is not provided, default to SAT
+            nwc_connection.spending_limit_currency_code = (
+                spending_limit_currency_code if spending_limit_currency_code else "SAT"
+            )
+            nwc_connection.spending_limit_frequency = (
+                SpendingLimitFrequency(period)
+                if period
+                else SpendingLimitFrequency.NONE
+            )
+
+        # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
+        connection_expires_at = int(
+            (datetime.now(timezone.utc) + timedelta(days=365)).timestamp()
+        )
+        nwc_connection.connection_expires_at = connection_expires_at
+
         db.session.add(nwc_connection)
         db.session.commit()
 
@@ -194,25 +224,18 @@ def create_app() -> Quart:
         # save the long lived token in the db and create the app connection
         nwc_connection: NWCConnection = db.session.get(NWCConnection, nwc_connection_id)
 
-        # exhange the short lived jwt for a long lived jwt
-        permissions = nwc_connection.supported_commands
-        # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
-        connection_expires_at = int(
-            (datetime.now(timezone.utc) + timedelta(days=365)).timestamp()
-        )
         response = requests.post(
             uma_vasp_token_exchange_url,
             json={
                 "token": short_lived_vasp_token,
-                "permissions": permissions,
-                "expiration": connection_expires_at,
+                "permissions": nwc_connection.supported_commands,
+                "expiration": (nwc_connection.connection_expires_at),
             },
         )
         response.raise_for_status()
         long_lived_vasp_token = response.json()["token"]
 
         nwc_connection.long_lived_vasp_token = long_lived_vasp_token
-        nwc_connection.connection_expires_at = connection_expires_at
         db.session.commit()
 
         oauth_storage = OauthStorage()
