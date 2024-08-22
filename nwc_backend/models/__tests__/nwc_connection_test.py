@@ -29,7 +29,7 @@ async def test_nwc_connection_model(test_client: QuartClient) -> None:
         db_session.commit()
 
     with Session(db.engine) as db_session:
-        nwc_connection = db_session.query(NWCConnection).get(id)
+        nwc_connection = db_session.get(NWCConnection, id)
         assert isinstance(nwc_connection, NWCConnection)
         assert nwc_connection.user.id == user_id
         assert nwc_connection.client_app.id == client_app_id

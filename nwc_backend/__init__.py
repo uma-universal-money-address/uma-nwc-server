@@ -144,8 +144,8 @@ def create_app() -> Quart:
 
         # save the long lived token in the db and create the app connection
         with Session(db.engine) as db_session:
-            nwc_connection: NWCConnection = db_session.query(NWCConnection).get(
-                nw_connection_id
+            nwc_connection: NWCConnection = db_session.get(
+                NWCConnection, nw_connection_id
             )
 
             # exhange the short lived jwt for a long lived jwt

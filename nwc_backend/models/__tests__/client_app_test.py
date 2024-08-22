@@ -30,7 +30,7 @@ async def test_client_app_model(test_client: QuartClient) -> None:
         db_session.commit()
 
     with Session(db.engine) as db_session:
-        client_app = db_session.query(ClientApp).get(id)
+        client_app = db_session.get(ClientApp, id)
         assert isinstance(client_app, ClientApp)
         assert client_app.client_id == client_id
         assert client_app.app_name == app_name
@@ -46,6 +46,6 @@ async def test_client_app_model(test_client: QuartClient) -> None:
         db_session.commit()
 
     with Session(db.engine) as db_session:
-        client_app = db_session.query(ClientApp).get(id)
+        client_app = db_session.get(ClientApp, id)
         assert isinstance(client_app, ClientApp)
         assert client_app.logo_uri == logo_uri
