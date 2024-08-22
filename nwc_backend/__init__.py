@@ -36,7 +36,7 @@ def create_app() -> Quart:
     app.static_folder = app.config["FRONTEND_BUILD_PATH"]
     db.init_app(app)
 
-    # asyncio.run(init_nostr_client())
+    # asyncio.run(init_nostr_client(app))
 
     @app.route("/hello", defaults={"path": ""})
     async def serve(path: str) -> dict[str, Any]:
@@ -213,15 +213,15 @@ def create_app() -> Quart:
     return app
 
 
-async def init_nostr_client() -> None:
-    await nostr_client.add_relay(NostrConfig.instance().relay_url)
+async def init_nostr_client(app: Quart) -> None:
+    await nostr_client.add_relay(NostrConfig.instance(app).relay_url)
     await nostr_client.connect()
 
     await _publish_nip47_info()
 
     nip47_filter = (
         Filter()
-        .pubkey(NostrConfig.instance().identity_pubkey)
+        .pubkey(NostrConfig.instance(app).identity_pubkey)
         .kind(Kind.from_enum(KindEnum.WALLET_CONNECT_REQUEST()))  # pyre-ignore[6]
     )
     await nostr_client.subscribe([nip47_filter])

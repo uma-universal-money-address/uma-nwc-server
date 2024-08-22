@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Any, Optional
 
 import aiohttp
+from quart import current_app
 from uma_auth.models.execute_quote_response import ExecuteQuoteResponse
 from uma_auth.models.get_balance_response import GetBalanceResponse
 from uma_auth.models.get_info_response import GetInfoResponse
@@ -61,7 +62,7 @@ class LockedCurrencySide(Enum):
 
 class VaspUmaClient:
     def __init__(self) -> None:
-        self.base_url: str = os.environ["VASP_UMA_API_BASE_URL"]
+        self.base_url: str = current_app.config["VASP_UMA_API_BASE_URL"]
 
     @staticmethod
     def instance() -> "VaspUmaClient":

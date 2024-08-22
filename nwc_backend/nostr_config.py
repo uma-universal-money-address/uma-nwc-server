@@ -1,11 +1,11 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import os
 from dataclasses import dataclass
 from typing import Optional
 
 from nostr_sdk import Keys, PublicKey, SecretKey
+from quart import Quart, current_app
 
 
 @dataclass
@@ -15,23 +15,21 @@ class NostrConfig:
     identity_pubkey: PublicKey
 
     @staticmethod
-    def load() -> "NostrConfig":
-        if "NOSRT_PRIVKEY_FILE" in os.environ:
-            with open(os.environ["NOSTR_PRIVKEY_FILE"], "r") as f:
-                keys = Keys.parse(f.read())
-        else:
-            keys = Keys.parse(os.environ["NOSTR_PRIVKEY"])
+    def load(app: Optional[Quart] = None) -> "NostrConfig":
+        if app is None:
+            app = current_app
+        keys = Keys.parse(app.config["NOSTR_PRIVKEY"])
         return NostrConfig(
-            relay_url=os.environ["RELAY"],
+            relay_url=app.config["RELAY"],
             identity_privkey=keys.secret_key(),
             identity_pubkey=keys.public_key(),
         )
 
     @staticmethod
-    def instance() -> "NostrConfig":
+    def instance(app: Optional[Quart] = None) -> "NostrConfig":
         global _nostr_config  # noqa: PLW0603
         if _nostr_config is None:
-            _nostr_config = NostrConfig.load()
+            _nostr_config = NostrConfig.load(app)
 
         return _nostr_config
 
