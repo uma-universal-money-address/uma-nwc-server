@@ -30,13 +30,13 @@ touch instance/nwc.sqlite
 Run migrations on the db:
 
 ```bash
-QUART_APP=nwc_backend QUART_CONFIG="configs/local_dev.py pipenv run alembic upgrade head
+QUART_APP=nwc_backend QUART_CONFIG="configs/local_dev.py" pipenv run alembic upgrade head
 ```
 
 Run the backend:
 
 ```bash
-QUART_APP=nwc_backend QUART_CONFIG="configs/local_dev.py pipenv run quart run
+QUART_APP=nwc_backend QUART_CONFIG="configs/local_dev.py" pipenv run quart run
 ```
 
 Alternatively you could just run the `run_backend.sh` script which sets all the needed env variables for you
