@@ -7,6 +7,7 @@ from unittest.mock import ANY, AsyncMock, Mock, patch
 
 import aiohttp
 import pytest
+from quart.app import QuartClient
 from uma_auth.models.transaction import TransactionType
 
 from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
@@ -16,7 +17,9 @@ from nwc_backend.models.nip47_request import Nip47Request
 
 
 @patch.object(aiohttp.ClientSession, "get")
-async def test_list_transactions_success(mock_get: Mock) -> None:
+async def test_list_transactions_success(
+    mock_get: Mock, test_client: QuartClient
+) -> None:
     vasp_response = {
         "transactions": [
             {
@@ -45,18 +48,26 @@ async def test_list_transactions_success(mock_get: Mock) -> None:
     mock_get.return_value.__aenter__.return_value = mock_response
 
     params = {"from": 1691024140, "limit": 50, "offset": 100}
-    invoice = await list_transactions(
-        access_token=token_hex(),
-        request=Nip47Request(params=params),
-    )
-    mock_get.assert_called_once_with(url="/transactions", params=params, headers=ANY)
-
-    assert exclude_none_values(invoice.to_dict()) == vasp_response
-
-
-async def test_list_transactions_failure__invalid_input() -> None:
-    with pytest.raises(InvalidInputException):
-        await list_transactions(
+    async with test_client.app.app_context():
+        invoice = await list_transactions(
             access_token=token_hex(),
-            request=Nip47Request(params={"from": "abcde", "limit": 50, "offset": 100}),
+            request=Nip47Request(params=params),
         )
+
+        mock_get.assert_called_once_with(
+            url="/transactions", params=params, headers=ANY
+        )
+        assert exclude_none_values(invoice.to_dict()) == vasp_response
+
+
+async def test_list_transactions_failure__invalid_input(
+    test_client: QuartClient,
+) -> None:
+    async with test_client.app.app_context():
+        with pytest.raises(InvalidInputException):
+            await list_transactions(
+                access_token=token_hex(),
+                request=Nip47Request(
+                    params={"from": "abcde", "limit": 50, "offset": 100}
+                ),
+            )

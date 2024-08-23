@@ -8,6 +8,7 @@ from unittest.mock import ANY, AsyncMock, Mock, patch
 import aiohttp
 import pytest
 from pydantic_core import ValidationError
+from quart.app import QuartClient
 from uma_auth.models.make_invoice_request import MakeInvoiceRequest
 from uma_auth.models.transaction import TransactionType
 
@@ -17,7 +18,7 @@ from nwc_backend.models.nip47_request import Nip47Request
 
 
 @patch.object(aiohttp.ClientSession, "post")
-async def test_make_invoice_success(mock_post: Mock) -> None:
+async def test_make_invoice_success(mock_post: Mock, test_client: QuartClient) -> None:
     vasp_response = {
         "type": TransactionType.INCOMING.value,
         "invoice": "lnbcrt1u1pjd4dnypp556q6aag8hf6rweejfdv8tp2v4034jdfvxj8p94rr2fwgvuy8xxxqsp5cqyc3alzjf3ua6up2jpvfu9xqa8rjk5txpeh3jhvcm2h8xprk8kqxqyz5vqnp4qga909cwg8hfr95yqftg6k7a99cm5f8xpzuven6680l0vancdhyjvcqzpgdqq9qyyssq2tcyjf6l4at69ljxnk8wcnx20s3qn2k356pn86qjah83ym3dhg4n48ukdmw79axgtd4fj6e9cezjyyca7m28q2flcj2wua0an5434dgppwa0mv",
@@ -33,19 +34,24 @@ async def test_make_invoice_success(mock_post: Mock) -> None:
     mock_post.return_value.__aenter__.return_value = mock_response
 
     params = {"amount": 100000, "expiry": 86400}
-    response = await make_invoice(
-        access_token=token_hex(),
-        request=Nip47Request(params=params),
-    )
-    mock_post.assert_called_once_with(
-        url="/invoice", data=MakeInvoiceRequest.from_dict(params).to_json(), headers=ANY
-    )
-    assert exclude_none_values(response.to_dict()) == vasp_response
-
-
-async def test_execute_quote_failure__invalid_input() -> None:
-    with pytest.raises(ValidationError):
-        await make_invoice(
+    async with test_client.app.app_context():
+        response = await make_invoice(
             access_token=token_hex(),
-            request=Nip47Request(params={"amount": -1000}),
+            request=Nip47Request(params=params),
         )
+
+        mock_post.assert_called_once_with(
+            url="/invoice",
+            data=MakeInvoiceRequest.from_dict(params).to_json(),
+            headers=ANY,
+        )
+        assert exclude_none_values(response.to_dict()) == vasp_response
+
+
+async def test_execute_quote_failure__invalid_input(test_client: QuartClient) -> None:
+    async with test_client.app.app_context():
+        with pytest.raises(ValidationError):
+            await make_invoice(
+                access_token=token_hex(),
+                request=Nip47Request(params={"amount": -1000}),
+            )

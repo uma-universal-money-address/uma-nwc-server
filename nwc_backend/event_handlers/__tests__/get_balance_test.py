@@ -8,6 +8,7 @@ from unittest.mock import ANY, AsyncMock, Mock, patch
 
 import aiohttp
 import pytest
+from quart.app import QuartClient
 
 from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
 from nwc_backend.event_handlers.get_balance_handler import get_balance
@@ -21,7 +22,7 @@ from nwc_backend.models.nip47_request import Nip47Request
     ["USD", None],
 )
 async def test_get_balance_success(
-    mock_get: Mock, currency_code: Optional[str]
+    mock_get: Mock, currency_code: Optional[str], test_client: QuartClient
 ) -> None:
     vasp_response: dict[str, Any] = {"balance": 1_000_000}
     if currency_code:
@@ -36,21 +37,22 @@ async def test_get_balance_success(
     if currency_code:
         params["currency_code"] = currency_code
 
-    response = await get_balance(
-        access_token=token_hex(),
-        request=Nip47Request(params=params),
-    )
-
-    mock_get.assert_called_once_with(
-        url="/balance", params=params if params else None, headers=ANY
-    )
-
-    assert exclude_none_values(response.to_dict()) == vasp_response
-
-
-async def test_get_balance_failure__invalid_input() -> None:
-    with pytest.raises(InvalidInputException):
-        await get_balance(
+    async with test_client.app.app_context():
+        response = await get_balance(
             access_token=token_hex(),
-            request=Nip47Request(params={"currency_code": 123}),  # wrong value
+            request=Nip47Request(params=params),
         )
+
+        mock_get.assert_called_once_with(
+            url="/balance", params=params if params else None, headers=ANY
+        )
+        assert exclude_none_values(response.to_dict()) == vasp_response
+
+
+async def test_get_balance_failure__invalid_input(test_client: QuartClient) -> None:
+    async with test_client.app.app_context():
+        with pytest.raises(InvalidInputException):
+            await get_balance(
+                access_token=token_hex(),
+                request=Nip47Request(params={"currency_code": 123}),  # wrong value
+            )

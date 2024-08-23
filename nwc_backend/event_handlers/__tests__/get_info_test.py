@@ -6,6 +6,7 @@ from secrets import token_hex
 from unittest.mock import ANY, AsyncMock, Mock, patch
 
 import aiohttp
+from quart.app import QuartClient
 
 from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
 from nwc_backend.event_handlers.get_info_handler import get_info
@@ -14,7 +15,7 @@ from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 
 
 @patch.object(aiohttp.ClientSession, "get")
-async def test_get_info_success(mock_get: Mock) -> None:
+async def test_get_info_success(mock_get: Mock, test_client: QuartClient) -> None:
     vasp_response = {
         "pubkey": token_hex(),
         "network": "mainnet",
@@ -40,10 +41,11 @@ async def test_get_info_success(mock_get: Mock) -> None:
     mock_response.raise_for_status = Mock()
     mock_get.return_value.__aenter__.return_value = mock_response
 
-    response = await get_info(
-        access_token=token_hex(),
-        request=Nip47Request(params={}),
-    )
-    mock_get.assert_called_once_with(url="/info", params=None, headers=ANY)
+    async with test_client.app.app_context():
+        response = await get_info(
+            access_token=token_hex(),
+            request=Nip47Request(params={}),
+        )
 
-    assert exclude_none_values(response.to_dict()) == vasp_response
+        mock_get.assert_called_once_with(url="/info", params=None, headers=ANY)
+        assert exclude_none_values(response.to_dict()) == vasp_response
