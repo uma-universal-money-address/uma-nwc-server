@@ -44,7 +44,7 @@ async def test_list_transactions_success(
     }
     mock_response = AsyncMock()
     mock_response.text = AsyncMock(return_value=json.dumps(vasp_response))
-    mock_response.raise_for_status = Mock()
+    mock_response.ok = True
     mock_get.return_value.__aenter__.return_value = mock_response
 
     params = {"from": 1691024140, "limit": 50, "offset": 100}

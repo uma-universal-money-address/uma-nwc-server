@@ -8,6 +8,8 @@ from unittest.mock import ANY, AsyncMock, Mock, patch
 import aiohttp
 import pytest
 from quart.app import QuartClient
+from uma_auth.models.error_response import ErrorCode as VaspErrorCode
+from uma_auth.models.error_response import ErrorResponse as VaspErrorResponse
 from uma_auth.models.transaction import TransactionType
 
 from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
@@ -42,7 +44,7 @@ async def test_lookup_invoice_success(
     }
     mock_response = AsyncMock()
     mock_response.text = AsyncMock(return_value=json.dumps(vasp_response))
-    mock_response.raise_for_status = Mock()
+    mock_response.ok = True
     mock_get.return_value.__aenter__.return_value = mock_response
 
     async with test_client.app.app_context():
@@ -98,12 +100,12 @@ async def test_lookup_invoice_failure__invalid_invoice(
 async def test_lookup_invoice_failure__not_found(
     mock_post: Mock, test_client: QuartClient
 ) -> None:
-    mock_response = AsyncMock()
-    mock_response.raise_for_status = Mock(
-        side_effect=aiohttp.ClientResponseError(
-            request_info=Mock(), history=(), status=404
-        )
+    vasp_response = VaspErrorResponse.from_dict(
+        {"code": VaspErrorCode.NOT_FOUND.name, "message": "Invoice not found."}
     )
+    mock_response = AsyncMock()
+    mock_response.text = AsyncMock(return_value=vasp_response.model_dump_json())
+    mock_response.ok = False
     mock_post.return_value.__aenter__.return_value = mock_response
 
     async with test_client.app.app_context():
@@ -113,3 +115,4 @@ async def test_lookup_invoice_failure__not_found(
                 request=Nip47Request(params={"payment_hash": PAYMENT_HASH}),
             )
             assert exc_info.value.error_code == ErrorCode.NOT_FOUND
+            assert exc_info.value.error_message == vasp_response.message

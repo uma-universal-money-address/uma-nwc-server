@@ -30,7 +30,7 @@ async def test_make_invoice_success(mock_post: Mock, test_client: QuartClient) -
     }
     mock_response = AsyncMock()
     mock_response.text = AsyncMock(return_value=json.dumps(vasp_response))
-    mock_response.raise_for_status = Mock()
+    mock_response.ok = True
     mock_post.return_value.__aenter__.return_value = mock_response
 
     params = {"amount": 100000, "expiry": 86400}
