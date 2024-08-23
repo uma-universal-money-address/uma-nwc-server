@@ -38,7 +38,7 @@ async def test_get_info_success(mock_get: Mock, test_client: QuartClient) -> Non
     }
     mock_response = AsyncMock()
     mock_response.text = AsyncMock(return_value=json.dumps(vasp_response))
-    mock_response.raise_for_status = Mock()
+    mock_response.ok = True
     mock_get.return_value.__aenter__.return_value = mock_response
 
     async with test_client.app.app_context():

@@ -5,7 +5,6 @@ import json
 import logging
 from datetime import datetime, timezone
 
-from aiohttp import ClientResponseError
 from nostr_sdk import ErrorCode, Event, Nip47Error, TagKind, nip04_decrypt
 from pydantic_core import ValidationError as PydanticValidationError
 
@@ -137,11 +136,6 @@ async def handle_nip47_event(event: Event) -> None:
             response = Nip47Error(
                 code=ex.error_code,
                 message=ex.error_message,
-            )
-        elif isinstance(ex, ClientResponseError):
-            response = Nip47Error(
-                code=ErrorCode.OTHER,
-                message=str(ex),
             )
         else:
             response = Nip47Error(

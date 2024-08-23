@@ -1,7 +1,10 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
+import logging
+
 from nostr_sdk import ErrorCode, Event
+from uma_auth.models.error_response import ErrorResponse
 
 
 class PublishEventFailedException(Exception):
@@ -34,6 +37,30 @@ class NotImplementedException(Nip47RequestException):
         super().__init__(
             error_code=ErrorCode.NOT_IMPLEMENTED, error_message=error_message
         )
+
+
+class VaspErrorResponseException(Nip47RequestException):
+    def __init__(self, http_status: int, response: str) -> None:
+        try:
+            error_response = ErrorResponse.from_json(response)
+            super().__init__(
+                error_code=ErrorCode[error_response.code],
+                error_message=error_response.message,
+            )
+        except Exception:
+            logging.debug(
+                "Receive an error response on status %d not in format of ErrorResponse: %s",
+                http_status,
+                response,
+            )
+            match http_status:
+                case 429:
+                    error_code = ErrorCode.RATE_LIMITED
+                case 404:
+                    error_code = ErrorCode.NOT_FOUND
+                case _:
+                    error_code = ErrorCode.OTHER
+            super().__init__(error_code=error_code, error_message=response)
 
 
 class AppConnectionNotFoundException(Exception):

@@ -23,7 +23,11 @@ from uma_auth.models.pay_to_address_response import PayToAddressResponse
 from uma_auth.models.quote import Quote
 from uma_auth.models.transaction import Transaction, TransactionType
 
-from nwc_backend.exceptions import InvalidInputException, NotImplementedException
+from nwc_backend.exceptions import (
+    InvalidInputException,
+    NotImplementedException,
+    VaspErrorResponseException,
+)
 
 
 class AddressType(Enum):
@@ -82,8 +86,12 @@ class VaspUmaClient:
                     "User-Agent": "NWC",
                 },
             ) as response:
-                response.raise_for_status()
-                return await response.text()
+                text = await response.text()
+                if not response.ok:
+                    raise VaspErrorResponseException(
+                        http_status=response.status, response=text
+                    )
+                return text
 
     async def _make_http_post(
         self, path: str, access_token: str, data: Optional[str] = None
@@ -98,8 +106,12 @@ class VaspUmaClient:
                     "User-Agent": "NWC",
                 },
             ) as response:
-                response.raise_for_status()
-                return await response.text()
+                text = await response.text()
+                if not response.ok:
+                    raise VaspErrorResponseException(
+                        http_status=response.status, response=text
+                    )
+                return text
 
     async def execute_quote(
         self, access_token: str, payment_hash: str
