@@ -65,3 +65,7 @@ class VaspErrorResponseException(Nip47RequestException):
 
 class ActiveAppConnectionAlreadyExistsException(Exception):
     pass
+
+
+class AppConnectionNotFoundException(Exception):
+    pass
