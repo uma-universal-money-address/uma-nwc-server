@@ -22,6 +22,7 @@ from nwc_backend.event_handlers.lookup_invoice_handler import lookup_invoice
 from nwc_backend.event_handlers.lookup_user_handler import lookup_user
 from nwc_backend.event_handlers.make_invoice_handler import make_invoice
 from nwc_backend.event_handlers.pay_invoice_handler import pay_invoice
+from nwc_backend.event_handlers.pay_keysend_handler import pay_keysend
 from nwc_backend.event_handlers.pay_to_address_handler import pay_to_address
 from nwc_backend.exceptions import Nip47RequestException
 from nwc_backend.models.app_connection import AppConnection
@@ -115,6 +116,8 @@ async def handle_nip47_event(event: Event) -> None:
                 response = await make_invoice(uma_access_token, nip47_request)
             case Nip47RequestMethod.PAY_INVOICE:
                 response = await pay_invoice(uma_access_token, nip47_request)
+            case Nip47RequestMethod.PAY_KEYSEND:
+                response = await pay_keysend(uma_access_token, nip47_request)
             case Nip47RequestMethod.PAY_TO_ADDRESS:
                 response = await pay_to_address(uma_access_token, nip47_request)
             case _:
