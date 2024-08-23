@@ -10,6 +10,7 @@ NWC_FRONTEND_NEW_APP_PAGE = "http://localhost:8080/apps/new"
 UMA_VASP_LOGIN_URL = "http://local:5001/auth/nwcsession"
 NOSTR_PRIVKEY = "nsec166ah7ez498kjl87a088yn34gvcjpzmy9eymuwwgtwcywh84j865s0qxnul"
 RELAY = "wss://fake.relay.url"
+UMA_VASP_TOKEN_EXCHANGE_URL = "http://local:5001/umanwc/token"
 VASP_UMA_API_BASE_URL = "https://fake.vasp.uma.api.url"
 
 VASP_SUPPORTED_COMMANDS = [
