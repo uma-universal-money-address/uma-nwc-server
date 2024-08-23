@@ -16,6 +16,8 @@ from uma_auth.models.lookup_user_response import LookupUserResponse
 from uma_auth.models.make_invoice_request import MakeInvoiceRequest
 from uma_auth.models.pay_invoice_request import PayInvoiceRequest
 from uma_auth.models.pay_invoice_response import PayInvoiceResponse
+from uma_auth.models.pay_keysend_request import PayKeysendRequest
+from uma_auth.models.pay_keysend_response import PayKeysendResponse
 from uma_auth.models.pay_to_address_request import PayToAddressRequest
 from uma_auth.models.pay_to_address_response import PayToAddressResponse
 from uma_auth.models.quote import Quote
@@ -224,6 +226,14 @@ class VaspUmaClient:
             path="/payments/bolt11", access_token=access_token, data=request.to_json()
         )
         return PayInvoiceResponse.from_json(result)
+
+    async def pay_keysend(
+        self, access_token: str, request: PayKeysendRequest
+    ) -> PayKeysendResponse:
+        result = await self._make_http_post(
+            path="/payments/keysend", access_token=access_token, data=request.to_json()
+        )
+        return PayKeysendResponse.from_json(result)
 
     async def pay_to_address(
         self, access_token: str, request: PayToAddressRequest, address_type: AddressType
