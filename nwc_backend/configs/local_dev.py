@@ -8,11 +8,11 @@ DATABASE_URI: str = "sqlite+pysqlite:///" + os.path.join(
     os.getcwd(), "instance", "nwc.sqlite"
 )
 
-VASP_NWC_SERVER_SHARED_SECRET = "secret"
+UMA_VASP_JWT_PUBKEY="-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\nq9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==\n-----END PUBLIC KEY-----"
 FRONTEND_BUILD_PATH = "../nwc-frontend/dist"
-NWC_FRONTEND_NEW_APP_PAGE = "http://localhost:3000/apps/new"
-UMA_VASP_LOGIN_URL = "http://127.0.0.1:5001/apps/new"
-VASP_UMA_API_BASE_URL = "http://127.0.0.1:5001/api"
+NWC_FRONTEND_NEW_APP_PAGE = "http://localhost:8080/apps/new"
+UMA_VASP_LOGIN_URL = "http://local:5001/auth/nwcsession"
+VASP_UMA_API_BASE_URL = "http://local:5001/api"
 
 # Replace with your own constant private key via `openssl rand -hex 32` if you want.
 NOSTR_PRIVKEY: str = secrets.token_hex(32)

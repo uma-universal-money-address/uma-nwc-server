@@ -77,14 +77,22 @@ def create_app() -> Quart:
             return redirect(vasp_url_with_query)
 
         # if short_lived_jwt is present, means user has logged in and this is redirect from the vasp with the full original url
-        required_commands = request.args.get("required_commands").split()
+        required_commands = (
+            request.args.get("required_commands").split()
+            if "required_commands" in request.args
+            else []
+        )
         optional_commands = request.args.get("optional_commands")
         budget = request.args.get("budget")
         app_name = request.args.get("app_name")
         description = request.args.get("description")
 
         vasp_token_payload = jwt.decode(
-            short_lived_vasp_token, app.config.get("VASP_NWC_SERVER_SHARED_SECRET")
+            short_lived_vasp_token,
+            app.config.get("UMA_VASP_JWT_PUBKEY"),
+            algorithms=["ES256"],
+            # TODO: verify the aud and iss
+            options={"verify_aud": False, "verify_iss": False},
         )
         vasp_user_id = vasp_token_payload["sub"]
         uma_address = vasp_token_payload["address"]

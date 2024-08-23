@@ -17,6 +17,7 @@ uma-auth-api = "*"
 uvicorn-worker = "*"
 uvicorn = "*"
 aioauth = "*"
+cryptography = "*"
 
 [dev-packages]
 black = "*"
