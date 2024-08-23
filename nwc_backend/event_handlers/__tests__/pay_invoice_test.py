@@ -8,6 +8,7 @@ from unittest.mock import ANY, AsyncMock, Mock, patch
 import aiohttp
 import pytest
 from pydantic_core import ValidationError
+from quart.app import QuartClient
 from uma_auth.models.pay_invoice_request import PayInvoiceRequest
 
 from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
@@ -19,7 +20,7 @@ INVOICE = "lnbcrt1u1pjd4dnypp556q6aag8hf6rweejfdv8tp2v4034jdfvxj8p94rr2fwgvuy8xx
 
 
 @patch.object(aiohttp.ClientSession, "post")
-async def test_pay_invoice_success(mock_post: Mock) -> None:
+async def test_pay_invoice_success(mock_post: Mock, test_client: QuartClient) -> None:
     vasp_response = {
         "preimage": "b6f1086f61561bacf2f05fa02ab30a06c3432c1aea62817c019ea33c1730eeb3",
     }
@@ -29,37 +30,43 @@ async def test_pay_invoice_success(mock_post: Mock) -> None:
     mock_post.return_value.__aenter__.return_value = mock_response
 
     params = {"invoice": INVOICE}
-    response = await pay_invoice(
-        access_token=token_hex(),
-        request=Nip47Request(params=params),
-    )
-    mock_post.assert_called_once_with(
-        url="/payments/bolt11",
-        data=PayInvoiceRequest.from_dict(params).to_json(),
-        headers=ANY,
-    )
-    assert exclude_none_values(response.to_dict()) == vasp_response
-
-
-async def test_pay_invoice_failure__invalid_input() -> None:
-    with pytest.raises(ValidationError):
-        await pay_invoice(
+    async with test_client.app.app_context():
+        response = await pay_invoice(
             access_token=token_hex(),
-            request=Nip47Request(params={"payment_hashh": token_hex()}),
+            request=Nip47Request(params=params),
         )
+
+        mock_post.assert_called_once_with(
+            url="/payments/bolt11",
+            data=PayInvoiceRequest.from_dict(params).to_json(),
+            headers=ANY,
+        )
+        assert exclude_none_values(response.to_dict()) == vasp_response
+
+
+async def test_pay_invoice_failure__invalid_input(test_client: QuartClient) -> None:
+    async with test_client.app.app_context():
+        with pytest.raises(ValidationError):
+            await pay_invoice(
+                access_token=token_hex(),
+                request=Nip47Request(params={"payment_hashh": token_hex()}),
+            )
 
 
 @patch.object(aiohttp.ClientSession, "post")
-async def test_pay_invoice_failure__http_raises(mock_post: Mock) -> None:
+async def test_pay_invoice_failure__http_raises(
+    mock_post: Mock, test_client: QuartClient
+) -> None:
     mock_response = AsyncMock()
     mock_response.raise_for_status = Mock(
         side_effect=aiohttp.ClientResponseError(request_info=Mock(), history=())
     )
     mock_post.return_value.__aenter__.return_value = mock_response
 
-    with pytest.raises(Nip47RequestException) as exc_info:
-        await pay_invoice(
-            access_token=token_hex(),
-            request=Nip47Request(params={"invoice": INVOICE}),
-        )
-    assert exc_info.value.error_code == ErrorCode.PAYMENT_FAILED
+    async with test_client.app.app_context():
+        with pytest.raises(Nip47RequestException) as exc_info:
+            await pay_invoice(
+                access_token=token_hex(),
+                request=Nip47Request(params={"invoice": INVOICE}),
+            )
+            assert exc_info.value.error_code == ErrorCode.PAYMENT_FAILED

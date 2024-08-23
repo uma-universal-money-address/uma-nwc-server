@@ -29,10 +29,11 @@ async def test_execute_quote_success(mock_post: Mock, test_client: QuartClient) 
             access_token=token_hex(),
             request=Nip47Request(params={"payment_hash": payment_hash}),
         )
-    mock_post.assert_called_once_with(
-        url=f"/quote/{payment_hash}", data=None, headers=ANY
-    )
-    assert exclude_none_values(response.to_dict()) == vasp_response
+
+        mock_post.assert_called_once_with(
+            url=f"/quote/{payment_hash}", data=None, headers=ANY
+        )
+        assert exclude_none_values(response.to_dict()) == vasp_response
 
 
 async def test_execute_quote_failure__invalid_input(test_client: QuartClient) -> None:
@@ -60,4 +61,4 @@ async def test_execute_quote_failure__http_raises(
                 access_token=token_hex(),
                 request=Nip47Request(params={"payment_hash": token_hex()}),
             )
-    assert exc_info.value.error_code == ErrorCode.PAYMENT_FAILED
+            assert exc_info.value.error_code == ErrorCode.PAYMENT_FAILED

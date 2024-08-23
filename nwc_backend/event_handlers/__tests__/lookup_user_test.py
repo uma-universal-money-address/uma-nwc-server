@@ -4,10 +4,10 @@
 import json
 from secrets import token_hex
 from unittest.mock import ANY, AsyncMock, Mock, patch
-from quart.app import QuartClient
 
 import aiohttp
 import pytest
+from quart.app import QuartClient
 
 from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
 from nwc_backend.event_handlers.lookup_user_handler import lookup_user
@@ -50,12 +50,11 @@ async def test_lookup_user_success(mock_get: Mock, test_client: QuartClient) -> 
             request=Nip47Request(params=params),
         )
 
-    params.pop("receiver")
-    mock_get.assert_called_once_with(
-        url=f"/receiver/lud16/{receiver_address}", params=params, headers=ANY
-    )
-
-    assert exclude_none_values(response.to_dict()) == vasp_response
+        params.pop("receiver")
+        mock_get.assert_called_once_with(
+            url=f"/receiver/lud16/{receiver_address}", params=params, headers=ANY
+        )
+        assert exclude_none_values(response.to_dict()) == vasp_response
 
 
 async def test_lookup_user_failure__missing_receiver(test_client: QuartClient) -> None:
@@ -114,4 +113,4 @@ async def test_lookup_user_failure__not_found(
                 access_token=token_hex(),
                 request=Nip47Request(params={"receiver": {"lud16": "lud16_address"}}),
             )
-    assert exc_info.value.error_code == ErrorCode.NOT_FOUND
+        assert exc_info.value.error_code == ErrorCode.NOT_FOUND
