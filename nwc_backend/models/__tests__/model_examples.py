@@ -5,8 +5,8 @@ from secrets import token_hex
 from uuid import uuid4
 
 from nostr_sdk import Keys
-from sqlalchemy.orm import Session
 
+from nwc_backend.db import db
 from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
@@ -14,14 +14,14 @@ from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.user import User
 
 
-def create_user(db_session: Session) -> User:
+def create_user() -> User:
     user = User(id=uuid4(), vasp_user_id=str(uuid4()), uma_address="$alice@uma.me")
-    db_session.add(user)
-    db_session.commit()
+    db.session.add(user)
+    db.session.commit()
     return user
 
 
-def create_client_app(db_session: Session) -> ClientApp:
+def create_client_app() -> ClientApp:
     nostr_pubkey = Keys.generate().public_key().to_hex()
     identity_relay = "wss://myrelay.info"
     client_app = ClientApp(
@@ -30,20 +30,19 @@ def create_client_app(db_session: Session) -> ClientApp:
         app_name="Blue Drink",
         description="An instant messaging app",
     )
-    db_session.add(client_app)
-    db_session.commit()
+    db.session.add(client_app)
+    db.session.commit()
     return client_app
 
 
 def create_nwc_connection(
-    db_session: Session,
     supported_commands: list[Nip47RequestMethod] = [
         Nip47RequestMethod.MAKE_INVOICE,
         Nip47RequestMethod.PAY_INVOICE,
     ],
 ) -> NWCConnection:
-    user = create_user(db_session)
-    client_app = create_client_app(db_session)
+    user = create_user()
+    client_app = create_client_app()
     nwc_connection = NWCConnection(
         id=uuid4(),
         user_id=user.id,
@@ -54,19 +53,18 @@ def create_nwc_connection(
             (datetime.now(timezone.utc) + timedelta(days=365)).timestamp()
         ),
     )
-    db_session.add(nwc_connection)
-    db_session.commit()
+    db.session.add(nwc_connection)
+    db.session.commit()
     return nwc_connection
 
 
 def create_app_connection(
-    db_session: Session,
     supported_commands: list[Nip47RequestMethod] = [
         Nip47RequestMethod.MAKE_INVOICE,
         Nip47RequestMethod.PAY_INVOICE,
     ],
 ) -> AppConnection:
-    nwc_connection = create_nwc_connection(db_session, supported_commands)
+    nwc_connection = create_nwc_connection(supported_commands)
     keys = Keys.generate()
     now = datetime.now(timezone.utc)
     app_connection = AppConnection(
@@ -81,6 +79,6 @@ def create_app_connection(
         authorization_code_expires_at=int((now + timedelta(minutes=10)).timestamp()),
     )
 
-    db_session.add(app_connection)
-    db_session.commit()
+    db.session.add(app_connection)
+    db.session.commit()
     return app_connection

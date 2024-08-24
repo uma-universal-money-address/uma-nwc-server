@@ -6,7 +6,6 @@ from uuid import uuid4
 
 from nostr_sdk import Keys
 from quart.app import QuartClient
-from sqlalchemy.orm import Session
 
 from nwc_backend.db import db
 from nwc_backend.models.__tests__.model_examples import create_nwc_connection
@@ -22,8 +21,8 @@ async def test_app_connection_model(test_client: QuartClient) -> None:
         Nip47RequestMethod.FETCH_QUOTE,
         Nip47RequestMethod.EXECUTE_QUOTE,
     ]
-    with Session(db.engine) as db_session:
-        nwc_connection = create_nwc_connection(db_session, supported_commands)
+    async with test_client.app.app_context():
+        nwc_connection = create_nwc_connection(supported_commands)
         app_connection = AppConnection(
             id=id,
             nwc_connection_id=nwc_connection.id,
@@ -37,11 +36,11 @@ async def test_app_connection_model(test_client: QuartClient) -> None:
                 (now + timedelta(minutes=10)).timestamp()
             ),
         )
-        db_session.add(app_connection)
-        db_session.commit()
+        db.session.add(app_connection)
+        db.session.commit()
 
-    with Session(db.engine) as db_session:
-        app_connection = db_session.get(AppConnection, id)
+    async with test_client.app.app_context():
+        app_connection = db.session.get(AppConnection, id)
         assert isinstance(app_connection, AppConnection)
         assert app_connection.has_command_permission(Nip47RequestMethod.FETCH_QUOTE)
         assert not app_connection.has_command_permission(

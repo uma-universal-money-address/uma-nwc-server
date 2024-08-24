@@ -10,7 +10,6 @@ from aioauth.models import Token
 from aioauth.utils import generate_token
 from nostr_sdk import Keys
 from quart import Response
-from sqlalchemy.orm import Session
 from werkzeug.datastructures import Headers
 
 from nwc_backend.db import db
@@ -48,30 +47,28 @@ class OauthStorage:
         self,
         nwc_connection_id: UUID,
     ) -> AppConnection:
-        with Session(db.engine) as db_session:
-            auth_code = generate_auth_code()
-            new_key_pair = generate_access_token_pubkey_pair()
-            new_access_token = new_key_pair.access_token
-            new_nostr_pubkey = new_key_pair.public_key
-            new_refresh_token = generate_refresh_token()
+        auth_code = generate_auth_code()
+        new_key_pair = generate_access_token_pubkey_pair()
+        new_access_token = new_key_pair.access_token
+        new_nostr_pubkey = new_key_pair.public_key
+        new_refresh_token = generate_refresh_token()
 
-            app_connection = AppConnection(
-                id=uuid4(),
-                nwc_connection_id=nwc_connection_id,
-                authorization_code=auth_code,
-                access_token=new_access_token,
-                nostr_pubkey=new_nostr_pubkey,
-                refresh_token=new_refresh_token,
-                access_token_expires_at=int(time()) + ACCESS_TOKEN_EXPIRES_IN,
-                refresh_token_expires_at=int(time()) + REFRESH_TOKEN_EXPIRES_IN,
-                authorization_code_expires_at=int(time())
-                + AUTHORIZATION_CODE_EXPIRES_IN,
-            )
+        app_connection = AppConnection(
+            id=uuid4(),
+            nwc_connection_id=nwc_connection_id,
+            authorization_code=auth_code,
+            access_token=new_access_token,
+            nostr_pubkey=new_nostr_pubkey,
+            refresh_token=new_refresh_token,
+            access_token_expires_at=int(time()) + ACCESS_TOKEN_EXPIRES_IN,
+            refresh_token_expires_at=int(time()) + REFRESH_TOKEN_EXPIRES_IN,
+            authorization_code_expires_at=int(time()) + AUTHORIZATION_CODE_EXPIRES_IN,
+        )
 
-            db_session.add(app_connection)
-            db_session.commit()
+        db.session.add(app_connection)
+        db.session.commit()
 
-            return app_connection
+        return app_connection
 
     async def refresh_access_token(
         self,
@@ -88,36 +85,33 @@ class OauthAuthorizationServer:
         self.storage = storage
 
     async def get_exchange_token_response(self, client_id: str, code: str) -> Response:
-        with Session(db.engine) as db_session:
-            app_connection: Optional[AppConnection] = (
-                db_session.query(AppConnection)
-                .filter_by(authorization_code=code)
-                .first()
-            )
-            if (
-                not app_connection
-                or app_connection.nwc_connection.client_app.client_id != client_id
-            ):
-                return Response(status=401, response="Invalid authorization code")
+        app_connection: Optional[AppConnection] = (
+            db.session.query(AppConnection).filter_by(authorization_code=code).first()
+        )
+        if (
+            not app_connection
+            or app_connection.nwc_connection.client_app.client_id != client_id
+        ):
+            return Response(status=401, response="Invalid authorization code")
 
-            nwc_connection = app_connection.nwc_connection
-            response = {
-                "access_token": app_connection.access_token,
-                "refresh_token": app_connection.refresh_token,
-                "expires_in": app_connection.access_token_expires_at - int(time()),
-                "token_type": "Bearer",
-                # TODO: Add the NWC connection URI
-                "nwc_connection_uri": "",
-                "commands": nwc_connection.supported_commands,
-                "budget": nwc_connection.max_budget_per_month,
-                "nwc_expires_at": nwc_connection.connection_expires_at,
-                "uma_address": nwc_connection.user.uma_address,
-            }
-            return Response(
-                json.dumps(response),
-                status=200,
-                headers=Headers({"Content-Type": "application/json"}),
-            )
+        nwc_connection = app_connection.nwc_connection
+        response = {
+            "access_token": app_connection.access_token,
+            "refresh_token": app_connection.refresh_token,
+            "expires_in": app_connection.access_token_expires_at - int(time()),
+            "token_type": "Bearer",
+            # TODO: Add the NWC connection URI
+            "nwc_connection_uri": "",
+            "commands": nwc_connection.supported_commands,
+            "budget": nwc_connection.max_budget_per_month,
+            "nwc_expires_at": nwc_connection.connection_expires_at,
+            "uma_address": nwc_connection.user.uma_address,
+        }
+        return Response(
+            json.dumps(response),
+            status=200,
+            headers=Headers({"Content-Type": "application/json"}),
+        )
 
     async def get_refresh_token_response(self) -> Response:
         # TODO: Implement this method
