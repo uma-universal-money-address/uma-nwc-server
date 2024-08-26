@@ -24,7 +24,7 @@ async def test_nip47_request_model(test_client: QuartClient) -> None:
     }
 
     async with test_client.app.app_context():
-        app_connection_id = create_app_connection().id
+        app_connection_id = (await create_app_connection()).id
         nip47_request = Nip47Request(
             id=id,
             app_connection_id=app_connection_id,
@@ -35,11 +35,10 @@ async def test_nip47_request_model(test_client: QuartClient) -> None:
             response_result=response_result,
         )
         db.session.add(nip47_request)
-        db.session.commit()
+        await db.session.commit()
 
     async with test_client.app.app_context():
-        nip47_request = db.session.get(Nip47Request, id)
-        assert isinstance(nip47_request, Nip47Request)
+        nip47_request = await db.session.get_one(Nip47Request, id)
         assert nip47_request.event_id == event_id
         assert nip47_request.app_connection_id == app_connection_id
         assert nip47_request.method == method

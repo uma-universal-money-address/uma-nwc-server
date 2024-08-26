@@ -3,21 +3,19 @@
 import json
 from dataclasses import dataclass
 from time import time
-from typing import Optional
 from uuid import UUID, uuid4
 
 from aioauth.models import Token
 from aioauth.utils import generate_token
 from nostr_sdk import Keys
 from quart import Response
-from werkzeug.datastructures import Headers
 from sqlalchemy.exc import IntegrityError
+from werkzeug.datastructures import Headers
 
 from nwc_backend.db import db
 from nwc_backend.exceptions import ActiveAppConnectionAlreadyExistsException
 from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.app_connection_status import AppConnectionStatus
-
 
 ACCESS_TOKEN_EXPIRES_IN = 30 * 24 * 60 * 60
 REFRESH_TOKEN_EXPIRES_IN = 120 * 24 * 60 * 60
@@ -72,7 +70,7 @@ class OauthStorage:
                 status=AppConnectionStatus.ACTIVE,
             )
             db.session.add(app_connection)
-            db.session.commit()
+            await db.session.commit()
         except IntegrityError as e:
             raise ActiveAppConnectionAlreadyExistsException(
                 "App connection already exists", e
@@ -95,9 +93,7 @@ class OauthAuthorizationServer:
         self.storage = storage
 
     async def get_exchange_token_response(self, client_id: str, code: str) -> Response:
-        app_connection: Optional[AppConnection] = (
-            db.session.query(AppConnection).filter_by(authorization_code=code).first()
-        )
+        app_connection = await AppConnection.from_authorization_code(code)
         if (
             not app_connection
             or app_connection.nwc_connection.client_app.client_id != client_id
