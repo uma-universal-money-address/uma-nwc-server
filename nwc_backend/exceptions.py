@@ -63,5 +63,5 @@ class VaspErrorResponseException(Nip47RequestException):
             super().__init__(error_code=error_code, error_message=response)
 
 
-class AppConnectionNotFoundException(Exception):
+class ActiveAppConnectionAlreadyExistsException(Exception):
     pass

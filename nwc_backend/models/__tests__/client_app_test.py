@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from quart.app import QuartClient
 
+from nwc_backend.client_app_identity_lookup import Nip05VerificationStatus
 from nwc_backend.db import db
 from nwc_backend.models.client_app import ClientApp
 
@@ -15,7 +16,7 @@ async def test_client_app_model(test_client: QuartClient) -> None:
     identity_relay = "wss://myrelay.info"
     client_id = f"{nostr_pubkey} {identity_relay}"
     app_name = "Blue Drink"
-    description = "An instant messaging app"
+    display_name = "Blue Drink"
 
     async with test_client.app.app_context():
         id = uuid4()
@@ -23,7 +24,8 @@ async def test_client_app_model(test_client: QuartClient) -> None:
             id=id,
             client_id=client_id,
             app_name=app_name,
-            description=description,
+            display_name=display_name,
+            verification_status=Nip05VerificationStatus.VERIFIED,
         )
         db.session.add(client_app)
         db.session.commit()
@@ -33,18 +35,18 @@ async def test_client_app_model(test_client: QuartClient) -> None:
         assert isinstance(client_app, ClientApp)
         assert client_app.client_id == client_id
         assert client_app.app_name == app_name
-        assert client_app.description == description
-        assert client_app.client_metadata is None
-        assert client_app.logo_uri is None
+        assert client_app.display_name == display_name
+        assert client_app.verification_status == Nip05VerificationStatus.VERIFIED
+        assert client_app.image_url is None
         assert client_app.nostr_pubkey == nostr_pubkey
         assert client_app.identity_relay == identity_relay
 
-        logo_uri = "https://picsum.photos/200/300"
+        image_url = "https://picsum.photos/200/300"
         # test update
-        client_app.client_metadata = {"logo_uri": logo_uri}
+        client_app.image_url = image_url
         db.session.commit()
 
     async with test_client.app.app_context():
         client_app = db.session.get(ClientApp, id)
         assert isinstance(client_app, ClientApp)
-        assert client_app.logo_uri == logo_uri
+        assert client_app.image_url == image_url

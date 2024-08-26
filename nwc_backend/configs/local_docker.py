@@ -10,7 +10,6 @@ DATABASE_URI: str = "sqlite+pysqlite:///" + os.path.join(
 
 UMA_VASP_JWT_PUBKEY = "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\nq9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==\n-----END PUBLIC KEY-----"
 FRONTEND_BUILD_PATH = "../static"
-NWC_FRONTEND_NEW_APP_PAGE = "http://localhost:8080/apps/new"
 UMA_VASP_LOGIN_URL = "http://local:5001/auth/nwcsession"
 UMA_VASP_TOKEN_EXCHANGE_URL = "http://local:5001/umanwc/token"
 VASP_UMA_API_BASE_URL = "http://local:5001/umanwc"
@@ -19,6 +18,7 @@ VASP_UMA_API_BASE_URL = "http://local:5001/umanwc"
 # Replace with your own constant private key via `openssl rand -hex 32` if you want.
 NOSTR_PRIVKEY: str = secrets.token_hex(32)
 RELAY = "wss://relay.getalby.com/v1"
+NWC_APP_ROOT_URL = "http://localhost:8080"
 
 VASP_SUPPORTED_COMMANDS = [
     "pay_invoice",

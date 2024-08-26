@@ -10,6 +10,7 @@ from quart.app import QuartClient
 from nwc_backend.db import db
 from nwc_backend.models.__tests__.model_examples import create_nwc_connection
 from nwc_backend.models.app_connection import AppConnection
+from nwc_backend.models.app_connection_status import AppConnectionStatus
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 
 
@@ -35,6 +36,7 @@ async def test_app_connection_model(test_client: QuartClient) -> None:
             authorization_code_expires_at=int(
                 (now + timedelta(minutes=10)).timestamp()
             ),
+            status=AppConnectionStatus.ACTIVE,
         )
         db.session.add(app_connection)
         db.session.commit()

@@ -8,6 +8,7 @@ from typing import Any
 from uuid import uuid4
 
 import jwt
+import json
 import requests
 from nostr_sdk import Filter, Kind, KindEnum
 from quart import Quart, Response, redirect, request, send_from_directory, session
@@ -15,8 +16,15 @@ from werkzeug import Response as WerkzeugResponse
 
 import nwc_backend.alembic_importer  # noqa: F401
 from nwc_backend.db import db
+from nwc_backend.db import UUID
 from nwc_backend.event_handlers.event_builder import EventBuilder
-from nwc_backend.exceptions import PublishEventFailedException
+from nwc_backend.exceptions import (
+    ActiveAppConnectionAlreadyExistsException,
+    PublishEventFailedException,
+)
+from nwc_backend.models.app_connection import AppConnection
+from nwc_backend.models.app_connection_status import AppConnectionStatus
+from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.user import User
@@ -24,6 +32,9 @@ from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
 from nwc_backend.nostr_notification_handler import NotificationHandler
 from nwc_backend.oauth import OauthStorage, authorization_server
+from nwc_backend.client_app_identity_lookup import (
+    look_up_client_app_identity,
+)
 
 
 def create_app() -> Quart:
@@ -83,8 +94,7 @@ def create_app() -> Quart:
         )
         optional_commands = request.args.get("optional_commands")
         budget = request.args.get("budget")
-        app_name = request.args.get("app_name")
-        description = request.args.get("description")
+        client_id = request.args.get("client_id")
 
         vasp_token_payload = jwt.decode(
             short_lived_vasp_token,
@@ -121,35 +131,68 @@ def create_app() -> Quart:
             )
             db.session.add(user)
 
+        # update client app info, or create a new one if it doesn't exist
+        client_app_info = await look_up_client_app_identity(client_id)
+        if not client_app_info:
+            logging.error(
+                "Received an empty response for client app identity lookup for client_id %s",
+                client_id,
+            )
+            # TODO: Sync with @brian on how we want to handle this
+            return WerkzeugResponse("Client app not found", status=404)
+
+        client_app = db.session.query(ClientApp).filter_by(client_id=client_id).first()
+        if client_app:
+            client_app.app_name = client_app_info.name
+            client_app.display_name = client_app_info.display_name
+            client_app.verification_status = (
+                client_app_info.nip05.verification_status
+                if client_app_info.nip05
+                else None
+            )
+            client_app.image_url = client_app_info.image_url
+        else:
+            client_app = ClientApp(
+                client_id=client_id,
+                app_name=client_app_info.name,
+                display_name=client_app_info.display_name,
+                verification_status=(
+                    client_app_info.nip05.verification_status
+                    if client_app_info.nip05
+                    else None
+                ),
+                image_url=client_app_info.image_url,
+            )
+            db.session.add(client_app)
+
         nwc_connection = NWCConnection(
-            id=uuid4(),
             user_id=user.id,
-            app_name=app_name,
-            description=description,
+            client_app_id=client_app.id,
             max_budget_per_month=budget,
             supported_commands=supported_commands,
         )
-
         db.session.add(nwc_connection)
         db.session.commit()
 
+        # TODO: Verify these are saved on nwc frontend session
         session["short_lived_vasp_token"] = short_lived_vasp_token
-        session["nw_connection_id"] = nwc_connection.id
+        session["nwc_connection_id"] = nwc_connection.id
         session["user_id"] = user.id
         session["client_id"] = request.args.get("client_id")
         session["client_redirect_uri"] = request.args.get("redirect_uri")
+        session["client_state"] = request.args.get("state")
 
-        nwc_frontend_new_app = app.config["NWC_FRONTEND_NEW_APP_PAGE"]
+        nwc_frontend_new_app = app.config["NWC_APP_ROOT_URL"] + "/apps/new"
         return redirect(nwc_frontend_new_app)
 
     @app.route("/apps/new", methods=["POST"])
     async def register_new_app_connection() -> WerkzeugResponse:
         uma_vasp_token_exchange_url = app.config["UMA_VASP_TOKEN_EXCHANGE_URL"]
         short_lived_vasp_token = session["short_lived_vasp_token"]
-        nw_connection_id = session["nw_connection_id"]
+        nwc_connection_id = session["nwc_connection_id"]
 
         # save the long lived token in the db and create the app connection
-        nwc_connection: NWCConnection = db.session.get(NWCConnection, nw_connection_id)
+        nwc_connection: NWCConnection = db.session.get(NWCConnection, nwc_connection_id)
 
         # exhange the short lived jwt for a long lived jwt
         permissions = nwc_connection.supported_commands
@@ -173,13 +216,17 @@ def create_app() -> Quart:
         db.session.commit()
 
         oauth_storage = OauthStorage()
-        app_connection = await oauth_storage.create_app_connection(
-            nwc_connection_id=nw_connection_id,
-        )
+        try:
+            app_connection = await oauth_storage.create_app_connection(
+                nwc_connection_id=nwc_connection_id,
+            )
+        except ActiveAppConnectionAlreadyExistsException:
+            return WerkzeugResponse("Active app connection already exists", status=400)
+
         # redirect back to the redirect_uri provided by the client app with the auth code and state
         added_parms = {
             "code": app_connection.authorization_code,
-            "state": "success",
+            "state": session["client_state"],
         }
         redirect_uri = session["client_redirect_uri"]
         return redirect(
@@ -202,6 +249,34 @@ def create_app() -> Quart:
             return await authorization_server.get_refresh_token_response()
         else:
             return Response(status=400, response="Invalid grant type")
+
+    @app.route("/api/connection/<connectionId>", methods=["GET"])
+    async def get_connection(connectionId: str) -> WerkzeugResponse:
+        user_id = session.get("user_id")
+        if not user_id:
+            return WerkzeugResponse("User not authenticated", status=401)
+        connection: AppConnection = db.session.query(AppConnection).get(
+            UUID(connectionId)
+        )
+        if not connection:
+            return WerkzeugResponse("Connection not found", status=404)
+        response = await connection.get_connection_reponse_data()
+        return WerkzeugResponse(json.dumps(response), status=200)
+
+    @app.route("/api/connections", methods=["GET"])
+    async def get_all_active_connections() -> WerkzeugResponse:
+        user_id = session.get("user_id")
+        if not user_id:
+            return WerkzeugResponse("User not authenticated", status=401)
+        connections = (
+            db.session.query(AppConnection)
+            .filter_by(user_id=user_id, status=AppConnectionStatus.ACTIVE)
+            .all()
+        )
+        response = []
+        for connection in connections:
+            response.append(await connection.get_connection_reponse_data())
+        return WerkzeugResponse(json.dumps(response), status=200)
 
     return app
 
