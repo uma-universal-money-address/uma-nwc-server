@@ -11,7 +11,6 @@ import jwt
 import requests
 from nostr_sdk import Filter, Kind, KindEnum
 from quart import Quart, Response, redirect, request, send_from_directory, session
-from sqlalchemy.orm import Session
 from werkzeug import Response as WerkzeugResponse
 
 import nwc_backend.alembic_importer  # noqa: F401
@@ -113,27 +112,26 @@ def create_app() -> Quart:
                     supported_commands.append(command)
 
         # save the app connection and nwc connection in the db
-        with Session(db.engine) as db_session:
-            user = db_session.query(User).filter_by(vasp_user_id=vasp_user_id).first()
-            if not user:
-                user = User(
-                    id=uuid4(),
-                    vasp_user_id=vasp_user_id,
-                    uma_address=uma_address,
-                )
-                db_session.add(user)
-
-            nwc_connection = NWCConnection(
+        user = db.session.query(User).filter_by(vasp_user_id=vasp_user_id).first()
+        if not user:
+            user = User(
                 id=uuid4(),
-                user_id=user.id,
-                app_name=app_name,
-                description=description,
-                max_budget_per_month=budget,
-                supported_commands=supported_commands,
+                vasp_user_id=vasp_user_id,
+                uma_address=uma_address,
             )
+            db.session.add(user)
 
-            db_session.add(nwc_connection)
-            db_session.commit()
+        nwc_connection = NWCConnection(
+            id=uuid4(),
+            user_id=user.id,
+            app_name=app_name,
+            description=description,
+            max_budget_per_month=budget,
+            supported_commands=supported_commands,
+        )
+
+        db.session.add(nwc_connection)
+        db.session.commit()
 
         session["short_lived_vasp_token"] = short_lived_vasp_token
         session["nw_connection_id"] = nwc_connection.id
@@ -151,47 +149,42 @@ def create_app() -> Quart:
         nw_connection_id = session["nw_connection_id"]
 
         # save the long lived token in the db and create the app connection
-        with Session(db.engine) as db_session:
-            nwc_connection: NWCConnection = db_session.get(
-                NWCConnection, nw_connection_id
-            )
+        nwc_connection: NWCConnection = db.session.get(NWCConnection, nw_connection_id)
 
-            # exhange the short lived jwt for a long lived jwt
-            permissions = nwc_connection.supported_commands
-            # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
-            connection_expires_at = int(
-                (datetime.now(timezone.utc) + timedelta(days=365)).timestamp()
-            )
-            response = requests.post(
-                uma_vasp_token_exchange_url,
-                json={
-                    "token": short_lived_vasp_token,
-                    "permissions": permissions,
-                    "expiration": connection_expires_at,
-                },
-            )
-            response.raise_for_status()
-            long_lived_vasp_token = response.json()["token"]
+        # exhange the short lived jwt for a long lived jwt
+        permissions = nwc_connection.supported_commands
+        # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
+        connection_expires_at = int(
+            (datetime.now(timezone.utc) + timedelta(days=365)).timestamp()
+        )
+        response = requests.post(
+            uma_vasp_token_exchange_url,
+            json={
+                "token": short_lived_vasp_token,
+                "permissions": permissions,
+                "expiration": connection_expires_at,
+            },
+        )
+        response.raise_for_status()
+        long_lived_vasp_token = response.json()["token"]
 
-            nwc_connection.long_lived_vasp_token = long_lived_vasp_token
-            nwc_connection.connection_expires_at = connection_expires_at
-            db_session.commit()
+        nwc_connection.long_lived_vasp_token = long_lived_vasp_token
+        nwc_connection.connection_expires_at = connection_expires_at
+        db.session.commit()
 
-            oauth_storage = OauthStorage()
-            app_connection = await oauth_storage.create_app_connection(
-                nwc_connection_id=nw_connection_id,
-            )
-            # redirect back to the redirect_uri provided by the client app with the auth code and state
-            added_parms = {
-                "code": app_connection.authorization_code,
-                "state": "success",
-            }
-            redirect_uri = session["client_redirect_uri"]
-            return redirect(
-                redirect_uri
-                + "?"
-                + "&".join([f"{k}={v}" for k, v in added_parms.items()])
-            )
+        oauth_storage = OauthStorage()
+        app_connection = await oauth_storage.create_app_connection(
+            nwc_connection_id=nw_connection_id,
+        )
+        # redirect back to the redirect_uri provided by the client app with the auth code and state
+        added_parms = {
+            "code": app_connection.authorization_code,
+            "state": "success",
+        }
+        redirect_uri = session["client_redirect_uri"]
+        return redirect(
+            redirect_uri + "?" + "&".join([f"{k}={v}" for k, v in added_parms.items()])
+        )
 
     @app.route("/oauth/token", methods=["GET"])
     async def oauth_exchange() -> Response:

@@ -3,7 +3,6 @@
 from uuid import uuid4
 
 from quart.app import QuartClient
-from sqlalchemy.orm import Session
 
 from nwc_backend.db import db
 from nwc_backend.models.__tests__.model_examples import create_client_app, create_user
@@ -13,9 +12,9 @@ from nwc_backend.models.nwc_connection import NWCConnection
 
 async def test_nwc_connection_model(test_client: QuartClient) -> None:
     id = uuid4()
-    with Session(db.engine) as db_session:
-        user_id = create_user(db_session).id
-        client_app_id = create_client_app(db_session).id
+    async with test_client.app.app_context():
+        user_id = create_user().id
+        client_app_id = create_client_app().id
         nwc_connection = NWCConnection(
             id=id,
             user_id=user_id,
@@ -25,11 +24,11 @@ async def test_nwc_connection_model(test_client: QuartClient) -> None:
                 Nip47RequestMethod.PAY_INVOICE.value,
             ],
         )
-        db_session.add(nwc_connection)
-        db_session.commit()
+        db.session.add(nwc_connection)
+        db.session.commit()
 
-    with Session(db.engine) as db_session:
-        nwc_connection = db_session.get(NWCConnection, id)
+    async with test_client.app.app_context():
+        nwc_connection = db.session.get(NWCConnection, id)
         assert isinstance(nwc_connection, NWCConnection)
         assert nwc_connection.user.id == user_id
         assert nwc_connection.client_app.id == client_app_id

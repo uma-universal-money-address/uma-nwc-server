@@ -5,7 +5,7 @@ from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import Boolean, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from nwc_backend.db import UUID as DBUUID
 from nwc_backend.db import db
@@ -43,12 +43,9 @@ class AppConnection(ModelBase):
 
     @staticmethod
     def from_nostr_pubkey(nostr_pubkey: str) -> Optional["AppConnection"]:
-        with Session(db.engine) as db_session:
-            return (
-                db_session.query(AppConnection)
-                .filter_by(nostr_pubkey=nostr_pubkey)
-                .first()
-            )
+        return (
+            db.session.query(AppConnection).filter_by(nostr_pubkey=nostr_pubkey).first()
+        )
 
     def has_command_permission(self, command: Nip47RequestMethod) -> bool:
         return self.nwc_connection.has_command_permission(command)

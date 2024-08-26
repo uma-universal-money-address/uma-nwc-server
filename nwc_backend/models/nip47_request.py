@@ -8,7 +8,7 @@ from sqlalchemy import JSON
 from sqlalchemy import Enum as DBEnum
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql.json import JSONB
-from sqlalchemy.orm import Mapped, Session, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
 from nwc_backend.db import UUID as DBUUID
 from nwc_backend.db import Column, db
@@ -44,30 +44,28 @@ class Nip47Request(ModelBase):
         method: Nip47RequestMethod,
         params: Optional[dict[str, Any]],
     ) -> "Nip47Request":
-        with Session(db.engine) as db_session:
-            request = Nip47Request(
-                id=uuid4(),
-                app_connection_id=app_connection_id,
-                event_id=event_id,
-                method=method,
-                params=params,
-                response_result=None,
-                response_event_id=None,
-            )
-            db_session.add(request)
-            db_session.commit()
-            return request
+        request = Nip47Request(
+            id=uuid4(),
+            app_connection_id=app_connection_id,
+            event_id=event_id,
+            method=method,
+            params=params,
+            response_result=None,
+            response_event_id=None,
+        )
+        db.session.add(request)
+        db.session.commit()
+        return request
 
     async def update_response_and_save(
         self,
         response_event_id: str,
         response: dict[str, Any] | Nip47Error,
     ) -> None:
-        with Session(db.engine) as db_session:
-            self.response_event_id = response_event_id
-            if isinstance(response, Nip47Error):
-                self.response_error_code = response.code
-            else:
-                self.response_result = response
-            db_session.add(self)
-            db_session.commit()
+        self.response_event_id = response_event_id
+        if isinstance(response, Nip47Error):
+            self.response_error_code = response.code
+        else:
+            self.response_result = response
+        db.session.add(self)
+        db.session.commit()
