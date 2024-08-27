@@ -14,12 +14,15 @@ from nwc_backend.nostr_config import NostrConfig
 
 
 class EventBuilder:
-    def __init__(self, kind: KindEnum, content: str) -> None:
+    def __init__(
+        self, kind: KindEnum, content: str, keys: Optional[Keys] = None
+    ) -> None:
         self.kind: Kind = Kind.from_enum(kind)
         self.content = content
         self.created_at = int(datetime.now(timezone.utc).timestamp())
         self.tags: list[list[str]] = []
         self.content_encrypted = False
+        self.keys: Keys = keys or NostrConfig.instance().identity_keys
 
     def add_tag(self, tag: list[str]) -> "EventBuilder":
         self.tags.append(tag)
@@ -30,7 +33,7 @@ class EventBuilder:
             raise EventBuilderException("Content has already been encrypted.")
 
         self.content = nip04_encrypt(
-            secret_key=NostrConfig.instance().identity_privkey,
+            secret_key=self.keys.secret_key(),
             public_key=recipient_pubkey,
             content=self.content,
         )
@@ -53,7 +56,7 @@ class EventBuilder:
             json.dumps(
                 {
                     "id": event_id,
-                    "pubkey": NostrConfig.instance().identity_pubkey.to_hex(),
+                    "pubkey": self.keys.public_key().to_hex(),
                     "created_at": self.created_at,
                     "kind": self.kind.as_u16(),
                     "tags": self.tags,
@@ -66,7 +69,7 @@ class EventBuilder:
     def _compute_id(self) -> str:
         data = [
             0,
-            NostrConfig.instance().identity_pubkey.to_hex(),
+            self.keys.public_key().to_hex(),
             self.created_at,
             self.kind.as_u16(),
             self.tags,
@@ -76,8 +79,7 @@ class EventBuilder:
         return sha256(serialized_data.encode()).hexdigest()
 
     def _sign(self, message: str) -> str:
-        keys = Keys.parse(NostrConfig.instance().identity_privkey.to_hex())
-        return keys.sign_schnorr(bytes.fromhex(message))
+        return self.keys.sign_schnorr(bytes.fromhex(message))
 
 
 def create_nip47_response(
@@ -90,7 +92,7 @@ def create_nip47_response(
             content=json.dumps(content),
         )
         .encrypt_content(event.author())
-        .add_tag(["p", NostrConfig.instance().identity_pubkey.to_hex()])
+        .add_tag(["p", NostrConfig.instance().identity_keys.public_key().to_hex()])
         .add_tag(["e", event.id().to_hex()])
         .build()
     )
@@ -111,7 +113,7 @@ def create_nip47_error_response(
             content=json.dumps(content),
         )
         .encrypt_content(event.author())
-        .add_tag(["p", NostrConfig.instance().identity_pubkey.to_hex()])
+        .add_tag(["p", NostrConfig.instance().identity_keys.public_key().to_hex()])
         .add_tag(["e", event.id().to_hex()])
         .build()
     )

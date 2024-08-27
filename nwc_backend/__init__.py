@@ -312,7 +312,7 @@ async def init_nostr_client(app: Quart) -> None:
 
     nip47_filter = (
         Filter()
-        .pubkey(NostrConfig.instance(app).identity_pubkey)
+        .pubkey(NostrConfig.instance(app).identity_keys.public_key())
         .kind(Kind.from_enum(KindEnum.WALLET_CONNECT_REQUEST()))  # pyre-ignore[6]
     )
     await nostr_client.subscribe([nip47_filter])

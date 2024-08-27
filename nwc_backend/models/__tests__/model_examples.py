@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 from secrets import token_hex
+from typing import Optional
 from uuid import uuid4
 
 from nostr_sdk import Keys
@@ -64,16 +65,22 @@ async def create_app_connection(
         Nip47RequestMethod.MAKE_INVOICE,
         Nip47RequestMethod.PAY_INVOICE,
     ],
+    keys: Optional[Keys] = None,
+    access_token_expired: bool = False,
 ) -> AppConnection:
     nwc_connection = await create_nwc_connection(supported_commands)
-    keys = Keys.generate()
+    keys = keys or Keys.generate()
     now = datetime.now(timezone.utc)
+    if access_token_expired:
+        access_token_expires_at = now - timedelta(days=30)
+    else:
+        access_token_expires_at = now + timedelta(days=30)
     app_connection = AppConnection(
         id=uuid4(),
         nwc_connection=nwc_connection,
         nostr_pubkey=keys.public_key().to_hex(),
         access_token=keys.secret_key().to_hex(),
-        access_token_expires_at=int((now + timedelta(days=30)).timestamp()),
+        access_token_expires_at=int(access_token_expires_at.timestamp()),
         refresh_token=token_hex(),
         refresh_token_expires_at=int((now + timedelta(days=120)).timestamp()),
         authorization_code=token_hex(),

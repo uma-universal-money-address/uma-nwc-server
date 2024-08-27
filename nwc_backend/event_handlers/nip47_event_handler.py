@@ -46,27 +46,16 @@ async def handle_nip47_event(event: Event) -> None:
         await nostr_client.send_event(error_response)
         return
 
-    now = datetime.now(timezone.utc)
-    if app_connection.is_access_token_expired():
-        error_response = create_nip47_error_response(
-            event=event,
-            method=None,
-            error=Nip47Error(
-                code=ErrorCode.UNAUTHORIZED,
-                message="The nwc connection secret has expired.",
-            ),
-        )
-        await nostr_client.send_event(error_response)
-        return
-
     expiration = event.get_tag_content(TagKind.EXPIRATION())  # pyre-ignore[6]
-    if expiration and datetime.fromtimestamp(float(expiration), timezone.utc) < now:
+    if expiration and datetime.fromtimestamp(
+        float(expiration), timezone.utc
+    ) < datetime.now(timezone.utc):
         logging.debug("Event ignored: expired at %s.", expiration)
         return
 
     content = json.loads(
         nip04_decrypt(
-            secret_key=NostrConfig.instance().identity_privkey,
+            secret_key=NostrConfig.instance().identity_keys.secret_key(),
             public_key=event.author(),
             encrypted_content=event.content(),
         )
@@ -76,10 +65,22 @@ async def handle_nip47_event(event: Event) -> None:
     if not app_connection.has_command_permission(method):
         error_response = create_nip47_error_response(
             event=event,
-            method=None,
+            method=method,
+            error=Nip47Error(
+                code=ErrorCode.RESTRICTED,
+                message=f"No permission for request method {method.name}.",
+            ),
+        )
+        await nostr_client.send_event(error_response)
+        return
+
+    if app_connection.is_access_token_expired():
+        error_response = create_nip47_error_response(
+            event=event,
+            method=method,
             error=Nip47Error(
                 code=ErrorCode.UNAUTHORIZED,
-                message=f"No permission for request method {method.name}.",
+                message="The nwc connection secret has expired.",
             ),
         )
         await nostr_client.send_event(error_response)
