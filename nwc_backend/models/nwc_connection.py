@@ -4,7 +4,7 @@
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import JSON, ForeignKey, Integer, String
+from sqlalchemy import JSON, ForeignKey, Integer, String, BigInteger
 from sqlalchemy.dialects.postgresql.json import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -12,7 +12,9 @@ from nwc_backend.db import UUID as DBUUID
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.model_base import ModelBase
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
+from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.models.user import User
+from sqlalchemy import Enum as DBEnum
 
 
 class NWCConnection(ModelBase):
@@ -31,9 +33,13 @@ class NWCConnection(ModelBase):
     supported_commands: Mapped[list[str]] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"), nullable=False
     )
-    max_budget_per_month: Mapped[Optional[int]] = mapped_column(Integer())
     long_lived_vasp_token: Mapped[Optional[str]] = mapped_column(String(255))
     connection_expires_at: Mapped[Optional[int]] = mapped_column(Integer())
+    spending_limit_amount: Mapped[Optional[int]] = mapped_column(BigInteger())
+    spending_limit_currency_code: Mapped[Optional[str]] = mapped_column(String(3))
+    spending_limit_frequency: Mapped[Optional[SpendingLimitFrequency]] = mapped_column(
+        DBEnum(SpendingLimitFrequency, native_enum=False)
+    )
 
     user: Mapped[User] = relationship("User")
     client_app: Mapped[ClientApp] = relationship("ClientApp")

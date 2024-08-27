@@ -76,8 +76,8 @@ class AppConnection(ModelBase):
             "lastUsedAt": "TODO",
             "amountInLowestDenom": "TODO",
             "amountInLowestDenomUsed": "TODO",
-            "limitFrequency": "MONTHLY",
-            "limitEnabled": self.nwc_connection.max_budget_per_month is not None,
+            "limitFrequency": self.nwc_connection.spending_limit_frequency,
+            "limitEnabled": self.nwc_connection.spending_limit_amount is not None,
             # TODO: currency should be fetched from somewhere
             "currency": {
                 "code": "USD",
