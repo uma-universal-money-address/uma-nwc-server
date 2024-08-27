@@ -33,7 +33,7 @@ from nwc_backend.typing import none_throws
 
 
 async def handle_nip47_event(event: Event) -> None:
-    app_connection = AppConnection.from_nostr_pubkey(event.author().to_hex())
+    app_connection = await AppConnection.from_nostr_pubkey(event.author().to_hex())
     if not app_connection:
         error_response = create_nip47_error_response(
             event=event,

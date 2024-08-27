@@ -1,10 +1,10 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-from datetime import datetime, timedelta, timezone
 import json
 import logging
 import os
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
 
@@ -12,11 +12,12 @@ import jwt
 import requests
 from nostr_sdk import Filter, Kind, KindEnum
 from quart import Quart, Response, redirect, request, send_from_directory, session
+from sqlalchemy.sql import select
 from werkzeug import Response as WerkzeugResponse
 
 import nwc_backend.alembic_importer  # noqa: F401
-from nwc_backend.db import db
-from nwc_backend.db import UUID
+from nwc_backend.client_app_identity_lookup import look_up_client_app_identity
+from nwc_backend.db import UUID, db
 from nwc_backend.event_handlers.event_builder import EventBuilder
 from nwc_backend.exceptions import (
     ActiveAppConnectionAlreadyExistsException,
@@ -33,9 +34,6 @@ from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
 from nwc_backend.nostr_notification_handler import NotificationHandler
 from nwc_backend.oauth import OauthStorage, authorization_server
-from nwc_backend.client_app_identity_lookup import (
-    look_up_client_app_identity,
-)
 
 
 def create_app() -> Quart:
@@ -122,7 +120,7 @@ def create_app() -> Quart:
                     supported_commands.append(command)
 
         # save the app connection and nwc connection in the db
-        user = db.session.query(User).filter_by(vasp_user_id=vasp_user_id).first()
+        user = await User.from_vasp_user_id(vasp_user_id)
         if not user:
             user = User(
                 id=uuid4(),
@@ -141,7 +139,7 @@ def create_app() -> Quart:
             # TODO: Sync with @brian on how we want to handle this
             return WerkzeugResponse("Client app not found", status=404)
 
-        client_app = db.session.query(ClientApp).filter_by(client_id=client_id).first()
+        client_app = await ClientApp.from_client_id(client_id)
         if client_app:
             client_app.app_name = client_app_info.name
             client_app.display_name = client_app_info.display_name
@@ -202,7 +200,7 @@ def create_app() -> Quart:
         nwc_connection.connection_expires_at = connection_expires_at
 
         db.session.add(nwc_connection)
-        db.session.commit()
+        await db.session.commit()
 
         # TODO: Verify these are saved on nwc frontend session
         session["short_lived_vasp_token"] = short_lived_vasp_token
@@ -222,21 +220,21 @@ def create_app() -> Quart:
         nwc_connection_id = session["nwc_connection_id"]
 
         # save the long lived token in the db and create the app connection
-        nwc_connection: NWCConnection = db.session.get(NWCConnection, nwc_connection_id)
+        nwc_connection = await db.session.get_one(NWCConnection, nwc_connection_id)
 
         response = requests.post(
             uma_vasp_token_exchange_url,
             json={
                 "token": short_lived_vasp_token,
                 "permissions": nwc_connection.supported_commands,
-                "expiration": (nwc_connection.connection_expires_at),
+                "expiration": nwc_connection.connection_expires_at,
             },
         )
         response.raise_for_status()
         long_lived_vasp_token = response.json()["token"]
 
         nwc_connection.long_lived_vasp_token = long_lived_vasp_token
-        db.session.commit()
+        await db.session.commit()
 
         oauth_storage = OauthStorage()
         try:
@@ -278,9 +276,7 @@ def create_app() -> Quart:
         user_id = session.get("user_id")
         if not user_id:
             return WerkzeugResponse("User not authenticated", status=401)
-        connection: AppConnection = db.session.query(AppConnection).get(
-            UUID(connectionId)
-        )
+        connection = await db.session.get(AppConnection, UUID(connectionId))
         if not connection:
             return WerkzeugResponse("Connection not found", status=404)
         response = await connection.get_connection_reponse_data()
@@ -291,13 +287,17 @@ def create_app() -> Quart:
         user_id = session.get("user_id")
         if not user_id:
             return WerkzeugResponse("User not authenticated", status=401)
-        connections = (
-            db.session.query(AppConnection)
-            .filter_by(user_id=user_id, status=AppConnectionStatus.ACTIVE)
-            .all()
+
+        result = await db.session.execute(
+            select(AppConnection)
+            .join(AppConnection.nwc_connection)  # Join with NWCConnection
+            .filter(
+                NWCConnection.user_id == user_id,
+                AppConnection.status == AppConnectionStatus.ACTIVE,
+            )
         )
         response = []
-        for connection in connections:
+        for connection in result.scalars():
             response.append(await connection.get_connection_reponse_data())
         return WerkzeugResponse(json.dumps(response), status=200)
 

@@ -54,7 +54,7 @@ class Nip47Request(ModelBase):
             response_event_id=None,
         )
         db.session.add(request)
-        db.session.commit()
+        await db.session.commit()
         return request
 
     async def update_response_and_save(
@@ -68,4 +68,4 @@ class Nip47Request(ModelBase):
         else:
             self.response_result = response
         db.session.add(self)
-        db.session.commit()
+        await db.session.commit()

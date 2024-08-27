@@ -2,7 +2,7 @@
 # pyre-strict
 
 
-DATABASE_URI: str = "sqlite:///:memory:"
+DATABASE_URI: str = "sqlite+aiosqlite:///:memory:"
 
 UMA_VASP_JWT_PUBKEY = "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\nq9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==\n-----END PUBLIC KEY-----"
 FRONTEND_BUILD_PATH = "../nwc-frontend/dist"

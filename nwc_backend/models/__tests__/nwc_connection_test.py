@@ -13,8 +13,8 @@ from nwc_backend.models.nwc_connection import NWCConnection
 async def test_nwc_connection_model(test_client: QuartClient) -> None:
     id = uuid4()
     async with test_client.app.app_context():
-        user_id = create_user().id
-        client_app_id = create_client_app().id
+        user_id = (await create_user()).id
+        client_app_id = (await create_client_app()).id
         nwc_connection = NWCConnection(
             id=id,
             user_id=user_id,
@@ -25,11 +25,10 @@ async def test_nwc_connection_model(test_client: QuartClient) -> None:
             ],
         )
         db.session.add(nwc_connection)
-        db.session.commit()
+        await db.session.commit()
 
     async with test_client.app.app_context():
-        nwc_connection = db.session.get(NWCConnection, id)
-        assert isinstance(nwc_connection, NWCConnection)
+        nwc_connection = await db.session.get_one(NWCConnection, id)
         assert nwc_connection.user.id == user_id
         assert nwc_connection.client_app.id == client_app_id
         assert nwc_connection.has_command_permission(Nip47RequestMethod.MAKE_INVOICE)

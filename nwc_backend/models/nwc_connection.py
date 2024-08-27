@@ -4,7 +4,9 @@
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import JSON, ForeignKey, Integer, String, BigInteger
+from sqlalchemy import JSON, BigInteger
+from sqlalchemy import Enum as DBEnum
+from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql.json import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -14,7 +16,6 @@ from nwc_backend.models.model_base import ModelBase
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.models.user import User
-from sqlalchemy import Enum as DBEnum
 
 
 class NWCConnection(ModelBase):
@@ -41,8 +42,8 @@ class NWCConnection(ModelBase):
         DBEnum(SpendingLimitFrequency, native_enum=False)
     )
 
-    user: Mapped[User] = relationship("User")
-    client_app: Mapped[ClientApp] = relationship("ClientApp")
+    user: Mapped[User] = relationship("User", lazy="joined")
+    client_app: Mapped[ClientApp] = relationship("ClientApp", lazy="joined")
 
     def has_command_permission(self, command: Nip47RequestMethod) -> bool:
         return command.value in self.supported_commands

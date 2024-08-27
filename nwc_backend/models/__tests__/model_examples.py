@@ -15,14 +15,14 @@ from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.user import User
 
 
-def create_user() -> User:
+async def create_user() -> User:
     user = User(id=uuid4(), vasp_user_id=str(uuid4()), uma_address="$alice@uma.me")
     db.session.add(user)
-    db.session.commit()
+    await db.session.commit()
     return user
 
 
-def create_client_app() -> ClientApp:
+async def create_client_app() -> ClientApp:
     nostr_pubkey = Keys.generate().public_key().to_hex()
     identity_relay = "wss://myrelay.info"
     client_app = ClientApp(
@@ -32,22 +32,22 @@ def create_client_app() -> ClientApp:
         display_name="Blue Drink",
     )
     db.session.add(client_app)
-    db.session.commit()
+    await db.session.commit()
     return client_app
 
 
-def create_nwc_connection(
+async def create_nwc_connection(
     supported_commands: list[Nip47RequestMethod] = [
         Nip47RequestMethod.MAKE_INVOICE,
         Nip47RequestMethod.PAY_INVOICE,
     ],
 ) -> NWCConnection:
-    user = create_user()
-    client_app = create_client_app()
+    user = await create_user()
+    client_app = await create_client_app()
     nwc_connection = NWCConnection(
         id=uuid4(),
-        user_id=user.id,
-        client_app_id=client_app.id,
+        client_app=client_app,
+        user=user,
         supported_commands=[command.value for command in supported_commands],
         long_lived_vasp_token=token_hex(),
         connection_expires_at=int(
@@ -55,22 +55,22 @@ def create_nwc_connection(
         ),
     )
     db.session.add(nwc_connection)
-    db.session.commit()
+    await db.session.commit()
     return nwc_connection
 
 
-def create_app_connection(
+async def create_app_connection(
     supported_commands: list[Nip47RequestMethod] = [
         Nip47RequestMethod.MAKE_INVOICE,
         Nip47RequestMethod.PAY_INVOICE,
     ],
 ) -> AppConnection:
-    nwc_connection = create_nwc_connection(supported_commands)
+    nwc_connection = await create_nwc_connection(supported_commands)
     keys = Keys.generate()
     now = datetime.now(timezone.utc)
     app_connection = AppConnection(
         id=uuid4(),
-        nwc_connection_id=nwc_connection.id,
+        nwc_connection=nwc_connection,
         nostr_pubkey=keys.public_key().to_hex(),
         access_token=keys.secret_key().to_hex(),
         access_token_expires_at=int((now + timedelta(days=30)).timestamp()),
@@ -82,5 +82,5 @@ def create_app_connection(
     )
 
     db.session.add(app_connection)
-    db.session.commit()
+    await db.session.commit()
     return app_connection

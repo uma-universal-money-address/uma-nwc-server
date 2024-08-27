@@ -4,18 +4,17 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
+from sqlalchemy import Enum as DBEnum
+from sqlalchemy import ForeignKey, Index, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import select
 
 from nwc_backend.db import UUID as DBUUID
 from nwc_backend.db import db
-from nwc_backend.models.client_app import ClientApp
+from nwc_backend.models.app_connection_status import AppConnectionStatus
 from nwc_backend.models.model_base import ModelBase
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
-from nwc_backend.models.app_connection_status import AppConnectionStatus
-from sqlalchemy import Enum as DBEnum
-from sqlalchemy import Index
 
 
 class AppConnection(ModelBase):
@@ -46,18 +45,25 @@ class AppConnection(ModelBase):
         nullable=False,
     )
 
-    nwc_connection: Mapped[NWCConnection] = relationship("NWCConnection")
+    nwc_connection: Mapped[NWCConnection] = relationship("NWCConnection", lazy="joined")
 
     @staticmethod
-    def from_nostr_pubkey(nostr_pubkey: str) -> Optional["AppConnection"]:
-        return (
-            db.session.query(AppConnection).filter_by(nostr_pubkey=nostr_pubkey).first()
+    async def from_nostr_pubkey(nostr_pubkey: str) -> Optional["AppConnection"]:
+        result = await db.session.execute(
+            select(AppConnection).filter_by(nostr_pubkey=nostr_pubkey).limit(1)
         )
+        return result.scalars().first()
 
-    async def get_client_app(self) -> ClientApp:
-        with Session(db.engine) as db_session:
-            client_app = db_session.get(ClientApp, self.nwc_connection.client_app_id)
-            return client_app
+    @staticmethod
+    async def from_authorization_code(
+        authorization_code: str,
+    ) -> Optional["AppConnection"]:
+        result = await db.session.execute(
+            select(AppConnection)
+            .filter_by(authorization_code=authorization_code)
+            .limit(1)
+        )
+        return result.scalars().first()
 
     def has_command_permission(self, command: Nip47RequestMethod) -> bool:
         return self.nwc_connection.has_command_permission(command)
@@ -66,11 +72,10 @@ class AppConnection(ModelBase):
         return datetime.now(timezone.utc).timestamp() >= self.access_token_expires_at
 
     async def get_connection_reponse_data(self) -> dict[str, Any]:
-        # TODO: Address the fields that are marked as TODO
-        client_app = await self.get_client_app()
+        client_app = self.nwc_connection.client_app
         response = {
             "connectionId": self.id,
-            "clientId": self.nwc_connection.client_app.client_id,
+            "clientId": client_app.client_id,
             "name": client_app.app_name,
             "createdAt": self.created_at,
             "lastUsedAt": "TODO",

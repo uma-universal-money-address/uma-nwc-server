@@ -28,11 +28,10 @@ async def test_client_app_model(test_client: QuartClient) -> None:
             verification_status=Nip05VerificationStatus.VERIFIED,
         )
         db.session.add(client_app)
-        db.session.commit()
+        await db.session.commit()
 
     async with test_client.app.app_context():
-        client_app = db.session.get(ClientApp, id)
-        assert isinstance(client_app, ClientApp)
+        client_app = await db.session.get_one(ClientApp, id)
         assert client_app.client_id == client_id
         assert client_app.app_name == app_name
         assert client_app.display_name == display_name
@@ -44,9 +43,8 @@ async def test_client_app_model(test_client: QuartClient) -> None:
         image_url = "https://picsum.photos/200/300"
         # test update
         client_app.image_url = image_url
-        db.session.commit()
+        await db.session.commit()
 
     async with test_client.app.app_context():
-        client_app = db.session.get(ClientApp, id)
-        assert isinstance(client_app, ClientApp)
+        client_app = await db.session.get_one(ClientApp, id)
         assert client_app.image_url == image_url

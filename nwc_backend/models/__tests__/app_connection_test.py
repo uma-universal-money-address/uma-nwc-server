@@ -22,8 +22,10 @@ async def test_app_connection_model(test_client: QuartClient) -> None:
         Nip47RequestMethod.FETCH_QUOTE,
         Nip47RequestMethod.EXECUTE_QUOTE,
     ]
+    authorization_code = token_hex()
     async with test_client.app.app_context():
-        nwc_connection = create_nwc_connection(supported_commands)
+        nwc_connection = await create_nwc_connection(supported_commands)
+        client_id = nwc_connection.client_app.client_id
         app_connection = AppConnection(
             id=id,
             nwc_connection_id=nwc_connection.id,
@@ -32,23 +34,27 @@ async def test_app_connection_model(test_client: QuartClient) -> None:
             access_token_expires_at=int((now + timedelta(days=30)).timestamp()),
             refresh_token=token_hex(),
             refresh_token_expires_at=int((now + timedelta(days=120)).timestamp()),
-            authorization_code=token_hex(),
+            authorization_code=authorization_code,
             authorization_code_expires_at=int(
                 (now + timedelta(minutes=10)).timestamp()
             ),
             status=AppConnectionStatus.ACTIVE,
         )
         db.session.add(app_connection)
-        db.session.commit()
+        await db.session.commit()
 
     async with test_client.app.app_context():
-        app_connection = db.session.get(AppConnection, id)
+        app_connection = await AppConnection.from_nostr_pubkey(
+            app_connection.nostr_pubkey
+        )
         assert isinstance(app_connection, AppConnection)
         assert app_connection.has_command_permission(Nip47RequestMethod.FETCH_QUOTE)
         assert not app_connection.has_command_permission(
             Nip47RequestMethod.MAKE_INVOICE
         )
         assert not app_connection.is_access_token_expired()
+        assert not await AppConnection.from_nostr_pubkey(token_hex())
 
-        assert AppConnection.from_nostr_pubkey(app_connection.nostr_pubkey)
-        assert not AppConnection.from_nostr_pubkey(token_hex())
+        app_connection = await AppConnection.from_authorization_code(authorization_code)
+        assert isinstance(app_connection, AppConnection)
+        assert app_connection.nwc_connection.client_app.client_id == client_id

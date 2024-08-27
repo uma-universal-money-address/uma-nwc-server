@@ -1,11 +1,12 @@
+import asyncio
 from logging.config import fileConfig
 
-from quart import current_app, Quart
-from nwc_backend import create_app
-from nwc_backend.models.model_base import ModelBase
-from nwc_backend.db import db
+from quart import Quart, current_app
 
 from alembic import context
+from nwc_backend import create_app
+from nwc_backend.db import db
+from nwc_backend.models.model_base import ModelBase
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -52,7 +53,7 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-def run_migrations_online() -> None:
+async def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
     In this scenario we need to create an Engine
@@ -60,9 +61,11 @@ def run_migrations_online() -> None:
 
     """
     get_app().config["DATABASE_STATEMENT_TIMEOUT"] = 0
-    with db.engine.connect() as connection:
+    async with db.engine.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata, render_as_batch=True
+            connection=connection,  # pyre-ignore[6]
+            target_metadata=target_metadata,
+            render_as_batch=True,
         )
 
         with context.begin_transaction():
@@ -72,4 +75,4 @@ def run_migrations_online() -> None:
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    run_migrations_online()
+    asyncio.run(run_migrations_online())
