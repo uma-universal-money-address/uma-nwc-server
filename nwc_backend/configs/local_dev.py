@@ -4,7 +4,7 @@
 import os
 import secrets
 
-DATABASE_URI: str = "sqlite+pysqlite:///" + os.path.join(
+DATABASE_URI: str = "sqlite+aiosqlite:///" + os.path.join(
     os.getcwd(), "instance", "nwc.sqlite"
 )
 
