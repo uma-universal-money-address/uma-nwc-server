@@ -2,12 +2,18 @@
 # pyre-strict
 
 import asyncio
+import ssl
 import uuid
+from getpass import getuser
+from os import environ
+from time import monotonic
 from typing import Any, Callable, Optional, Type, Union
 
 import sqlalchemy
+from botocore.client import BaseClient
 from quart import Quart, Response, g
-from sqlalchemy import Uuid
+from sqlalchemy import Uuid, event
+from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_connection
 from sqlalchemy.engine import Dialect, Result
 from sqlalchemy.ext.asyncio.engine import AsyncEngine, create_async_engine
 from sqlalchemy.ext.asyncio.scoping import AsyncSession, async_scoped_session
@@ -75,3 +81,49 @@ class AsyncSQLAlchemy:
 
 db = AsyncSQLAlchemy()
 Column: Type[sqlalchemy.Column] = db.Column
+
+
+def setup_rds_iam_auth(engine: AsyncEngine) -> None:
+    from botocore.session import get_session
+
+    rds: BaseClient = get_session().create_client("rds")
+    token_cache: list[Union[float, str]] = []
+
+    @event.listens_for(engine.sync_engine, "do_connect", named=True)
+    def provide_token(cparams: dict[str, Any], **_kwargs: Any) -> None:
+        if not token_cache or monotonic() - token_cache[0] > 600:  # pyre-ignore[58]
+            token = rds.generate_db_auth_token(
+                cparams["host"], cparams["port"], cparams["user"]
+            )
+            token_cache.clear()
+            token_cache.extend((monotonic(), token))
+        cparams["password"] = token_cache[1]
+
+        # SQLAlchemy converts the URL to connect() arguments, but asyncpg
+        # only accepts sslmode et al. in a URL, not as arguments. So we
+        # need to construct an SSL context instead.
+        if "ssl" not in cparams:
+            sslmode = cparams.pop("sslmode", "prefer")
+            if sslmode in {"disable", "prefer", "allow", "require"}:
+                cparams["ssl"] = sslmode
+            else:
+                sslctx = ssl.create_default_context(
+                    ssl.Purpose.SERVER_AUTH, cafile=cparams.pop("sslrootcert", None)
+                )
+                sslctx.check_hostname = sslmode == "verify-full"
+                cparams["ssl"] = sslctx
+
+        cparams["server_settings"] = {
+            "application_name": environ.get("POD_NAME", getuser())
+        }
+
+    @event.listens_for(engine.sync_engine, "connect", named=True)
+    def set_timeout(
+        dbapi_connection: AsyncAdapt_asyncpg_connection, **_kwargs: Any
+    ) -> None:
+        timeout = int(60_000)
+        dbapi_connection.await_(
+            dbapi_connection._connection.execute(  # noqa: SLF001
+                f"SET statement_timeout = {timeout}"
+            )
+        )
