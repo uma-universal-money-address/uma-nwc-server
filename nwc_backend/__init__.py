@@ -17,7 +17,7 @@ from werkzeug import Response as WerkzeugResponse
 
 import nwc_backend.alembic_importer  # noqa: F401
 from nwc_backend.client_app_identity_lookup import look_up_client_app_identity
-from nwc_backend.db import UUID, db
+from nwc_backend.db import UUID, db, setup_rds_iam_auth
 from nwc_backend.event_handlers.event_builder import EventBuilder
 from nwc_backend.exceptions import (
     ActiveAppConnectionAlreadyExistsException,
@@ -43,6 +43,8 @@ def create_app() -> Quart:
     app.config.from_envvar("QUART_CONFIG")
     app.static_folder = app.config["FRONTEND_BUILD_PATH"]
     db.init_app(app)
+    if app.config.get("DATABASE_MODE") == "rds":
+        setup_rds_iam_auth(db.engine)
 
     # asyncio.run(init_nostr_client(app))
 

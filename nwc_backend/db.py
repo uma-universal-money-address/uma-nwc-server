@@ -3,9 +3,11 @@
 
 import asyncio
 import uuid
+from time import monotonic
 from typing import Any, Callable, Optional, Type, Union
 
 import sqlalchemy
+from botocore.client import BaseClient
 from quart import Quart, Response, g
 from sqlalchemy import Uuid
 from sqlalchemy.engine import Dialect, Result
@@ -75,3 +77,20 @@ class AsyncSQLAlchemy:
 
 db = AsyncSQLAlchemy()
 Column: Type[sqlalchemy.Column] = db.Column
+
+
+def setup_rds_iam_auth(engine: Engine) -> None:
+    from botocore.session import get_session
+
+    rds: BaseClient = get_session().create_client("rds")
+    token_cache: list[float | str] = []
+
+    @event.listens_for(engine, "do_connect", named=True)
+    def provide_token(cparams: dict[str, Any], **_kwargs: Any) -> None:
+        if not token_cache or monotonic() - token_cache[0] > 600:  # pyre-ignore[58]
+            token = rds.generate_db_auth_token(
+                cparams["host"], cparams["port"], cparams["user"]
+            )
+            token_cache.clear()
+            token_cache.extend((monotonic(), token))
+        cparams["password"] = token_cache[1]

@@ -19,6 +19,7 @@ uvicorn-worker = "*"
 uvicorn = "*"
 aioauth = "*"
 cryptography = "*"
+botocore = "*"
 
 [dev-packages]
 aiosqlite = "*"
