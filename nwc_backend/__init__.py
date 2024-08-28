@@ -153,6 +153,7 @@ def create_app() -> Quart:
             client_app.image_url = client_app_info.image_url
         else:
             client_app = ClientApp(
+                id=uuid4(),
                 client_id=client_id,
                 app_name=client_app_info.name,
                 display_name=client_app_info.display_name,
@@ -166,6 +167,7 @@ def create_app() -> Quart:
             db.session.add(client_app)
 
         nwc_connection = NWCConnection(
+            id=uuid4(),
             user_id=user.id,
             client_app_id=client_app.id,
             supported_commands=supported_commands,
