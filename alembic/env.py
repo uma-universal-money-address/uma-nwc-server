@@ -62,14 +62,19 @@ async def run_migrations_online() -> None:
     """
     get_app().config["DATABASE_STATEMENT_TIMEOUT"] = 0
     async with db.engine.connect() as connection:
-        context.configure(
-            connection=connection,  # pyre-ignore[6]
-            target_metadata=target_metadata,
-            render_as_batch=True,
-        )
+        await connection.run_sync(do_run_migrations)
 
-        with context.begin_transaction():
-            context.run_migrations()
+
+def do_run_migrations(connection):
+    """Function to run migrations in a synchronous context."""
+    context.configure(
+        connection=connection,  # This connection is now a synchronous connection
+        target_metadata=target_metadata,
+        render_as_batch=True,
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
 
 
 if context.is_offline_mode():
