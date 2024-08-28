@@ -4,12 +4,14 @@
 import json
 import logging
 from dataclasses import dataclass
+from datetime import timedelta
 from enum import Enum
 from typing import Optional
 
 from nostr_sdk import (
     Client,
     Event,
+    EventSource,
     Filter,
     Kind,
     KindEnum,
@@ -101,13 +103,13 @@ async def look_up_client_app_identity(client_id: str) -> Optional[ClientAppInfo]
         .kinds(
             [
                 Kind.from_enum(KindEnum.METADATA()),  # pyre-ignore[6]
-                # update it with 13195
-                Kind.from_enum(KindEnum.AUTHENTICATION()),  # pyre-ignore[6]
+                Kind(kind=13195),
             ]
         )
         .limit(2)
     )
-    events = await client.get_events_of(filters=[filter], timeout=None)  # pyre-ignore
+    source = EventSource.relays(timeout=timedelta(seconds=20))
+    events = await client.get_events_of(filters=[filter], source=source)
     await client.disconnect()
 
     if not events:
