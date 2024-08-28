@@ -20,6 +20,7 @@ uvicorn = "*"
 aioauth = "*"
 cryptography = "*"
 botocore = "*"
+awscli = "*"
 
 [dev-packages]
 aiosqlite = "*"
