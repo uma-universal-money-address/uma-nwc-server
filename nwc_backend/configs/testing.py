@@ -3,7 +3,7 @@
 
 
 DATABASE_URI: str = "sqlite+aiosqlite:///:memory:"
-
+SECRET_KEY = "tests_secret_key"
 UMA_VASP_JWT_PUBKEY = "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\nq9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==\n-----END PUBLIC KEY-----"
 FRONTEND_BUILD_PATH = "../nwc-frontend/dist"
 UMA_VASP_LOGIN_URL = "http://local:5001/auth/nwcsession"
