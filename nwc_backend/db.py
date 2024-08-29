@@ -99,24 +99,6 @@ def setup_rds_iam_auth(engine: AsyncEngine) -> None:
             token_cache.extend((monotonic(), token))
         cparams["password"] = token_cache[1]
 
-        # SQLAlchemy converts the URL to connect() arguments, but asyncpg
-        # only accepts sslmode et al. in a URL, not as arguments. So we
-        # need to construct an SSL context instead.
-        if "ssl" not in cparams:
-            sslmode = cparams.pop("sslmode", "prefer")
-            if sslmode in {"disable", "prefer", "allow", "require"}:
-                cparams["ssl"] = sslmode
-            else:
-                sslctx = ssl.create_default_context(
-                    ssl.Purpose.SERVER_AUTH, cafile=cparams.pop("sslrootcert", None)
-                )
-                sslctx.check_hostname = sslmode == "verify-full"
-                cparams["ssl"] = sslctx
-
-        cparams["server_settings"] = {
-            "application_name": environ.get("POD_NAME", getuser())
-        }
-
     @event.listens_for(engine.sync_engine, "connect", named=True)
     def set_timeout(
         dbapi_connection: AsyncAdapt_asyncpg_connection, **_kwargs: Any
