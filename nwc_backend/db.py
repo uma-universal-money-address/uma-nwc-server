@@ -2,10 +2,7 @@
 # pyre-strict
 
 import asyncio
-import ssl
 import uuid
-from getpass import getuser
-from os import environ
 from time import monotonic
 from typing import Any, Callable, Optional, Type, Union
 
