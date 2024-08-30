@@ -77,17 +77,22 @@ def create_app() -> Quart:
         if not short_lived_vasp_token:
             uma_vasp_login_url = app.config["UMA_VASP_LOGIN_URL"]
             # redirect back to the same url with the short lived jwt added
+            request_params = request.query_string.decode()
             query_params = {
-                "redirect_uri": request.url,
+                "redirect_uri": app.config["NWC_APP_ROOT_URL"]
+                + "/apps/auth"
+                + "?"
+                + request_params,
             }
             vasp_url_with_query = (
                 uma_vasp_login_url
                 + "?"
                 + "&".join([f"{k}={v}" for k, v in query_params.items()])
             )
+            logging.debug("REDIRECT to %s", vasp_url_with_query)
             return redirect(vasp_url_with_query)
 
-        # if short_lived_jwt is present, means user has logged in and this is redirect from the vasp with the full original url
+        # if short_lived_jwt is present, means user has logged in and this is redirect  from VASP to frontend, and frontend is making this call
         required_commands = (
             request.args.get("required_commands").split()
             if "required_commands" in request.args
