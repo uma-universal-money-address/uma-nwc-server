@@ -23,9 +23,9 @@ RUN pip install --upgrade pip wheel setuptools && \
     rm -rf ~/.cache ~/.local
 
 
-EXPOSE 8080
+EXPOSE 8081
 ENTRYPOINT ["gunicorn"]
-CMD ["-b", "0.0.0.0:8080", "-k", "uvicorn.workers.UvicornWorker", "nwc_backend.server:app"]
+CMD ["-b", "0.0.0.0:8081", "-k", "uvicorn.workers.UvicornWorker", "nwc_backend.server:app"]
 
 COPY alembic.ini /app
 COPY alembic /app/alembic
