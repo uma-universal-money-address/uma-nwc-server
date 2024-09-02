@@ -42,8 +42,12 @@ const getClientAppDefaultSettings = ({
   const permissionStates = requiredPermissionStates.concat(
     optionalPermissionStates,
   );
-  let [amountCurrency, limitFrequency] = budget.split("/");
-  let [amountInLowestDenom, currencyCode] = amountCurrency.split(".");
+  let [amountCurrency, limitFrequency] = budget
+    ? budget.split("/")
+    : [undefined, undefined];
+  let [amountInLowestDenom, currencyCode] = amountCurrency
+    ? amountCurrency.split(".")
+    : [undefined, undefined];
 
   if (permissionStates.length === 0) {
     permissionStates.concat(DEFAULT_CONNECTION_SETTINGS.permissionStates);
@@ -87,8 +91,8 @@ export const permissionsPageDataFromUrl = (async ({ request }) => {
     codeChallengeMethod: params.get("code_challenge_method"),
   };
   const nwcParams = {
-    requiredCommands: params.get("required_commands"),
-    optionalCommands: params.get("optional_commands"),
+    requiredCommands: params.get("required_commands") || "",
+    optionalCommands: params.get("optional_commands") || "",
     budget: params.get("budget"),
     expirationPeriod: params.get("expiration_period"),
   };

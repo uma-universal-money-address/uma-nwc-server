@@ -6,6 +6,7 @@ import logging
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from urllib.parse import urlencode, urlparse, unquote, parse_qs, urlunparse
 from uuid import uuid4
 
 import jwt
@@ -69,7 +70,45 @@ def create_app() -> Quart:
         if path != "" and os.path.exists(static_folder + "/" + path):
             return await send_from_directory(static_folder, path)
         else:
-            return await send_from_directory(static_folder, "index.html")
+            # TODO(LIG-6299): Replace this with a proper template engine.
+            with open(static_folder + "/index.html", "r") as file:
+                content = file.read()
+                content = content.replace(
+                    "${{VASP_NAME}}", app.config.get("VASP_NAME") or "UMA NWC"
+                )
+                content = content.replace(
+                    "${{UMA_VASP_LOGIN_URL}}", app.config["UMA_VASP_LOGIN_URL"]
+                )
+                content = content.replace(
+                    "${{VASP_LOGO_URL}}", app.config.get("VASP_LOGO_URL") or "/vasp.svg"
+                )
+                return Response(content, mimetype="text/html")
+
+    @app.route("/auth/vasp_token_callback", methods=["GET"])
+    async def vasp_token_callback() -> WerkzeugResponse:
+        short_lived_vasp_token = request.args.get("token")
+        fe_redirect_path = request.args.get("fe_redirect_path")
+        if fe_redirect_path:
+            fe_redirect_path = unquote(fe_redirect_path)
+        frontend_redirect_url = app.config["NWC_APP_ROOT_URL"] + (
+            fe_redirect_path or "/"
+        )
+        try:
+            parsed_url = urlparse(frontend_redirect_url)
+        except ValueError as e:
+            return WerkzeugResponse(
+                f"Invalid redirect url: {frontend_redirect_url}", status=400
+            )
+
+        query_params = parse_qs(parsed_url.query)
+        query_params["token"] = short_lived_vasp_token
+        parsed_url = parsed_url._replace(query=urlencode(query_params, doseq=True))
+        frontend_redirect_url = urlunparse(parsed_url)
+
+        if not short_lived_vasp_token:
+            return WerkzeugResponse("No token provided", status=400)
+
+        return redirect(frontend_redirect_url)
 
     @app.route("/oauth/auth", methods=["GET"])
     async def oauth_auth() -> WerkzeugResponse:
