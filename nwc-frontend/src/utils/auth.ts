@@ -4,7 +4,7 @@ import { getBackendUrl } from "./backendUrl";
 type LoginState = {
   umaAddress: string;
   authToken: string;
-  validUntil: string;
+  validUntil: Date|null;
 };
 
 let globalLoginState: LoginState | null = null;
@@ -18,17 +18,22 @@ export class Auth {
     this.handleToken();
   }
 
-  handleToken() {
+  private handleToken() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("token");
     if (token) {
+      const expiryStr = params.get("expiry");
+      const expiry = expiryStr ? new Date(parseFloat(expiryStr) * 1000) : null;
       globalLoginState = {
         umaAddress: params.get("uma_address") || "",
         authToken: token,
-        validUntil: params.get("valid_until") || "",
+        validUntil: expiry,
       };
+      console.log("Logged in", globalLoginState);
       const url = new URL(window.location.href);
       url.searchParams.delete("token");
+      url.searchParams.delete("expiry");
+      url.searchParams.delete("uma_address");
       window.history.replaceState({}, document.title, url.toString());
     }
   }
@@ -64,6 +69,13 @@ export class Auth {
       return false;
     }
     return true;
+  }
+
+  getAuthToken() {
+    if (!this.isLoggedIn()) {
+      return null;
+    }
+    return globalLoginState?.authToken;
   }
 }
 

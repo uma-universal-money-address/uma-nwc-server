@@ -87,6 +87,19 @@ def create_app() -> Quart:
     @app.route("/auth/vasp_token_callback", methods=["GET"])
     async def vasp_token_callback() -> WerkzeugResponse:
         short_lived_vasp_token = request.args.get("token")
+        vasp_token_payload = jwt.decode(
+            short_lived_vasp_token,
+            app.config.get("UMA_VASP_JWT_PUBKEY"),
+            algorithms=["ES256"],
+            # TODO: verify the aud and iss
+            options={"verify_aud": False, "verify_iss": False},
+        )
+        # TODO: Should probably let the VASP's tokens be opaque to the NWC backend and just have the
+        # VASP send this info explicitly
+        vasp_user_id = vasp_token_payload["sub"]
+        uma_address = vasp_token_payload["address"]
+        expiry = vasp_token_payload["exp"]
+
         fe_redirect_path = request.args.get("fe_redirect_path")
         if fe_redirect_path:
             fe_redirect_path = unquote(fe_redirect_path)
@@ -102,6 +115,8 @@ def create_app() -> Quart:
 
         query_params = parse_qs(parsed_url.query)
         query_params["token"] = short_lived_vasp_token
+        query_params["uma_address"] = uma_address
+        query_params["expiry"] = expiry
         parsed_url = parsed_url._replace(query=urlencode(query_params, doseq=True))
         frontend_redirect_url = urlunparse(parsed_url)
 
@@ -147,8 +162,11 @@ def create_app() -> Quart:
             # TODO: verify the aud and iss
             options={"verify_aud": False, "verify_iss": False},
         )
+        # TODO: Should probably let the VASP's tokens be opaque to the NWC backend and just have the
+        # VASP send this info explicitly
         vasp_user_id = vasp_token_payload["sub"]
         uma_address = vasp_token_payload["address"]
+        expiry = vasp_token_payload["exp"]
 
         # check if all required commands are supported are vasp, and add optional commands supported by vasp
         vasp_supported_commands = app.config.get("VASP_SUPPORTED_COMMANDS")
@@ -259,6 +277,12 @@ def create_app() -> Quart:
         session["client_state"] = request.args.get("state")
 
         nwc_frontend_new_app = app.config["NWC_APP_ROOT_URL"] + "/apps/new"
+        query_params = {
+            "token": short_lived_vasp_token,
+            "uma_address": uma_address,
+            "exipry": expiry,
+        }
+        nwc_frontend_new_app = nwc_frontend_new_app + "?" + urlencode(query_params)
         return redirect(nwc_frontend_new_app)
 
     @app.route("/apps/new", methods=["POST"])

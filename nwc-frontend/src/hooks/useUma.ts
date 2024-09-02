@@ -15,6 +15,7 @@ export const fetchUma = async () => {
   return response.uma;
 };
 
+// TODO: Switch this to use the Auth state instead of fetching directly.
 export function useUma() {
   const [uma, setUma] = useState<string>();
   const [error, setError] = useState<string>();
