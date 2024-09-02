@@ -17,6 +17,7 @@ import { formatConnectionString } from "src/utils/formatConnectionString";
 import { EditExpiration } from "./EditExpiration";
 import { EditLimit } from "./EditLimit";
 import { PermissionsEditableList } from "./PermissionsEditableList";
+import { LoaderData } from "src/loaders/LoaderData";
 
 export interface ConnectionSettings {
   permissionStates: PermissionState[];
@@ -163,7 +164,6 @@ export const PersonalizePage = ({
         visible={isEditLimitVisible}
         amountInLowestDenom={internalConnectionSettings.amountInLowestDenom}
         currency={defaultCurrency}
-        limitFrequency={internalConnectionSettings.limitFrequency}
         frequency={internalConnectionSettings.limitFrequency}
         enabled={internalConnectionSettings.limitEnabled}
         handleSubmit={handleSubmitEditLimit}

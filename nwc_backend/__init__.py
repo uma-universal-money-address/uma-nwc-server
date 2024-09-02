@@ -96,11 +96,10 @@ def create_app() -> Quart:
         )
         # TODO: Should probably let the VASP's tokens be opaque to the NWC backend and just have the
         # VASP send this info explicitly
-        vasp_user_id = vasp_token_payload["sub"]
         uma_address = vasp_token_payload["address"]
         expiry = vasp_token_payload["exp"]
 
-        fe_redirect_path = request.args.get("fe_redirect_path")
+        fe_redirect_path = request.args.get("fe_redirect")
         if fe_redirect_path:
             fe_redirect_path = unquote(fe_redirect_path)
         frontend_redirect_url = app.config["NWC_APP_ROOT_URL"] + (
@@ -134,7 +133,7 @@ def create_app() -> Quart:
             request_params = request.query_string.decode()
             query_params = {
                 "redirect_uri": app.config["NWC_APP_ROOT_URL"]
-                + "/apps/auth"
+                + "/oauth/auth"
                 + "?"
                 + request_params,
             }
@@ -280,7 +279,7 @@ def create_app() -> Quart:
         query_params = {
             "token": short_lived_vasp_token,
             "uma_address": uma_address,
-            "exipry": expiry,
+            "expiry": expiry,
         }
         nwc_frontend_new_app = nwc_frontend_new_app + "?" + urlencode(query_params)
         return redirect(nwc_frontend_new_app)

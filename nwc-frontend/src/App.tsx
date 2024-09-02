@@ -13,7 +13,6 @@ import {
 import { LearnMoreModal } from "./LearnMoreModal";
 import { useConnections } from "./hooks/useConnections";
 import { ConnectionStatus } from "./types/Connection";
-import { useAuth } from "./utils/auth";
 
 function App() {
   const navigate = useNavigate();
@@ -35,12 +34,6 @@ function App() {
   const archivedConnections = connections?.filter(
     (connection) => connection.status === ConnectionStatus.INACTIVE,
   );
-
-  const auth = useAuth();
-  if (!auth.isLoggedIn()) {
-    auth.redirectToLogin();
-    return null;
-  }
 
   return (
     <Main>

@@ -4,7 +4,7 @@ import { getBackendUrl } from "./backendUrl";
 type LoginState = {
   umaAddress: string;
   authToken: string;
-  validUntil: Date|null;
+  validUntil: Date | null;
 };
 
 let globalLoginState: LoginState | null = null;
@@ -29,7 +29,6 @@ export class Auth {
         authToken: token,
         validUntil: expiry,
       };
-      console.log("Logged in", globalLoginState);
       const url = new URL(window.location.href);
       url.searchParams.delete("token");
       url.searchParams.delete("expiry");
@@ -64,7 +63,10 @@ export class Auth {
     if (!globalLoginState) {
       return false;
     }
-    if (new Date(globalLoginState.validUntil) < new Date()) {
+    if (
+      !globalLoginState.validUntil ||
+      globalLoginState.validUntil < new Date()
+    ) {
       this.logout();
       return false;
     }
