@@ -109,7 +109,7 @@ def create_app() -> Quart:
             parsed_url = urlparse(frontend_redirect_url)
         except ValueError as e:
             return WerkzeugResponse(
-                f"Invalid redirect url: {frontend_redirect_url}", status=400
+                f"Invalid redirect url: {frontend_redirect_url}. {e}", status=400
             )
 
         query_params = parse_qs(parsed_url.query)
