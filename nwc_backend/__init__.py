@@ -117,7 +117,7 @@ def create_app() -> Quart:
         query_params["uma_address"] = uma_address
         query_params["expiry"] = expiry
         parsed_url = parsed_url._replace(query=urlencode(query_params, doseq=True))
-        frontend_redirect_url = urlunparse(parsed_url)
+        frontend_redirect_url = str(urlunparse(parsed_url))
 
         if not short_lived_vasp_token:
             return WerkzeugResponse("No token provided", status=400)
