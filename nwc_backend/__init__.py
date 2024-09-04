@@ -131,17 +131,15 @@ def create_app() -> Quart:
             uma_vasp_login_url = app.config["UMA_VASP_LOGIN_URL"]
             # redirect back to the same url with the short lived jwt added
             request_params = request.query_string.decode()
-            query_params = {
-                "redirect_uri": app.config["NWC_APP_ROOT_URL"]
-                + "/oauth/auth"
-                + "?"
-                + request_params,
-            }
-            vasp_url_with_query = (
-                uma_vasp_login_url
-                + "?"
-                + "&".join([f"{k}={v}" for k, v in query_params.items()])
+            query_params = urlencode(
+                {
+                    "redirect_uri": app.config["NWC_APP_ROOT_URL"]
+                    + "/oauth/auth"
+                    + "?"
+                    + request_params,
+                }
             )
+            vasp_url_with_query = uma_vasp_login_url + "?" + query_params
             logging.debug("REDIRECT to %s", vasp_url_with_query)
             return redirect(vasp_url_with_query)
 
@@ -277,8 +275,12 @@ def create_app() -> Quart:
 
         nwc_frontend_new_app = app.config["NWC_APP_ROOT_URL"] + "/apps/new"
         query_params = {
+            "client_id": client_id,
+            "optional_commands": optional_commands,
+            "required_commands": required_commands,
             "token": short_lived_vasp_token,
             "uma_address": uma_address,
+            "redirect_uri": request.args.get("redirect_uri"),
             "expiry": expiry,
         }
         nwc_frontend_new_app = nwc_frontend_new_app + "?" + urlencode(query_params)
@@ -295,9 +297,12 @@ def create_app() -> Quart:
 
         response = requests.post(
             uma_vasp_token_exchange_url,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + short_lived_vasp_token,
+            },
             json={
-                "token": short_lived_vasp_token,
-                "permissions": nwc_connection.supported_commands,
+                "permissions": ["all"], # TODO: Pass real permissions.
                 "expiration": nwc_connection.connection_expires_at,
             },
         )
@@ -321,9 +326,7 @@ def create_app() -> Quart:
             "state": session["client_state"],
         }
         redirect_uri = session["client_redirect_uri"]
-        return redirect(
-            redirect_uri + "?" + "&".join([f"{k}={v}" for k, v in added_parms.items()])
-        )
+        return redirect_uri + "?" + "&".join([f"{k}={v}" for k, v in added_parms.items()])
 
     @app.route("/oauth/token", methods=["GET"])
     async def oauth_exchange() -> Response:
@@ -371,6 +374,38 @@ def create_app() -> Quart:
         for connection in result.scalars():
             response.append(await connection.get_connection_reponse_data())
         return WerkzeugResponse(json.dumps(response), status=200)
+
+    @app.route("/api/app", methods=["GET"])
+    async def get_client_app() -> WerkzeugResponse:
+        # user_id = session.get("user_id")
+        # if not user_id:
+        #     return WerkzeugResponse("User not authenticated", status=401)
+
+        client_id = request.args.get("clientId")
+        if not client_id:
+            return WerkzeugResponse("Client ID not provided", status=400)
+
+        client_app_info = await look_up_client_app_identity(client_id)
+        if not client_app_info:
+            return WerkzeugResponse("Client app not found", status=404)
+
+        return WerkzeugResponse(
+            json.dumps(
+                {
+                    "clientId": client_id,
+                    "name": client_app_info.display_name,
+                    "verified": (
+                        client_app_info.nip05.verification_status.value
+                        if client_app_info.nip05
+                        else None
+                    ),
+                    "avatar": client_app_info.image_url,
+                    "domain": (
+                        client_app_info.nip05.domain if client_app_info.nip05 else None
+                    ),
+                }
+            )
+        )
 
     return app
 

@@ -79,6 +79,13 @@ export class Auth {
     }
     return globalLoginState?.authToken;
   }
+
+  getUmaAddress() {
+    if (!this.isLoggedIn()) {
+      return null;
+    }
+    return globalLoginState?.umaAddress;
+  }
 }
 
 export const useAuth = () => {

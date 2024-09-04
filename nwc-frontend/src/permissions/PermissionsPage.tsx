@@ -44,6 +44,7 @@ async function initConnection({
     limitEnabled: connectionSettings.limitEnabled,
     expiration,
   });
+  console.log(`Redirecting to ${redirectUri}?code=${code}&state=${state}`);
   window.location.href = `${redirectUri}?code=${code}&state=${state}`;
 }
 
