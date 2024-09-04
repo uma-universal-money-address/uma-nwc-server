@@ -34,7 +34,7 @@ class NWCConnection(ModelBase):
     supported_commands: Mapped[list[str]] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"), nullable=False
     )
-    long_lived_vasp_token: Mapped[Optional[str]] = mapped_column(String(255))
+    long_lived_vasp_token: Mapped[Optional[str]] = mapped_column(String(1024))
     connection_expires_at: Mapped[Optional[int]] = mapped_column(Integer())
     spending_limit_amount: Mapped[Optional[int]] = mapped_column(BigInteger())
     spending_limit_currency_code: Mapped[Optional[str]] = mapped_column(String(3))
