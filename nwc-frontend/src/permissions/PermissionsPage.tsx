@@ -15,6 +15,7 @@ import {
 } from "src/hooks/useConnection";
 import { ExpirationPeriod, Permission } from "src/types/Connection";
 import { PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
+import { useAuth } from "src/utils/auth";
 import { formatConnectionString } from "src/utils/formatConnectionString";
 import { PermissionsList } from "./PermissionsList";
 import { ConnectionSettings, PersonalizePage } from "./PersonalizePage";
@@ -56,12 +57,13 @@ async function initConnection({
 export const PermissionsPage = () => {
   const {
     appInfo,
-    uma,
     oauthParams,
     connection,
     connectionSettings: initialConnectionSettings,
     defaultCurrency,
   } = useLoaderData() as PermissionPageLoaderData;
+  const auth = useAuth();
+  const uma = auth.getUmaAddress();
   const navigate = useNavigate();
 
   const [isPersonalizeVisible, setIsPersonalizeVisible] =

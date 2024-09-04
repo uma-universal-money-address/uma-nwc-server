@@ -2,10 +2,11 @@ import styled from "@emotion/styled";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { Uma } from "src/components/Uma";
-import { useUma } from "src/hooks/useUma";
+import { useAuth } from "./utils/auth";
 
 export const Nav = () => {
-  const { uma, isLoading: isLoadingUma } = useUma();
+  const auth = useAuth();
+  const uma = auth.getUmaAddress();
 
   return (
     <NavContainer>
@@ -15,7 +16,7 @@ export const Nav = () => {
         <Name>UMA Connections</Name>
       </NavLeftSide>
       <a href="/vasp">
-        <Uma uma={uma} isLoading={isLoadingUma} />
+        <Uma uma={uma} />
       </a>
     </NavContainer>
   );

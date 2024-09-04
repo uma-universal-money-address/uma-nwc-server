@@ -1,6 +1,5 @@
 import { json, LoaderFunction } from "react-router-dom";
 import { fetchAppInfo } from "src/hooks/useAppInfo";
-import { fetchUma } from "src/hooks/useUma";
 import {
   DEFAULT_CONNECTION_SETTINGS,
   PERMISSION_DESCRIPTIONS,
@@ -120,15 +119,11 @@ export const permissionsPageDataFromUrl = (async ({ request }) => {
     type: "fiat",
   };
 
-  const [appInfo, uma] = await Promise.all([
-    fetchAppInfo(oauthParams.clientId),
-    fetchUma(),
-  ]);
+  const appInfo = await fetchAppInfo(oauthParams.clientId);
 
   return json(
     {
       appInfo,
-      uma,
       connectionSettings: getClientAppDefaultSettings(nwcParams),
       defaultCurrency,
       oauthParams,

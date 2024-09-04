@@ -1,18 +1,9 @@
 import styled from "@emotion/styled";
-import { Shimmer } from "./Shimmer";
 
-export const Uma = ({
-  uma,
-  isLoading,
-}: {
-  uma?: string;
-  isLoading?: boolean;
-}) => {
+export const Uma = ({ uma }: { uma?: string }) => {
   return (
     <Container>
-      <Text>
-        {uma && !isLoading ? uma : <Shimmer height={20} width={120} />}
-      </Text>
+      <Text>{uma}</Text>
       <img alt="uma" src="/uma.svg" width={28} height={12} />
     </Container>
   );
