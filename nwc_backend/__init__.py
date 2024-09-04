@@ -32,11 +32,16 @@ from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.spending_limit import SpendingLimit
+from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.models.user import User
 from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
 from nwc_backend.nostr_notification_handler import NotificationHandler
 from nwc_backend.oauth import OauthStorage, authorization_server
+from nwc_backend.models.permissions_grouping import (
+    PERMISSIONS_GROUP_TO_METHODS,
+    PermissionsGroup,
+)
 
 
 def create_app() -> Quart:
@@ -288,9 +293,44 @@ def create_app() -> Quart:
         short_lived_vasp_token = session["short_lived_vasp_token"]
         nwc_connection_id = session["nwc_connection_id"]
 
-        # save the long lived token in the db and create the app connection
+        data = await request.get_data()
+        data = json.loads(data)
+        permissions = data.get("permissions")
+        currency_code = data.get("currencyCode")
+        amount_in_lowest_denom = data.get("amountInLowestDenom")
+        limit_enabled = data.get("limitEnabled")
+        limit_frequency = data.get("limitFrequency")
+        expiration = data.get("expiration")
+
         nwc_connection = await db.session.get_one(NWCConnection, nwc_connection_id)
 
+        nwc_connection.spending_limit_currency_code = currency_code
+        expires_at = datetime.fromisoformat(expiration)
+        nwc_connection.connection_expires_at = expires_at.timestamp()
+        if limit_enabled:
+            nwc_connection.spending_limit_amount = amount_in_lowest_denom
+            if limit_frequency is None:
+                nwc_connection.spending_limit_frequency = SpendingLimitFrequency.NONE
+            else:
+                nwc_connection.spending_limit_frequency = SpendingLimitFrequency(
+                    limit_frequency
+                )
+        else:
+            nwc_connection.spending_limit_amount = None
+            nwc_connection.spending_limit_frequency = None
+
+        # the frontend will always send grouped permissions so we can directly save
+        nwc_connection.supported_commands = permissions
+        all_granted_granular_permissions = set()
+        for permission in permissions:
+            all_granted_granular_permissions.update(
+                PERMISSIONS_GROUP_TO_METHODS[PermissionsGroup(permission)]
+            )
+        all_granted_granular_permissions.update(
+            PERMISSIONS_GROUP_TO_METHODS[PermissionsGroup.ALWAYS_GRANTED]
+        )
+
+        # save the long lived token in the db and create the app connection
         response = requests.post(
             uma_vasp_token_exchange_url,
             headers={
@@ -298,7 +338,7 @@ def create_app() -> Quart:
                 "Authorization": "Bearer " + short_lived_vasp_token,
             },
             json={
-                "permissions": ["all"],  # TODO: Pass real permissions.
+                "permissions": list(all_granted_granular_permissions),
                 "expiration": nwc_connection.connection_expires_at,
             },
         )
