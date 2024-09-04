@@ -143,15 +143,7 @@ def create_app() -> Quart:
             logging.debug("REDIRECT to %s", vasp_url_with_query)
             return redirect(vasp_url_with_query)
 
-        # if short_lived_jwt is present, means user has logged in and this is redirect  from VASP to frontend, and frontend is making this call
-        required_commands = (
-            request.args.get("required_commands").split()
-            if "required_commands" in request.args
-            else []
-        )
-        optional_commands = request.args.get("optional_commands")
-        client_id = request.args.get("client_id")
-
+        # if short_lived_jwt is present, means user has logged in and this is redirect from VASP to frontend, and frontend is making this call
         vasp_token_payload = jwt.decode(
             short_lived_vasp_token,
             app.config.get("UMA_VASP_JWT_PUBKEY"),
@@ -164,137 +156,58 @@ def create_app() -> Quart:
         vasp_user_id = vasp_token_payload["sub"]
         uma_address = vasp_token_payload["address"]
         expiry = vasp_token_payload["exp"]
-
-        # check if all required commands are supported are vasp, and add optional commands supported by vasp
-        vasp_supported_commands = app.config.get("VASP_SUPPORTED_COMMANDS")
-        for command in required_commands:
-            if command not in vasp_supported_commands:
-                return WerkzeugResponse(
-                    f"Command {command} is not supported by the VASP",
-                    status=400,
-                )
-        supported_commands = required_commands
-        if optional_commands:
-            optional_commands = optional_commands.split()
-            for command in optional_commands:
-                if command in vasp_supported_commands:
-                    supported_commands.append(command)
-
-        # save the app connection and nwc connection in the db
-        user = await User.from_vasp_user_id(vasp_user_id)
-        if not user:
-            user = User(
-                id=uuid4(),
-                vasp_user_id=vasp_user_id,
-                uma_address=uma_address,
-            )
-            db.session.add(user)
-
-        # update client app info, or create a new one if it doesn't exist
-        client_app_info = await look_up_client_app_identity(client_id)
-        if not client_app_info:
-            logging.error(
-                "Received an empty response for client app identity lookup for client_id %s",
-                client_id,
-            )
-            # TODO: Sync with @brian on how we want to handle this
-            return WerkzeugResponse("Client app not found", status=404)
-
-        client_app = await ClientApp.from_client_id(client_id)
-        if client_app:
-            client_app.app_name = client_app_info.name
-            client_app.display_name = client_app_info.display_name
-            client_app.verification_status = (
-                client_app_info.nip05.verification_status
-                if client_app_info.nip05
-                else None
-            )
-            client_app.image_url = client_app_info.image_url
-        else:
-            client_app = ClientApp(
-                id=uuid4(),
-                client_id=client_id,
-                app_name=client_app_info.name,
-                display_name=client_app_info.display_name,
-                verification_status=(
-                    client_app_info.nip05.verification_status
-                    if client_app_info.nip05
-                    else None
-                ),
-                image_url=client_app_info.image_url,
-            )
-            db.session.add(client_app)
-
-        nwc_connection = NWCConnection(
-            id=uuid4(),
-            user_id=user.id,
-            client_app_id=client_app.id,
-            supported_commands=supported_commands,
-        )
-
-        # budget format is <max_amount>.<currency>/<period>
-        budget = request.args.get("budget")
-        # assert budget is in the correct format
-        if budget:
-            if len(budget.split(".")) != 2 and len(budget.split("/")) != 2:
-                return WerkzeugResponse(
-                    "Budget should be in the format <max_amount>.<currency>/<period>",
-                    status=400,
-                )
-            spending_limit_amount = int(budget.split(".")[0])
-            spending_limit_currency_code = budget.split(".")[1].split("/")[0]
-            period = budget.split("/")[1].lower()
-
-            nwc_connection.spending_limit_amount = spending_limit_amount
-            # if currency code is not provided, default to SAT
-            nwc_connection.spending_limit_currency_code = (
-                spending_limit_currency_code if spending_limit_currency_code else "SAT"
-            )
-            nwc_connection.spending_limit_frequency = (
-                SpendingLimitFrequency(period)
-                if period
-                else SpendingLimitFrequency.NONE
-            )
-
-        # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
-        connection_expires_at = int(
-            (datetime.now(timezone.utc) + timedelta(days=365)).timestamp()
-        )
-        nwc_connection.connection_expires_at = connection_expires_at
-
-        db.session.add(nwc_connection)
-        await db.session.commit()
+        nwc_connection, user = await _handle_vasp_oauth_redirect(vasp_user_id, uma_address, app)
 
         # TODO: Verify these are saved on nwc frontend session
         session["short_lived_vasp_token"] = short_lived_vasp_token
         session["nwc_connection_id"] = nwc_connection.id
-        session["user_id"] = user.id
+        session["user_id"] = nwc_connection.user_id
         session["client_id"] = request.args.get("client_id")
         session["client_redirect_uri"] = request.args.get("redirect_uri")
         session["client_state"] = request.args.get("state")
 
         nwc_frontend_new_app = app.config["NWC_APP_ROOT_URL"] + "/apps/new"
         query_params = {
-            "client_id": client_id,
-            "optional_commands": optional_commands,
-            "required_commands": required_commands,
+            "client_id": request.args.get("client_id"),
+            "optional_commands": request.args.get("optional_commands"),
+            "required_commands": request.args.get("required_commands"),
             "token": short_lived_vasp_token,
-            "uma_address": uma_address,
+            "uma_address": user.uma_address,
             "redirect_uri": request.args.get("redirect_uri"),
             "expiry": expiry,
         }
         nwc_frontend_new_app = nwc_frontend_new_app + "?" + urlencode(query_params)
         return redirect(nwc_frontend_new_app)
 
+
+        '''
+        export interface InitialConnection {
+        name: string;
+        permissions: Permission[];
+        currencyCode: string;
+        amountInLowestDenom: number;
+        limitEnabled: boolean;
+        limitFrequency?: LimitFrequency;
+        expiration?: string;
+        clientId?: string;
+        }
+        '''
     @app.route("/apps/new", methods=["POST"])
     async def register_new_app_connection() -> WerkzeugResponse:
         uma_vasp_token_exchange_url = app.config["UMA_VASP_TOKEN_EXCHANGE_URL"]
         short_lived_vasp_token = session["short_lived_vasp_token"]
         nwc_connection_id = session["nwc_connection_id"]
 
+        permissions = request.json.get("permissions")
+        currency_code = request.json.get("currencyCode")
+        amount_in_lowest_denom = request.json.get("amountInLowestDenom")
+        limit_enabled = request.json.get("limitEnabled")
+        limit_frequency = request.json.get("limitFrequency")
+        expiration = request.json.get("expiration")
+
         # save the long lived token in the db and create the app connection
         nwc_connection = await db.session.get_one(NWCConnection, nwc_connection_id)
-
+        
         response = requests.post(
             uma_vasp_token_exchange_url,
             headers={
@@ -442,3 +355,116 @@ async def _publish_nip47_info() -> None:
 
     if not response.output.success:
         raise PublishEventFailedException(nip47_info_event, response.output.failed)
+
+
+async def _handle_vasp_oauth_redirect(vasp_user_id: str, uma_address: str, app: Quart) -> tuple[NWCConnection, User]:
+    required_commands = (
+            request.args.get("required_commands").split()
+            if "required_commands" in request.args
+            else []
+        )
+    optional_commands = request.args.get("optional_commands")
+    client_id = request.args.get("client_id")
+
+    # check if all required commands are supported are vasp, and add optional commands supported by vasp
+    vasp_supported_commands = app.config.get("VASP_SUPPORTED_COMMANDS")
+    for command in required_commands:
+        if command not in vasp_supported_commands:
+            return WerkzeugResponse(
+                f"Command {command} is not supported by the VASP",
+                status=400,
+            )
+    supported_commands = required_commands
+    if optional_commands:
+        optional_commands = optional_commands.split()
+        for command in optional_commands:
+            if command in vasp_supported_commands:
+                supported_commands.append(command)
+
+    # save the app connection and nwc connection in the db
+    user = await User.from_vasp_user_id(vasp_user_id)
+    if not user:
+        user = User(
+            id=uuid4(),
+            vasp_user_id=vasp_user_id,
+            uma_address=uma_address,
+        )
+        db.session.add(user)
+
+    # update client app info, or create a new one if it doesn't exist
+    client_app_info = await look_up_client_app_identity(client_id)
+    if not client_app_info:
+        logging.error(
+            "Received an empty response for client app identity lookup for client_id %s",
+            client_id,
+        )
+        # TODO: Sync with @brian on how we want to handle this
+        return WerkzeugResponse("Client app not found", status=404)
+
+    client_app = await ClientApp.from_client_id(client_id)
+    if client_app:
+        client_app.app_name = client_app_info.name
+        client_app.display_name = client_app_info.display_name
+        client_app.verification_status = (
+            client_app_info.nip05.verification_status
+            if client_app_info.nip05
+            else None
+        )
+        client_app.image_url = client_app_info.image_url
+    else:
+        client_app = ClientApp(
+            id=uuid4(),
+            client_id=client_id,
+            app_name=client_app_info.name,
+            display_name=client_app_info.display_name,
+            verification_status=(
+                client_app_info.nip05.verification_status
+                if client_app_info.nip05
+                else None
+            ),
+            image_url=client_app_info.image_url,
+        )
+        db.session.add(client_app)
+
+    nwc_connection = NWCConnection(
+        id=uuid4(),
+        user_id=user.id,
+        client_app_id=client_app.id,
+        supported_commands=supported_commands,
+    )
+
+    # budget format is <max_amount>.<currency>/<period>
+    budget = request.args.get("budget")
+    # assert budget is in the correct format
+    if budget:
+        if len(budget.split(".")) != 2 and len(budget.split("/")) != 2:
+            return WerkzeugResponse(
+                "Budget should be in the format <max_amount>.<currency>/<period>",
+                status=400,
+            )
+        spending_limit_amount = int(budget.split(".")[0])
+        spending_limit_currency_code = budget.split(".")[1].split("/")[0]
+        period = budget.split("/")[1].lower()
+
+        nwc_connection.spending_limit_amount = spending_limit_amount
+        # if currency code is not provided, default to SAT
+        nwc_connection.spending_limit_currency_code = (
+            spending_limit_currency_code if spending_limit_currency_code else "SAT"
+        )
+        nwc_connection.spending_limit_frequency = (
+            SpendingLimitFrequency(period)
+            if period
+            else SpendingLimitFrequency.NONE
+        )
+
+    # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
+    connection_expires_at = int(
+        (datetime.now(timezone.utc) + timedelta(days=365)).timestamp()
+    )
+    nwc_connection.connection_expires_at = connection_expires_at
+
+    db.session.add(nwc_connection)
+    await db.session.commit()
+
+    return nwc_connection, user
+    
