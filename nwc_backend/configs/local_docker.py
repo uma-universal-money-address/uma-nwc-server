@@ -14,6 +14,7 @@ FRONTEND_BUILD_PATH = "../static"
 UMA_VASP_LOGIN_URL = "http://local:5001/auth/nwcsession"
 UMA_VASP_TOKEN_EXCHANGE_URL = "http://local:5001/umanwc/token"
 VASP_UMA_API_BASE_URL = "http://local:5001/umanwc"
+VASP_NAME = "Pink Drink NWC"
 
 
 # Replace with your own constant private key via `openssl rand -hex 32` if you want.

@@ -1,4 +1,5 @@
 import { json, LoaderFunction } from "react-router-dom";
+import { Currency } from "src/types/Currency";
 
 export interface UserCurrenciesResponse {
   defaultCurrency: Currency;

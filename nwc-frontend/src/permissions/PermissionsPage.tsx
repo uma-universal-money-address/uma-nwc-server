@@ -44,6 +44,7 @@ async function initConnection({
     limitEnabled: connectionSettings.limitEnabled,
     expiration,
   });
+  console.log(`Redirecting to ${redirectUri}?code=${code}&state=${state}`);
   window.location.href = `${redirectUri}?code=${code}&state=${state}`;
 }
 
@@ -85,7 +86,7 @@ export const PermissionsPage = () => {
   const handleSubmit = () => {
     const today = dayjs();
     const expiration = today
-      .add(1, connectionSettings.expirationPeriod)
+      .add(1, connectionSettings.expirationPeriod.toLowerCase())
       .toISOString();
 
     setIsSubmitting(true);
@@ -104,6 +105,7 @@ export const PermissionsPage = () => {
         limitFrequency: connectionSettings.limitFrequency,
         limitEnabled: connectionSettings.limitEnabled,
         status: connection.status,
+        expiration,
       });
       navigate(`/connection/${connection.connectionId}`);
     }

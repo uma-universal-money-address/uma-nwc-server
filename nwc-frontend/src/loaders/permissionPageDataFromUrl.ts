@@ -6,6 +6,7 @@ import {
   PERMISSION_DESCRIPTIONS,
   PermissionType,
 } from "src/types/Connection";
+import { Currency } from "src/types/Currency";
 import { PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
 
 export interface InitialPermissionsResponse {
@@ -18,32 +19,43 @@ const getClientAppDefaultSettings = ({
   optionalCommands,
   budget,
   expirationPeriod,
+}: {
+  requiredCommands: string;
+  optionalCommands: string;
+  budget: string;
+  expirationPeriod: string;
 }) => {
-  const requiredPermissionStates = requiredCommands
-    .split(",")
-    .map((command) => ({
-      permission: {
-        type: command.toUpperCase() as PermissionType,
-        description: PERMISSION_DESCRIPTIONS[command.toLowerCase()],
-        optional: false,
-      },
-      enabled: true,
-    }));
-  const optionalPermissionStates = optionalCommands
-    .split(",")
-    .map((command) => ({
-      permission: {
-        type: command.toUpperCase() as PermissionType,
-        description: PERMISSION_DESCRIPTIONS[command.toLowerCase()],
-        optional: true,
-      },
-      enabled: false,
-    }));
+  const requiredPermissionStates =
+    requiredCommands.length > 0
+      ? requiredCommands.split(",").map((command) => ({
+          permission: {
+            type: command.toLowerCase() as PermissionType,
+            description: PERMISSION_DESCRIPTIONS[command.toLowerCase()],
+            optional: false,
+          },
+          enabled: true,
+        }))
+      : [];
+  const optionalPermissionStates =
+    optionalCommands.length > 0
+      ? optionalCommands.split(",").map((command) => ({
+          permission: {
+            type: command.toLowerCase() as PermissionType,
+            description: PERMISSION_DESCRIPTIONS[command.toLowerCase()],
+            optional: true,
+          },
+          enabled: false,
+        }))
+      : [];
   const permissionStates = requiredPermissionStates.concat(
     optionalPermissionStates,
   );
-  let [amountCurrency, limitFrequency] = budget.split("/");
-  let [amountInLowestDenom, currencyCode] = amountCurrency.split(".");
+  let [amountCurrency, limitFrequency] = budget
+    ? budget.split("/")
+    : [undefined, undefined];
+  let [amountInLowestDenom, currencyCode] = amountCurrency
+    ? amountCurrency.split(".")
+    : [undefined, undefined];
 
   if (permissionStates.length === 0) {
     permissionStates.concat(DEFAULT_CONNECTION_SETTINGS.permissionStates);
@@ -87,8 +99,8 @@ export const permissionsPageDataFromUrl = (async ({ request }) => {
     codeChallengeMethod: params.get("code_challenge_method"),
   };
   const nwcParams = {
-    requiredCommands: params.get("required_commands"),
-    optionalCommands: params.get("optional_commands"),
+    requiredCommands: params.get("required_commands") || "",
+    optionalCommands: params.get("optional_commands") || "",
     budget: params.get("budget"),
     expirationPeriod: params.get("expiration_period"),
   };

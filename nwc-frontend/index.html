@@ -4,7 +4,15 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vasp.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NWC</title>
+    <title>${{VASP_NAME}}</title>
+    <script type="text/javascript">
+      window.NWC_CONFIG = {
+        // TODO: Replace with a proper template lib. LIG-6299
+        UMA_VASP_LOGIN_URL: "${{UMA_VASP_LOGIN_URL}}",
+        VASP_NAME: "${{VASP_NAME}}",
+        VASP_LOGO_URL: "${{VASP_LOGO_URL}}",
+      };
+    </script>
   </head>
   <body>
     <div id="root"></div>

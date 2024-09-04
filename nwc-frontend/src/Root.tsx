@@ -15,6 +15,7 @@ import { userCurrencies } from "./loaders/userCurrencies";
 import { Nav } from "./Nav";
 import { NotificationLayout } from "./NotificationLayout";
 import { PermissionsPage } from "./permissions/PermissionsPage";
+import { useAuth } from "./utils/auth";
 
 const router = createBrowserRouter([
   {
@@ -49,6 +50,12 @@ const router = createBrowserRouter([
 ]);
 
 export function Root() {
+  const auth = useAuth();
+  if (!auth.isLoggedIn()) {
+    auth.redirectToLogin();
+    return null;
+  }
+
   return (
     <ThemeProvider theme={themes.umameDocsLight}>
       <GlobalStyles />

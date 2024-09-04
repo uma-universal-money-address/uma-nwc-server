@@ -6,6 +6,7 @@ import logging
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from urllib.parse import urlencode, urlparse, unquote, parse_qs, urlunparse
 from uuid import uuid4
 
 import jwt
@@ -69,7 +70,59 @@ def create_app() -> Quart:
         if path != "" and os.path.exists(static_folder + "/" + path):
             return await send_from_directory(static_folder, path)
         else:
-            return await send_from_directory(static_folder, "index.html")
+            # TODO(LIG-6299): Replace this with a proper template engine.
+            with open(static_folder + "/index.html", "r") as file:
+                content = file.read()
+                content = content.replace(
+                    "${{VASP_NAME}}", app.config.get("VASP_NAME") or "UMA NWC"
+                )
+                content = content.replace(
+                    "${{UMA_VASP_LOGIN_URL}}", app.config["UMA_VASP_LOGIN_URL"]
+                )
+                content = content.replace(
+                    "${{VASP_LOGO_URL}}", app.config.get("VASP_LOGO_URL") or "/vasp.svg"
+                )
+                return Response(content, mimetype="text/html")
+
+    @app.route("/auth/vasp_token_callback", methods=["GET"])
+    async def vasp_token_callback() -> WerkzeugResponse:
+        short_lived_vasp_token = request.args.get("token")
+        vasp_token_payload = jwt.decode(
+            short_lived_vasp_token,
+            app.config.get("UMA_VASP_JWT_PUBKEY"),
+            algorithms=["ES256"],
+            # TODO: verify the aud and iss
+            options={"verify_aud": False, "verify_iss": False},
+        )
+        # TODO: Should probably let the VASP's tokens be opaque to the NWC backend and just have the
+        # VASP send this info explicitly
+        uma_address = vasp_token_payload["address"]
+        expiry = vasp_token_payload["exp"]
+
+        fe_redirect_path = request.args.get("fe_redirect")
+        if fe_redirect_path:
+            fe_redirect_path = unquote(fe_redirect_path)
+        frontend_redirect_url = app.config["NWC_APP_ROOT_URL"] + (
+            fe_redirect_path or "/"
+        )
+        try:
+            parsed_url = urlparse(frontend_redirect_url)
+        except ValueError as e:
+            return WerkzeugResponse(
+                f"Invalid redirect url: {frontend_redirect_url}. {e}", status=400
+            )
+
+        query_params = parse_qs(parsed_url.query)
+        query_params["token"] = short_lived_vasp_token
+        query_params["uma_address"] = uma_address
+        query_params["expiry"] = expiry
+        parsed_url = parsed_url._replace(query=urlencode(query_params, doseq=True))
+        frontend_redirect_url = str(urlunparse(parsed_url))
+
+        if not short_lived_vasp_token:
+            return WerkzeugResponse("No token provided", status=400)
+
+        return redirect(frontend_redirect_url)
 
     @app.route("/oauth/auth", methods=["GET"])
     async def oauth_auth() -> WerkzeugResponse:
@@ -78,17 +131,15 @@ def create_app() -> Quart:
             uma_vasp_login_url = app.config["UMA_VASP_LOGIN_URL"]
             # redirect back to the same url with the short lived jwt added
             request_params = request.query_string.decode()
-            query_params = {
-                "redirect_uri": app.config["NWC_APP_ROOT_URL"]
-                + "/apps/auth"
-                + "?"
-                + request_params,
-            }
-            vasp_url_with_query = (
-                uma_vasp_login_url
-                + "?"
-                + "&".join([f"{k}={v}" for k, v in query_params.items()])
+            query_params = urlencode(
+                {
+                    "redirect_uri": app.config["NWC_APP_ROOT_URL"]
+                    + "/oauth/auth"
+                    + "?"
+                    + request_params,
+                }
             )
+            vasp_url_with_query = uma_vasp_login_url + "?" + query_params
             logging.debug("REDIRECT to %s", vasp_url_with_query)
             return redirect(vasp_url_with_query)
 
@@ -108,8 +159,11 @@ def create_app() -> Quart:
             # TODO: verify the aud and iss
             options={"verify_aud": False, "verify_iss": False},
         )
+        # TODO: Should probably let the VASP's tokens be opaque to the NWC backend and just have the
+        # VASP send this info explicitly
         vasp_user_id = vasp_token_payload["sub"]
         uma_address = vasp_token_payload["address"]
+        expiry = vasp_token_payload["exp"]
 
         # check if all required commands are supported are vasp, and add optional commands supported by vasp
         vasp_supported_commands = app.config.get("VASP_SUPPORTED_COMMANDS")
@@ -220,6 +274,16 @@ def create_app() -> Quart:
         session["client_state"] = request.args.get("state")
 
         nwc_frontend_new_app = app.config["NWC_APP_ROOT_URL"] + "/apps/new"
+        query_params = {
+            "client_id": client_id,
+            "optional_commands": optional_commands,
+            "required_commands": required_commands,
+            "token": short_lived_vasp_token,
+            "uma_address": uma_address,
+            "redirect_uri": request.args.get("redirect_uri"),
+            "expiry": expiry,
+        }
+        nwc_frontend_new_app = nwc_frontend_new_app + "?" + urlencode(query_params)
         return redirect(nwc_frontend_new_app)
 
     @app.route("/apps/new", methods=["POST"])
@@ -233,9 +297,12 @@ def create_app() -> Quart:
 
         response = requests.post(
             uma_vasp_token_exchange_url,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + short_lived_vasp_token,
+            },
             json={
-                "token": short_lived_vasp_token,
-                "permissions": nwc_connection.supported_commands,
+                "permissions": ["all"],  # TODO: Pass real permissions.
                 "expiration": nwc_connection.connection_expires_at,
             },
         )
@@ -259,7 +326,7 @@ def create_app() -> Quart:
             "state": session["client_state"],
         }
         redirect_uri = session["client_redirect_uri"]
-        return redirect(
+        return (
             redirect_uri + "?" + "&".join([f"{k}={v}" for k, v in added_parms.items()])
         )
 
@@ -309,6 +376,38 @@ def create_app() -> Quart:
         for connection in result.scalars():
             response.append(await connection.get_connection_reponse_data())
         return WerkzeugResponse(json.dumps(response), status=200)
+
+    @app.route("/api/app", methods=["GET"])
+    async def get_client_app() -> WerkzeugResponse:
+        # user_id = session.get("user_id")
+        # if not user_id:
+        #     return WerkzeugResponse("User not authenticated", status=401)
+
+        client_id = request.args.get("clientId")
+        if not client_id:
+            return WerkzeugResponse("Client ID not provided", status=400)
+
+        client_app_info = await look_up_client_app_identity(client_id)
+        if not client_app_info:
+            return WerkzeugResponse("Client app not found", status=404)
+
+        return WerkzeugResponse(
+            json.dumps(
+                {
+                    "clientId": client_id,
+                    "name": client_app_info.display_name,
+                    "verified": (
+                        client_app_info.nip05.verification_status.value
+                        if client_app_info.nip05
+                        else None
+                    ),
+                    "avatar": client_app_info.image_url,
+                    "domain": (
+                        client_app_info.nip05.domain if client_app_info.nip05 else None
+                    ),
+                }
+            )
+        )
 
     return app
 

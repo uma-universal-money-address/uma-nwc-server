@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "src/utils/auth";
 
 export const fetchUma = async () => {
   // const uma = await fetch(`${getBackendUrl()}/uma`, {
@@ -11,10 +12,12 @@ export const fetchUma = async () => {
   //     throw new Error("Failed to fetch uma.");
   //   }
   // });
-  const response = { uma: "$test@vasp.com" };
+  const auth = useAuth();
+  const response = { uma: auth.getUmaAddress() };
   return response.uma;
 };
 
+// TODO: Switch this to use the Auth state instead of fetching directly.
 export function useUma() {
   const [uma, setUma] = useState<string>();
   const [error, setError] = useState<string>();

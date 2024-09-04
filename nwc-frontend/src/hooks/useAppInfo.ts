@@ -2,16 +2,8 @@ import { useEffect, useState } from "react";
 import { AppInfo } from "src/types/AppInfo";
 
 export const fetchAppInfo = async (clientId: string) => {
-  // const response = await fetch("/app", { method: "GET", body: JSON.stringify({ clientId }) });
-  // const appInfo = await response.json();
-  const appInfo = {
-    clientId,
-    name: "Cool App",
-    verified: true,
-    domain: "coolapp.com",
-    avatar: "/default-app-logo.svg",
-  };
-  return appInfo;
+  const response = await fetch(`/api/app?clientId=${clientId}`);
+  return await response.json();
 };
 
 export const useAppInfo = ({ clientId }: { clientId: string }) => {
