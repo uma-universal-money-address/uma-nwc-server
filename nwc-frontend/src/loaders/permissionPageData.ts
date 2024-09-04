@@ -1,6 +1,5 @@
 import { json, LoaderFunction } from "react-router-dom";
 import { fetchAppInfo } from "src/hooks/useAppInfo";
-import { fetchUma } from "src/hooks/useUma";
 import { Connection, DEFAULT_CONNECTION_SETTINGS } from "src/types/Connection";
 import { PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
 import { MOCKED_CONNECTIONS } from "src/utils/fetchConnections";
@@ -51,15 +50,11 @@ export const permissionsPageData = (async ({ params }) => {
     type: "fiat",
   };
 
-  const [appInfo, uma] = await Promise.all([
-    fetchAppInfo(connection.clientId),
-    fetchUma(),
-  ]);
+  const appInfo = await fetchAppInfo(connection.clientId);
 
   return json(
     {
       appInfo,
-      uma,
       connectionSettings: getConnectionSettings(connection),
       defaultCurrency,
       connection,

@@ -112,7 +112,7 @@ export const initializeConnection = async (
   try {
     const response = await fetch("/apps/new", {
       method: "POST",
-      body: JSON.stringify({ ...initialConnection, }),
+      body: JSON.stringify({ ...initialConnection }),
     });
     console.log("Connection initialized", response);
     if (!response.ok) {

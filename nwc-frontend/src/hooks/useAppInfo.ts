@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { AppInfo } from "src/types/AppInfo";
+import { fetchWithAuth } from "src/utils/fetchWithAuth";
 
 export const fetchAppInfo = async (clientId: string) => {
-  const response = await fetch(`/api/app?clientId=${clientId}`);
+  const response = await fetchWithAuth(`/api/app?clientId=${clientId}`);
   return await response.json();
 };
 
