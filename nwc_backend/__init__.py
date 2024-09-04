@@ -1,12 +1,13 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
+import asyncio
 import json
 import logging
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
-from urllib.parse import urlencode, urlparse, unquote, parse_qs, urlunparse
+from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 from uuid import uuid4
 
 import jwt
@@ -47,7 +48,8 @@ def create_app() -> Quart:
     if app.config.get("DATABASE_MODE") == "rds":
         setup_rds_iam_auth(db.engine)
 
-    # asyncio.run(init_nostr_client(app))
+    if not app.config.get("QUART_ENV") == "testing":
+        app.before_serving(init_nostr_client)
 
     @app.route("/hello", defaults={"path": ""})
     async def serve(path: str) -> dict[str, Any]:
@@ -411,19 +413,23 @@ def create_app() -> Quart:
     return app
 
 
-async def init_nostr_client(app: Quart) -> None:
-    await nostr_client.add_relay(NostrConfig.instance(app).relay_url)
+async def init_nostr_client() -> None:
+    nostr_config = NostrConfig.instance()
+    await nostr_client.add_relay(nostr_config.relay_url)
     await nostr_client.connect()
 
-    await _publish_nip47_info()
+    try:
+        await _publish_nip47_info()
+    except Exception:
+        logging.exception("Failed to publish nip47.")
 
     nip47_filter = (
         Filter()
-        .pubkey(NostrConfig.instance(app).identity_keys.public_key())
+        .pubkey(nostr_config.identity_keys.public_key())
         .kind(Kind.from_enum(KindEnum.WALLET_CONNECT_REQUEST()))  # pyre-ignore[6]
     )
     await nostr_client.subscribe([nip47_filter])
-    await nostr_client.handle_notifications(NotificationHandler())
+    asyncio.create_task(nostr_client.handle_notifications(NotificationHandler()))
 
 
 async def _publish_nip47_info() -> None:

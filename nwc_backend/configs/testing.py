@@ -13,6 +13,7 @@ RELAY = "wss://fake.relay.url"
 UMA_VASP_TOKEN_EXCHANGE_URL = "http://local:5001/umanwc/token"
 VASP_UMA_API_BASE_URL = "https://fake.vasp.uma.api.url"
 NWC_APP_ROOT_URL = "http://localhost:8080"
+QUART_ENV = "testing"
 
 VASP_SUPPORTED_COMMANDS = [
     "pay_invoice",
