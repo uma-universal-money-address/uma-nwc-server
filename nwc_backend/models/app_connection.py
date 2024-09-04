@@ -28,8 +28,8 @@ class AppConnection(ModelBase):
         DBUUID(), ForeignKey("nwc_connection.id"), nullable=False
     )
     nostr_pubkey: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    access_token: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    refresh_token: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    access_token: Mapped[str] = mapped_column(String(1024), unique=True, nullable=False)
+    refresh_token: Mapped[str] = mapped_column(String(1024), index=True, nullable=False)
     authorization_code: Mapped[str] = mapped_column(
         String(255), unique=True, nullable=False
     )
