@@ -115,10 +115,10 @@ export const initializeConnection = async (
       body: JSON.stringify({ ...initialConnection, }),
     });
     console.log("Connection initialized", response);
-    return {
-      code: "g0ZGZmNjVmOWI",
-      state: "dkZmYxMzE2",
-    };
+    if (!response.ok) {
+      return { error: response.statusText };
+    }
+    return response.json();
   } catch (e) {
     return { error: e };
   }
