@@ -14,7 +14,7 @@ export function LayoutInnerContent({ children }: Props) {
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  margin-top: ${Spacing["6xl"]};
+  padding: ${Spacing["6xl"]} ${Spacing["2xl"]};
   max-width: 800px;
   width: 100%;
   align-self: center;

@@ -91,6 +91,7 @@ const InnerContainer = styled.div`
   padding-right: env(safe-area-inset-right);
   padding-bottom: env(safecare-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
+  overflow: scroll;
 
   display: flex;
   flex-direction: column;
