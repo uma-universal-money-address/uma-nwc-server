@@ -32,7 +32,7 @@ async function initConnection({
   redirectUri: string;
   expiration: string;
 }) {
-  const { code, state } = await initializeConnection({
+  const { code, state, error } = await initializeConnection({
     clientId: appInfo.clientId,
     name: appInfo.name,
     currencyCode,
@@ -44,6 +44,11 @@ async function initConnection({
     limitEnabled: connectionSettings.limitEnabled,
     expiration,
   });
+  if (error) {
+    // TODO: Show an error toast.
+    console.error(error);
+    return;
+  }
   console.log(`Redirecting to ${redirectUri}?code=${code}&state=${state}`);
   window.location.href = `${redirectUri}?code=${code}&state=${state}`;
 }

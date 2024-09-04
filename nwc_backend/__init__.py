@@ -320,14 +320,13 @@ def create_app() -> Quart:
         except ActiveAppConnectionAlreadyExistsException:
             return WerkzeugResponse("Active app connection already exists", status=400)
 
-        # redirect back to the redirect_uri provided by the client app with the auth code and state
-        added_parms = {
-            "code": app_connection.authorization_code,
-            "state": session["client_state"],
-        }
-        redirect_uri = session["client_redirect_uri"]
-        return (
-            redirect_uri + "?" + "&".join([f"{k}={v}" for k, v in added_parms.items()])
+        return WerkzeugResponse(
+            json.dumps(
+                {
+                    "code": app_connection.authorization_code,
+                    "state": session["client_state"],
+                }
+            )
         )
 
     @app.route("/oauth/token", methods=["GET"])
