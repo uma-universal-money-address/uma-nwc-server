@@ -30,6 +30,7 @@ const NavContainer = styled.section`
   align-items: center;
   padding: ${Spacing.md} ${Spacing.xl};
   border-bottom: 1px solid #dedfe4;
+  gap: ${Spacing.md};
 `;
 
 const NavLeftSide = styled.div`
@@ -51,4 +52,5 @@ const Name = styled.span`
   font-size: 16px;
   font-weight: 600;
   line-height: 24px;
+  white-space: nowrap;
 `;
