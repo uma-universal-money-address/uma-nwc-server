@@ -302,7 +302,7 @@ def create_app() -> Quart:
                 "Authorization": "Bearer " + short_lived_vasp_token,
             },
             json={
-                "permissions": ["all"], # TODO: Pass real permissions.
+                "permissions": ["all"],  # TODO: Pass real permissions.
                 "expiration": nwc_connection.connection_expires_at,
             },
         )
@@ -326,7 +326,9 @@ def create_app() -> Quart:
             "state": session["client_state"],
         }
         redirect_uri = session["client_redirect_uri"]
-        return redirect_uri + "?" + "&".join([f"{k}={v}" for k, v in added_parms.items()])
+        return (
+            redirect_uri + "?" + "&".join([f"{k}={v}" for k, v in added_parms.items()])
+        )
 
     @app.route("/oauth/token", methods=["GET"])
     async def oauth_exchange() -> Response:
