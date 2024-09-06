@@ -16,6 +16,7 @@ from nwc_backend.db import db
 from nwc_backend.exceptions import ActiveAppConnectionAlreadyExistsException
 from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.app_connection_status import AppConnectionStatus
+from nwc_backend.nostr_config import NostrConfig
 
 ACCESS_TOKEN_EXPIRES_IN = 30 * 24 * 60 * 60
 REFRESH_TOKEN_EXPIRES_IN = 120 * 24 * 60 * 60
@@ -102,13 +103,16 @@ class OauthAuthorizationServer:
 
         nwc_connection = app_connection.nwc_connection
         spending_limit = nwc_connection.spending_limit
+        nostr_config = NostrConfig.instance()
+        wallet_pubkey = nostr_config.identity_keys.public_key().to_hex()
+        wallet_relay = nostr_config.relay_url
         response = {
             "access_token": app_connection.access_token,
             "refresh_token": app_connection.refresh_token,
             "expires_in": app_connection.access_token_expires_at - int(time()),
             "token_type": "Bearer",
             # TODO: Add the NWC connection URI
-            "nwc_connection_uri": "",
+            "nwc_connection_uri": f"nostr+walletconnect://{wallet_pubkey}?relay={wallet_relay}&lud16={nwc_connection.user.uma_address}&secret={app_connection.access_token}",
             "budget": spending_limit.get_budget_repr() if spending_limit else None,
             "commands": nwc_connection.get_all_granted_granular_permissions(),
             "nwc_expires_at": nwc_connection.connection_expires_at,
