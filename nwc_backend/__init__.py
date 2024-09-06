@@ -23,6 +23,7 @@ from nwc_backend.db import UUID, db, setup_rds_iam_auth
 from nwc_backend.event_handlers.event_builder import EventBuilder
 from nwc_backend.exceptions import (
     ActiveAppConnectionAlreadyExistsException,
+    InvalidBudgetFormatException,
     PublishEventFailedException,
 )
 from nwc_backend.models.app_connection import AppConnection
@@ -30,7 +31,7 @@ from nwc_backend.models.app_connection_status import AppConnectionStatus
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
-from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
+from nwc_backend.models.spending_limit import SpendingLimit
 from nwc_backend.models.user import User
 from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
@@ -234,29 +235,22 @@ def create_app() -> Quart:
             supported_commands=supported_commands,
         )
 
-        # budget format is <max_amount>.<currency>/<period>
         budget = request.args.get("budget")
-        # assert budget is in the correct format
         if budget:
-            if len(budget.split(".")) != 2 and len(budget.split("/")) != 2:
+            try:
+                spending_limit = SpendingLimit.from_budget_repr(
+                    budget=budget,
+                    nwc_connection_id=nwc_connection.id,
+                    start_time=datetime.now(timezone.utc),
+                )
+            except InvalidBudgetFormatException as ex:
                 return WerkzeugResponse(
-                    "Budget should be in the format <max_amount>.<currency>/<period>",
+                    ex.error_message,
                     status=400,
                 )
-            spending_limit_amount = int(budget.split(".")[0])
-            spending_limit_currency_code = budget.split(".")[1].split("/")[0]
-            period = budget.split("/")[1].lower()
 
-            nwc_connection.spending_limit_amount = spending_limit_amount
-            # if currency code is not provided, default to SAT
-            nwc_connection.spending_limit_currency_code = (
-                spending_limit_currency_code if spending_limit_currency_code else "SAT"
-            )
-            nwc_connection.spending_limit_frequency = (
-                SpendingLimitFrequency(period)
-                if period
-                else SpendingLimitFrequency.NONE
-            )
+            nwc_connection.spending_limit_id = spending_limit.id
+            db.session.add(spending_limit)
 
         # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
         connection_expires_at = int(

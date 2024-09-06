@@ -65,3 +65,11 @@ class VaspErrorResponseException(Nip47RequestException):
 
 class ActiveAppConnectionAlreadyExistsException(Exception):
     pass
+
+
+class InvalidBudgetFormatException(Exception):
+    def __init__(self) -> None:
+        self.error_message = (
+            "Budget should be in the format <max_amount>.<currency>/<period>"
+        )
+        super().__init__(self.error_message)

@@ -73,6 +73,7 @@ class AppConnection(ModelBase):
 
     async def get_connection_reponse_data(self) -> dict[str, Any]:
         client_app = self.nwc_connection.client_app
+        spending_limit = self.nwc_connection.spending_limit
         response = {
             "connectionId": self.id,
             "clientId": client_app.client_id,
@@ -81,8 +82,8 @@ class AppConnection(ModelBase):
             "lastUsedAt": "TODO",
             "amountInLowestDenom": "TODO",
             "amountInLowestDenomUsed": "TODO",
-            "limitFrequency": self.nwc_connection.spending_limit_frequency,
-            "limitEnabled": self.nwc_connection.spending_limit_amount is not None,
+            "limitFrequency": spending_limit.frequency if spending_limit else None,
+            "limitEnabled": bool(spending_limit),
             # TODO: currency should be fetched from somewhere
             "currency": {
                 "code": "USD",

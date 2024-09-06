@@ -101,12 +101,7 @@ class OauthAuthorizationServer:
             return Response(status=401, response="Invalid authorization code")
 
         nwc_connection = app_connection.nwc_connection
-        frequency = (
-            nwc_connection.spending_limit_frequency.value
-            if nwc_connection.spending_limit_frequency
-            else ""
-        )
-        budget = f"{nwc_connection.spending_limit_amount}.{nwc_connection.spending_limit_currency_code}/{frequency}"
+        spending_limit = nwc_connection.spending_limit
         response = {
             "access_token": app_connection.access_token,
             "refresh_token": app_connection.refresh_token,
@@ -115,7 +110,7 @@ class OauthAuthorizationServer:
             # TODO: Add the NWC connection URI
             "nwc_connection_uri": "",
             "commands": nwc_connection.supported_commands,
-            "budget": budget,
+            "budget": spending_limit.get_budget_repr() if spending_limit else None,
             "nwc_expires_at": nwc_connection.connection_expires_at,
             "uma_address": nwc_connection.user.uma_address,
         }

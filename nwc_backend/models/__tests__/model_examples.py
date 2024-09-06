@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from secrets import token_hex
 from typing import Optional
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from nostr_sdk import Keys
 
@@ -13,6 +13,7 @@ from nwc_backend.models.app_connection_status import AppConnectionStatus
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
+from nwc_backend.models.spending_limit import SpendingLimit, SpendingLimitFrequency
 from nwc_backend.models.user import User
 
 
@@ -91,3 +92,20 @@ async def create_app_connection(
     db.session.add(app_connection)
     await db.session.commit()
     return app_connection
+
+
+async def create_spending_limit(
+    nwc_connection_id: Optional[UUID] = None,
+) -> SpendingLimit:
+    nwc_connection_id = nwc_connection_id or (await create_nwc_connection()).id
+    spending_limit = SpendingLimit(
+        id=uuid4(),
+        nwc_connection_id=nwc_connection_id,
+        currency_code="USD",
+        amount=100,
+        frequency=SpendingLimitFrequency.MONTHLY,
+        start_time=datetime.now(timezone.utc),
+    )
+    db.session.add(spending_limit)
+    await db.session.commit()
+    return spending_limit

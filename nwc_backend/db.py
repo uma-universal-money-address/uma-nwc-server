@@ -3,18 +3,53 @@
 
 import asyncio
 import uuid
+from datetime import datetime, timezone
 from time import monotonic
 from typing import Any, Callable, Optional, Type, Union
 
 import sqlalchemy
 from botocore.client import BaseClient
 from quart import Quart, Response, g
-from sqlalchemy import Uuid, event
+from sqlalchemy import Uuid, event, types
 from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_connection
 from sqlalchemy.engine import Dialect, Result
 from sqlalchemy.ext.asyncio.engine import AsyncEngine, create_async_engine
 from sqlalchemy.ext.asyncio.scoping import AsyncSession, async_scoped_session
 from sqlalchemy.orm import sessionmaker
+
+
+class DateTime(types.TypeDecorator):
+    impl = types.TIMESTAMP
+    cache_ok = True
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(timezone=True, *args, **kwargs)  # noqa: B026 FIXME
+
+    @property
+    def python_type(self) -> Type[datetime]:
+        return datetime
+
+    def process_bind_param(
+        self, value: datetime, dialect: Dialect
+    ) -> Optional[datetime]:
+        if value is None:
+            return None
+
+        if value.tzinfo is None:
+            raise ValueError("datetime objects must be timezone aware")
+
+        return value.astimezone(timezone.utc)
+
+    def process_result_value(
+        self, value: datetime, dialect: Dialect
+    ) -> Optional[datetime]:
+        if value is None:
+            return value
+
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+
+        return value
 
 
 class UUID(Uuid):
