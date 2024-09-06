@@ -21,6 +21,7 @@ uvicorn = "*"
 aioauth = "*"
 cryptography = "*"
 botocore = "*"
+quart-cors = "*"
 
 [dev-packages]
 aiosqlite = "*"
