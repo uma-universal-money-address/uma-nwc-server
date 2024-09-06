@@ -10,6 +10,7 @@ from nwc_backend.models.__tests__.model_examples import create_client_app, creat
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.spending_limit import SpendingLimit, SpendingLimitFrequency
+from nwc_backend.models.permissions_grouping import PermissionsGroup
 
 
 async def test_nwc_connection_model(test_client: QuartClient) -> None:
@@ -21,9 +22,8 @@ async def test_nwc_connection_model(test_client: QuartClient) -> None:
             id=id,
             user_id=user_id,
             client_app_id=client_app_id,
-            supported_commands=[
-                Nip47RequestMethod.MAKE_INVOICE.value,
-                Nip47RequestMethod.PAY_INVOICE.value,
+            granted_permissions_groups=[
+                PermissionsGroup.RECEIVE_PAYMENTS.value,
             ],
         )
         db.session.add(nwc_connection)
@@ -60,9 +60,9 @@ async def test_creation_with_spending_limit(
             id=nwc_connection_id,
             user_id=user_id,
             client_app_id=client_app_id,
-            supported_commands=[
-                Nip47RequestMethod.MAKE_INVOICE.value,
-                Nip47RequestMethod.PAY_INVOICE.value,
+            granted_permissions_groups=[
+                PermissionsGroup.SEND_PAYMENTS.value,
+                PermissionsGroup.RECEIVE_PAYMENTS.value,
             ],
             spending_limit_id=spending_limit_id,
         )

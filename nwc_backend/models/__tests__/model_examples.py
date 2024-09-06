@@ -11,9 +11,9 @@ from nwc_backend.db import db
 from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.app_connection_status import AppConnectionStatus
 from nwc_backend.models.client_app import ClientApp
-from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.spending_limit import SpendingLimit, SpendingLimitFrequency
+from nwc_backend.models.permissions_grouping import PermissionsGroup
 from nwc_backend.models.user import User
 
 
@@ -39,9 +39,9 @@ async def create_client_app() -> ClientApp:
 
 
 async def create_nwc_connection(
-    supported_commands: list[Nip47RequestMethod] = [
-        Nip47RequestMethod.MAKE_INVOICE,
-        Nip47RequestMethod.PAY_INVOICE,
+    granted_permissions_groups: list[PermissionsGroup] = [
+        PermissionsGroup.RECEIVE_PAYMENTS,
+        PermissionsGroup.SEND_PAYMENTS,
     ],
 ) -> NWCConnection:
     user = await create_user()
@@ -50,7 +50,9 @@ async def create_nwc_connection(
         id=uuid4(),
         client_app=client_app,
         user=user,
-        supported_commands=[command.value for command in supported_commands],
+        granted_permissions_groups=[
+            command.value for command in granted_permissions_groups
+        ],
         long_lived_vasp_token=token_hex(),
         connection_expires_at=int(
             (datetime.now(timezone.utc) + timedelta(days=365)).timestamp()
@@ -62,14 +64,14 @@ async def create_nwc_connection(
 
 
 async def create_app_connection(
-    supported_commands: list[Nip47RequestMethod] = [
-        Nip47RequestMethod.MAKE_INVOICE,
-        Nip47RequestMethod.PAY_INVOICE,
+    granted_permissions_groups: list[PermissionsGroup] = [
+        PermissionsGroup.RECEIVE_PAYMENTS,
+        PermissionsGroup.SEND_PAYMENTS,
     ],
     keys: Optional[Keys] = None,
     access_token_expired: bool = False,
 ) -> AppConnection:
-    nwc_connection = await create_nwc_connection(supported_commands)
+    nwc_connection = await create_nwc_connection(granted_permissions_groups)
     keys = keys or Keys.generate()
     now = datetime.now(timezone.utc)
     if access_token_expired:

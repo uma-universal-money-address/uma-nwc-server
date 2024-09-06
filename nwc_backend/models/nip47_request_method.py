@@ -16,3 +16,7 @@ class Nip47RequestMethod(Enum):
     FETCH_QUOTE = "fetch_quote"
     EXECUTE_QUOTE = "execute_quote"
     PAY_TO_ADDRESS = "pay_to_address"
+
+    @staticmethod
+    def get_values() -> list[str]:
+        return [method.value for method in Nip47RequestMethod]
