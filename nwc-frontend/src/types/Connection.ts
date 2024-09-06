@@ -45,7 +45,7 @@ export enum ConnectionStatus {
 
 export interface InitialConnection {
   name: string;
-  permissions: Permission[];
+  permissions: PermissionType[];
   currencyCode: string;
   amountInLowestDenom: number;
   limitEnabled: boolean;

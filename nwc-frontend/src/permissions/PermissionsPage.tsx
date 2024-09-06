@@ -39,7 +39,7 @@ async function initConnection({
     currencyCode,
     permissions: connectionSettings.permissionStates
       .filter((permissionState) => permissionState.enabled)
-      .map((permissionState) => permissionState.permission),
+      .map((permissionState) => permissionState.permission.type),
     amountInLowestDenom: connectionSettings.amountInLowestDenom,
     limitFrequency: connectionSettings.limitFrequency,
     limitEnabled: connectionSettings.limitEnabled,
