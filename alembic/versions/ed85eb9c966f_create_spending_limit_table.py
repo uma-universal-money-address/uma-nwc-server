@@ -15,7 +15,7 @@ from nwc_backend.db import UUID, DateTime
 
 # revision identifiers, used by Alembic.
 revision: str = "ed85eb9c966f"
-down_revision: Union[str, None] = "8934fcddb325"
+down_revision: Union[str, None] = "8fa5da72dc33"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

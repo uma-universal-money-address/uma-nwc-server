@@ -14,6 +14,10 @@ from nwc_backend.models.model_base import ModelBase
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.spending_limit import SpendingLimit
 from nwc_backend.models.user import User
+from nwc_backend.models.permissions_grouping import (
+    PermissionsGroup,
+    PERMISSIONS_GROUP_TO_METHODS,
+)
 
 
 class NWCConnection(ModelBase):
@@ -29,7 +33,7 @@ class NWCConnection(ModelBase):
     client_app_id: Mapped[UUID] = mapped_column(
         DBUUID(), ForeignKey("client_app.id"), nullable=False
     )
-    supported_commands: Mapped[list[str]] = mapped_column(
+    granted_permissions_groups: Mapped[list[str]] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"), nullable=False
     )
     long_lived_vasp_token: Mapped[Optional[str]] = mapped_column(String(1024))
@@ -44,5 +48,13 @@ class NWCConnection(ModelBase):
         "SpendingLimit", foreign_keys=[spending_limit_id], lazy="joined"
     )
 
+    def get_all_granted_granular_permissions(self) -> list[str]:
+        all_permissions = set()
+        for group in self.granted_permissions_groups:
+            all_permissions.update(
+                PERMISSIONS_GROUP_TO_METHODS[PermissionsGroup(group)]
+            )
+        return list(all_permissions)
+
     def has_command_permission(self, command: Nip47RequestMethod) -> bool:
-        return command.value in self.supported_commands
+        return command.value in self.get_all_granted_granular_permissions()

@@ -92,7 +92,7 @@ class AppConnection(ModelBase):
                 "decimals": 2,
                 "type": "fiat",
             },
-            "permissions": self.nwc_connection.supported_commands,
+            "permissions": self.nwc_connection.granted_permissions_groups,
             "avatar": client_app.image_url,
             "status": self.status.value,
         }

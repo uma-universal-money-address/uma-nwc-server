@@ -12,19 +12,19 @@ from nwc_backend.models.__tests__.model_examples import create_nwc_connection
 from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.app_connection_status import AppConnectionStatus
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
+from nwc_backend.models.permissions_grouping import PermissionsGroup
 
 
 async def test_app_connection_model(test_client: QuartClient) -> None:
     id = uuid4()
     keys = Keys.generate()
     now = datetime.now(timezone.utc)
-    supported_commands = [
-        Nip47RequestMethod.FETCH_QUOTE,
-        Nip47RequestMethod.EXECUTE_QUOTE,
+    granted_permissions_groups = [
+        PermissionsGroup.SEND_PAYMENTS,
     ]
     authorization_code = token_hex()
     async with test_client.app.app_context():
-        nwc_connection = await create_nwc_connection(supported_commands)
+        nwc_connection = await create_nwc_connection(granted_permissions_groups)
         client_id = nwc_connection.client_app.client_id
         app_connection = AppConnection(
             id=id,

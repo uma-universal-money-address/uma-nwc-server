@@ -31,6 +31,7 @@ from nwc_backend.models.__tests__.model_examples import create_app_connection
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.nostr_config import NostrConfig
+from nwc_backend.models.permissions_grouping import PermissionsGroup
 
 
 @dataclass
@@ -118,7 +119,10 @@ async def test_failed__access_token_expired(
         harness = Harness.prepare()
         await create_app_connection(
             keys=harness.client_app_keys,
-            supported_commands=[Nip47RequestMethod.PAY_INVOICE],
+            granted_permissions_groups=[
+                PermissionsGroup.SEND_PAYMENTS,
+                PermissionsGroup.RECEIVE_PAYMENTS,
+            ],
             access_token_expired=True,
         )
         request_event = harness.create_request_event()
@@ -139,7 +143,7 @@ async def test_failed__no_permission(
     async with test_client.app.app_context():
         harness = Harness.prepare()
         await create_app_connection(
-            supported_commands=[Nip47RequestMethod.GET_BALANCE],
+            granted_permissions_groups=[PermissionsGroup.READ_BALANCE],
             keys=harness.client_app_keys,
         )
         request_event = harness.create_request_event()
@@ -164,7 +168,7 @@ async def test_failed__invalid_input_params(
     async with test_client.app.app_context():
         harness = Harness.prepare()
         await create_app_connection(
-            supported_commands=[Nip47RequestMethod.PAY_INVOICE],
+            granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
             keys=harness.client_app_keys,
         )
         request_event = harness.create_request_event(params={})
@@ -201,7 +205,7 @@ async def test_succeeded(
     async with test_client.app.app_context():
         harness = Harness.prepare()
         app_connection = await create_app_connection(
-            supported_commands=[Nip47RequestMethod.PAY_INVOICE],
+            granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
             keys=harness.client_app_keys,
         )
         request_event = harness.create_request_event()
@@ -254,7 +258,7 @@ async def test_failed__vasp_error_response(
     async with test_client.app.app_context():
         harness = Harness.prepare()
         await create_app_connection(
-            supported_commands=[Nip47RequestMethod.PAY_INVOICE],
+            granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
             keys=harness.client_app_keys,
         )
         request_event = harness.create_request_event()

@@ -109,8 +109,8 @@ class OauthAuthorizationServer:
             "token_type": "Bearer",
             # TODO: Add the NWC connection URI
             "nwc_connection_uri": "",
-            "commands": nwc_connection.supported_commands,
             "budget": spending_limit.get_budget_repr() if spending_limit else None,
+            "commands": nwc_connection.get_all_granted_granular_permissions(),
             "nwc_expires_at": nwc_connection.connection_expires_at,
             "uma_address": nwc_connection.user.uma_address,
         }
