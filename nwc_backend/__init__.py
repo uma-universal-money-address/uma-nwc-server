@@ -242,7 +242,7 @@ def create_app() -> Quart:
 
     @app.route("/oauth/token", methods=["GET"])
     @route_cors(
-        allow_origin=["*"], allow_methods=["GET"], allow_headers=["Authorization"]
+        allow_origin=["*"], allow_methods=["GET"], allow_headers=["Authorization", "Access-Control-Request-Headers"]
     )
     async def oauth_exchange() -> Response:
         # authenticate the the oauth code for the access token + details
