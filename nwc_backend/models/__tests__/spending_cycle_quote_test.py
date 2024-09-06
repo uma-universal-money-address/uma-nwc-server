@@ -20,7 +20,7 @@ async def test_spending_cycle_quote(test_client: QuartClient) -> None:
             id=uuid4(),
             nip47_request_id=nip47_request.id,
             payment_hash=payment_hash,
-            estimated_amount__amount=100,
+            estimated_amount__amount=amount,
             estimated_amount__currency=currency_code,
         )
         db.session.add(quote)

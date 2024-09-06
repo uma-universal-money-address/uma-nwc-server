@@ -5,5 +5,6 @@
 from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nwc_connection import NWCConnection
+from nwc_backend.models.spending_cycle_payment import SpendingCyclePayment
 from nwc_backend.models.spending_cycle_quote import SpendingCycleQuote
 from nwc_backend.models.user import User
