@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 from uuid import uuid4
+from quart_cors import route_cors
 
 import jwt
 import requests
@@ -240,6 +241,9 @@ def create_app() -> Quart:
         )
 
     @app.route("/oauth/token", methods=["GET"])
+    @route_cors(
+        allow_origin=["*"], allow_methods=["GET"], allow_headers=["Authorization"]
+    )
     async def oauth_exchange() -> Response:
         # authenticate the the oauth code for the access token + details
         client_id = request.args.get("client_id")
