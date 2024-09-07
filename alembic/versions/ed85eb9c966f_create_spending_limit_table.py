@@ -1,7 +1,7 @@
 """create spending_limit table
 
 Revision ID: ed85eb9c966f
-Revises: 8934fcddb325
+Revises: 8fa5da72dc33
 Create Date: 2024-09-06 00:13:19.603507
 
 """

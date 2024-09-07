@@ -98,6 +98,7 @@ async def create_app_connection(
 
 async def create_spending_limit(
     nwc_connection_id: Optional[UUID] = None,
+    frequency: Optional[SpendingLimitFrequency] = None,
 ) -> SpendingLimit:
     nwc_connection_id = nwc_connection_id or (await create_nwc_connection()).id
     spending_limit = SpendingLimit(
@@ -105,7 +106,7 @@ async def create_spending_limit(
         nwc_connection_id=nwc_connection_id,
         currency_code="USD",
         amount=100,
-        frequency=SpendingLimitFrequency.MONTHLY,
+        frequency=frequency or SpendingLimitFrequency.MONTHLY,
         start_time=datetime.now(timezone.utc),
     )
     db.session.add(spending_limit)

@@ -1,7 +1,7 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 
 from sqlalchemy import BigInteger
@@ -13,6 +13,7 @@ from nwc_backend.db import UUID as DBUUID
 from nwc_backend.db import DateTime
 from nwc_backend.exceptions import InvalidBudgetFormatException
 from nwc_backend.models.model_base import ModelBase
+from nwc_backend.models.spending_cycle import SpendingCycle
 from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 
 
@@ -62,4 +63,21 @@ class SpendingLimit(ModelBase):
                 else SpendingLimitFrequency.NONE
             ),
             start_time=start_time,
+        )
+
+    def create_spending_cycle(self, start_time: datetime) -> SpendingCycle:
+        assert start_time >= self.start_time
+        delta = SpendingLimitFrequency.get_time_delta(self.frequency)
+        if delta:
+            assert (start_time - self.start_time) % delta == timedelta(0)
+
+        return SpendingCycle(
+            id=uuid4(),
+            spending_limit_id=self.id,
+            limit_currency=self.currency_code,
+            limit_amount=self.amount,
+            start_time=start_time,
+            end_time=start_time + delta if delta else None,
+            total_spent=0,
+            total_spent_on_hold=0,
         )
