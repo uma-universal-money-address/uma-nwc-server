@@ -27,6 +27,7 @@ def upgrade() -> None:
                 "granted_permissions_groups",
                 sa.JSON().with_variant(JSONB(astext_type=sa.Text()), "postgresql"),
                 nullable=False,
+                server_default="[]",
             )
         )
         batch_op.drop_column("supported_commands")
