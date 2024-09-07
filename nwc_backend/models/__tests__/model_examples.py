@@ -15,12 +15,16 @@ from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.permissions_grouping import PermissionsGroup
+from nwc_backend.models.spending_cycle import SpendingCycle
+from nwc_backend.models.spending_cycle_quote import SpendingCycleQuote
 from nwc_backend.models.spending_limit import SpendingLimit, SpendingLimitFrequency
 from nwc_backend.models.user import User
 
 
 async def create_user() -> User:
-    user = User(id=uuid4(), vasp_user_id=str(uuid4()), uma_address="$alice@uma.me")
+    user = User(
+        id=uuid4(), vasp_user_id=str(uuid4()), uma_address=f"$test_{uuid4()}@uma.me"
+    )
     db.session.add(user)
     await db.session.commit()
     return user
@@ -134,3 +138,35 @@ async def create_nip47_request() -> Nip47Request:
     db.session.add(nip47_request)
     await db.session.commit()
     return nip47_request
+
+
+async def create_spending_cycle() -> SpendingCycle:
+    spending_limit = await create_spending_limit()
+    delta = SpendingLimitFrequency.get_time_delta(spending_limit.frequency)
+    spending_cycle = SpendingCycle(
+        id=uuid4(),
+        spending_limit_id=spending_limit.id,
+        limit_currency=spending_limit.currency_code,
+        limit_amount=spending_limit.amount,
+        start_time=spending_limit.start_time,
+        end_time=(spending_limit.start_time + delta) if delta else None,
+        total_spent=0,
+        total_spent_on_hold=0,
+    )
+    db.session.add(spending_cycle)
+    await db.session.commit()
+    return spending_cycle
+
+
+async def create_spending_cycle_quote() -> SpendingCycleQuote:
+    nip47_request = await create_nip47_request()
+    quote = SpendingCycleQuote(
+        id=uuid4(),
+        nip47_request_id=nip47_request.id,
+        payment_hash=token_hex(),
+        estimated_amount__amount=100,
+        estimated_amount__currency="USD",
+    )
+    db.session.add(quote)
+    await db.session.commit()
+    return quote
