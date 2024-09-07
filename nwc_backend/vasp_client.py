@@ -7,6 +7,7 @@ from typing import Any, Optional
 
 import aiohttp
 from quart import current_app
+from urllib.parse import urlparse
 from uma_auth.models.execute_quote_response import ExecuteQuoteResponse
 from uma_auth.models.get_balance_response import GetBalanceResponse
 from uma_auth.models.get_info_response import GetInfoResponse
@@ -76,9 +77,12 @@ class VaspUmaClient:
     async def _make_http_get(
         self, path: str, access_token: str, params: Optional[dict[str, Any]] = None
     ) -> str:
-        async with aiohttp.ClientSession(base_url=self.base_url) as session:
+        base_url_parts = urlparse(self.base_url)
+        base_url_without_path = f"{base_url_parts.scheme}://{base_url_parts.netloc}"
+        base_url_path = base_url_parts.path
+        async with aiohttp.ClientSession(base_url=base_url_without_path) as session:
             async with session.get(  # pyre-ignore[16]
-                url=path,
+                url=f"{base_url_path}{path}",
                 params=params,
                 headers={
                     "Authorization": f"Bearer {access_token}",
@@ -96,9 +100,12 @@ class VaspUmaClient:
     async def _make_http_post(
         self, path: str, access_token: str, data: Optional[str] = None
     ) -> str:
-        async with aiohttp.ClientSession(base_url=self.base_url) as session:
+        base_url_parts = urlparse(self.base_url)
+        base_url_without_path = f"{base_url_parts.scheme}://{base_url_parts.netloc}"
+        base_url_path = base_url_parts.path
+        async with aiohttp.ClientSession(base_url=base_url_without_path) as session:
             async with session.post(  # pyre-ignore[16]
-                url=path,
+                url=f"{base_url_path}{path}",
                 data=data,
                 headers={
                     "Authorization": f"Bearer {access_token}",
