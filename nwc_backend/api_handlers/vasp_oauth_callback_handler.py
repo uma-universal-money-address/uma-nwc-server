@@ -16,13 +16,13 @@ from nwc_backend.exceptions import InvalidBudgetFormatException
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
-from nwc_backend.models.spending_limit import SpendingLimit
-from nwc_backend.models.user import User
 from nwc_backend.models.permissions_grouping import (
-    PERMISSIONS_GROUP_TO_METHODS,
     METHOD_TO_PERMISSIONS_GROUP,
+    PERMISSIONS_GROUP_TO_METHODS,
     PermissionsGroup,
 )
+from nwc_backend.models.spending_limit import SpendingLimit
+from nwc_backend.models.user import User
 
 
 async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
@@ -33,6 +33,20 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
         return WerkzeugResponse("Required commands not provided", status=400)
     optional_commands = request.args.get("optional_commands")
     client_id = request.args.get("client_id")
+
+    now = datetime.now(timezone.utc)
+    budget = request.args.get("budget")
+    spending_limit = None
+    if budget:
+        try:
+            spending_limit = SpendingLimit.from_budget_repr(
+                budget=budget, start_time=now
+            )
+        except InvalidBudgetFormatException as ex:
+            return WerkzeugResponse(
+                ex.error_message,
+                status=400,
+            )
 
     vasp_token_payload = jwt.decode(
         short_lived_vasp_token,
@@ -143,32 +157,17 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
             group.value for group in granted_permissions_groups
         ],
     )
+    # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
+    connection_expires_at = int((now + timedelta(days=365)).timestamp())
+    nwc_connection.connection_expires_at = connection_expires_at
     db.session.add(nwc_connection)
+    await db.session.commit()
 
-    budget = request.args.get("budget")
-    if budget:
-        try:
-            spending_limit = SpendingLimit.from_budget_repr(
-                budget=budget,
-                nwc_connection_id=nwc_connection.id,
-                start_time=datetime.now(timezone.utc),
-            )
-        except InvalidBudgetFormatException as ex:
-            return WerkzeugResponse(
-                ex.error_message,
-                status=400,
-            )
-
+    if spending_limit:
+        spending_limit.nwc_connection_id = nwc_connection.id
         nwc_connection.spending_limit_id = spending_limit.id
         db.session.add(spending_limit)
-
-    # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
-    connection_expires_at = int(
-        (datetime.now(timezone.utc) + timedelta(days=365)).timestamp()
-    )
-    nwc_connection.connection_expires_at = connection_expires_at
-
-    await db.session.commit()
+        await db.session.commit()
 
     # TODO: Verify these are saved on nwc frontend session
     session["short_lived_vasp_token"] = short_lived_vasp_token

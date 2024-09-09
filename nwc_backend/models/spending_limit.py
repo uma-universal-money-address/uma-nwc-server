@@ -2,6 +2,7 @@
 # pyre-strict
 
 from datetime import datetime, timedelta
+from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import BigInteger
@@ -42,7 +43,9 @@ class SpendingLimit(ModelBase):
 
     @staticmethod
     def from_budget_repr(
-        budget: str, nwc_connection_id: UUID, start_time: datetime
+        budget: str,
+        start_time: datetime,
+        nwc_connection_id: Optional[UUID] = None,
     ) -> "SpendingLimit":
         # budget format is <max_amount>.<currency>/<period>
         if len(budget.split(".")) != 2 and len(budget.split("/")) != 2:
