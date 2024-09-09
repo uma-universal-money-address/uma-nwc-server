@@ -143,6 +143,7 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
             group.value for group in granted_permissions_groups
         ],
     )
+    db.session.add(nwc_connection)
 
     budget = request.args.get("budget")
     if budget:
@@ -167,7 +168,6 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
     )
     nwc_connection.connection_expires_at = connection_expires_at
 
-    db.session.add(nwc_connection)
     await db.session.commit()
 
     # TODO: Verify these are saved on nwc frontend session
