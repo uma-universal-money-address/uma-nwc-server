@@ -4,11 +4,11 @@
 import json
 import math
 from secrets import token_hex
-from typing import Any
 from unittest.mock import ANY, AsyncMock, Mock, patch
 
 import aiohttp
 import pytest
+from nostr_sdk import ErrorCode
 from pydantic_core import ValidationError
 from quart.app import QuartClient
 from sqlalchemy.sql import select
@@ -21,12 +21,9 @@ from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
 from nwc_backend.event_handlers.pay_invoice_handler import pay_invoice
 from nwc_backend.exceptions import InsufficientBudgetException, Nip47RequestException
 from nwc_backend.models.__tests__.model_examples import (
-    create_app_connection,
     create_nip47_request,
-    create_nwc_connection,
-    create_spending_limit,
+    create_nip47_with_spending_limit,
 )
-from nwc_backend.models.nip47_request import ErrorCode, Nip47Request
 from nwc_backend.models.spending_cycle import SpendingCycle
 from nwc_backend.models.spending_cycle_payment import (
     PaymentStatus,
@@ -90,23 +87,6 @@ async def test_pay_invoice_failure__http_raises(
             await pay_invoice(access_token=token_hex(), request=request)
             assert exc_info.value.error_code == ErrorCode.PAYMENT_FAILED
             assert exc_info.value.error_message == vasp_response.message
-
-
-async def create_nip47_with_spending_limit(
-    spending_limit_currency_code: str,
-    spending_limit_currency_amount: int,
-    request_params: dict[str, Any],
-) -> Nip47Request:
-    nwc_connection = await create_nwc_connection()
-    await create_spending_limit(
-        nwc_connection=nwc_connection,
-        currency_code=spending_limit_currency_code,
-        amount=spending_limit_currency_amount,
-    )
-    app_connection = await create_app_connection(nwc_connection=nwc_connection)
-    return await create_nip47_request(
-        app_connection=app_connection, params=request_params
-    )
 
 
 @patch.object(aiohttp.ClientSession, "post")
