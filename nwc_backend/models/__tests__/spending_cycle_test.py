@@ -29,6 +29,12 @@ async def test_spending_cycle(test_client: QuartClient) -> None:
         assert spending_cycle.end_time == spending_cycle.start_time + timedelta(days=7)
         assert spending_cycle.total_spent == 0
         assert spending_cycle.total_spent_on_hold == 0
+        assert (
+            spending_cycle.get_available_budget_amount() == spending_cycle.limit_amount
+        )
+        assert spending_cycle.can_make_payment(spending_cycle.limit_amount - 10)
+        assert spending_cycle.can_make_payment(spending_cycle.limit_amount)
+        assert not spending_cycle.can_make_payment(spending_cycle.limit_amount + 10)
 
 
 async def test_duplicate_spending_limit_creation_throws(

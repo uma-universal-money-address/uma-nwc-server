@@ -13,7 +13,7 @@ class SpendingLimitFrequency(Enum):
     NONE = "none"
 
     @staticmethod
-    def get_time_delta(frequency: "SpendingLimitFrequency") -> Optional[timedelta]:
+    def get_cycle_length(frequency: "SpendingLimitFrequency") -> Optional[timedelta]:
         match frequency:
             case SpendingLimitFrequency.DAILY:
                 return timedelta(days=1)

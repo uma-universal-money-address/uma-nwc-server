@@ -73,3 +73,11 @@ class InvalidBudgetFormatException(Exception):
             "Budget should be in the format <max_amount>.<currency>/<period>"
         )
         super().__init__(self.error_message)
+
+
+class InsufficientBudgetException(Nip47RequestException):
+    def __init__(self) -> None:
+        super().__init__(
+            error_code=ErrorCode.OTHER,
+            error_message="The avaiable budget left this cycle is not enough to cover the payment.",
+        )

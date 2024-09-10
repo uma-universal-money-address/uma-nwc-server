@@ -31,6 +31,15 @@ class SpendingCycle(ModelBase):
     total_spent: Mapped[int] = mapped_column(BigInteger(), nullable=False)
     total_spent_on_hold: Mapped[int] = mapped_column(BigInteger(), nullable=False)
 
+    def get_available_budget_amount(self) -> int:
+        return self.limit_amount - self.total_spent - self.total_spent_on_hold
+
+    def can_make_payment(self, estimate_amount: int) -> bool:
+        return (
+            self.limit_amount - self.total_spent - self.total_spent_on_hold
+            >= estimate_amount
+        )
+
 
 Index(
     "spending_cycle_spending_limit_id_start_time_unique_idx",

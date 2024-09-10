@@ -2,8 +2,8 @@
 
 from datetime import datetime, timedelta, timezone
 from secrets import token_hex
-from typing import Optional
-from uuid import UUID, uuid4
+from typing import Any, Optional
+from uuid import uuid4
 
 from nostr_sdk import Keys
 
@@ -70,6 +70,7 @@ async def create_nwc_connection(
 
 
 async def create_app_connection(
+    nwc_connection: Optional[NWCConnection] = None,
     granted_permissions_groups: list[PermissionsGroup] = [
         PermissionsGroup.RECEIVE_PAYMENTS,
         PermissionsGroup.SEND_PAYMENTS,
@@ -77,7 +78,9 @@ async def create_app_connection(
     keys: Optional[Keys] = None,
     access_token_expired: bool = False,
 ) -> AppConnection:
-    nwc_connection = await create_nwc_connection(granted_permissions_groups)
+    nwc_connection = nwc_connection or await create_nwc_connection(
+        granted_permissions_groups
+    )
     keys = keys or Keys.generate()
     now = datetime.now(timezone.utc)
     if access_token_expired:
@@ -103,33 +106,41 @@ async def create_app_connection(
 
 
 async def create_spending_limit(
-    nwc_connection_id: Optional[UUID] = None,
-    frequency: Optional[SpendingLimitFrequency] = None,
+    nwc_connection: Optional[NWCConnection] = None,
+    frequency: SpendingLimitFrequency = SpendingLimitFrequency.MONTHLY,
+    amount: int = 100,
+    currency_code: str = "USD",
 ) -> SpendingLimit:
-    nwc_connection_id = nwc_connection_id or (await create_nwc_connection()).id
+    nwc_connection = nwc_connection or await create_nwc_connection()
     spending_limit = SpendingLimit(
         id=uuid4(),
-        nwc_connection_id=nwc_connection_id,
-        currency_code="USD",
-        amount=100,
-        frequency=frequency or SpendingLimitFrequency.MONTHLY,
+        nwc_connection_id=nwc_connection.id,
+        currency_code=currency_code,
+        amount=amount,
+        frequency=frequency,
         start_time=datetime.now(timezone.utc),
     )
+    nwc_connection.spending_limit = spending_limit
     db.session.add(spending_limit)
     await db.session.commit()
     return spending_limit
 
 
-async def create_nip47_request() -> Nip47Request:
-    app_connection = await create_app_connection()
+async def create_nip47_request(
+    app_connection: Optional[AppConnection] = None,
+    params: Optional[dict[str, Any]] = None,
+) -> Nip47Request:
+    if params is None:
+        params = {
+            "invoice": "lnbcrt1pjrsa37pp50geu5vxkzn4ddc4hmfkz9x308tw9lrrqtktz2hpm0rccjyhcyp5qdqh2d68yetpd45kueeqv3jk6mccqzpgxq9z0rgqsp5ge2rdw0tzvakxslmtvfmqf2fr7eucg9ughps5vdvp6fm2utk20rs9q8pqqqssqjs3k4nzrzg2nu9slu9c3srv2ae8v69ge097q9seukyw2nger8arj93m6erz8u657hfdzztfmc55wjjm9k337krl00fyw6s9nnwaafaspcqp2uv"
+        }
+    app_connection = app_connection or await create_app_connection()
     nip47_request = Nip47Request(
         id=uuid4(),
-        app_connection_id=app_connection.id,
+        app_connection=app_connection,
         event_id=token_hex(),
         method=Nip47RequestMethod.PAY_INVOICE,
-        params={
-            "invoice": "lnbcrt1pjrsa37pp50geu5vxkzn4ddc4hmfkz9x308tw9lrrqtktz2hpm0rccjyhcyp5qdqh2d68yetpd45kueeqv3jk6mccqzpgxq9z0rgqsp5ge2rdw0tzvakxslmtvfmqf2fr7eucg9ughps5vdvp6fm2utk20rs9q8pqqqssqjs3k4nzrzg2nu9slu9c3srv2ae8v69ge097q9seukyw2nger8arj93m6erz8u657hfdzztfmc55wjjm9k337krl00fyw6s9nnwaafaspcqp2uv"
-        },
+        params=params,
         response_event_id=token_hex(),
         response_result={
             "preimage": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -142,14 +153,14 @@ async def create_nip47_request() -> Nip47Request:
 
 async def create_spending_cycle() -> SpendingCycle:
     spending_limit = await create_spending_limit()
-    delta = SpendingLimitFrequency.get_time_delta(spending_limit.frequency)
+    cycle_length = SpendingLimitFrequency.get_cycle_length(spending_limit.frequency)
     spending_cycle = SpendingCycle(
         id=uuid4(),
         spending_limit_id=spending_limit.id,
         limit_currency=spending_limit.currency_code,
         limit_amount=spending_limit.amount,
         start_time=spending_limit.start_time,
-        end_time=(spending_limit.start_time + delta) if delta else None,
+        end_time=(spending_limit.start_time + cycle_length) if cycle_length else None,
         total_spent=0,
         total_spent_on_hold=0,
     )
