@@ -95,6 +95,9 @@ async def create_app_connection(
         authorization_code=token_hex(),
         authorization_code_expires_at=int((now + timedelta(minutes=10)).timestamp()),
         status=AppConnectionStatus.ACTIVE,
+        redirect_uri="https://example.com",
+        code_challenge=token_hex(),
+        code_challenge_method="S256",
     )
 
     db.session.add(app_connection)

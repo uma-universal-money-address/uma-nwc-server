@@ -23,7 +23,6 @@ from nwc_backend.client_app_identity_lookup import look_up_client_app_identity
 from nwc_backend.db import UUID, db, setup_rds_iam_auth
 from nwc_backend.event_handlers.event_builder import EventBuilder
 from nwc_backend.exceptions import (
-    ActiveAppConnectionAlreadyExistsException,
     PublishEventFailedException,
 )
 from nwc_backend.models.app_connection import AppConnection
@@ -35,7 +34,7 @@ from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
 from nwc_backend.nostr_notification_handler import NotificationHandler
-from nwc_backend.oauth import OauthStorage, authorization_server
+from nwc_backend.oauth import authorization_server
 from nwc_backend.models.permissions_grouping import (
     PERMISSIONS_GROUP_TO_METHODS,
     PermissionsGroup,
@@ -223,13 +222,8 @@ def create_app() -> Quart:
         nwc_connection.long_lived_vasp_token = long_lived_vasp_token
         await db.session.commit()
 
-        oauth_storage = OauthStorage()
-        try:
-            app_connection = await oauth_storage.create_app_connection(
-                nwc_connection_id=nwc_connection_id,
-            )
-        except ActiveAppConnectionAlreadyExistsException:
-            return WerkzeugResponse("Active app connection already exists", status=400)
+        app_connection_id = session.get("app_connection_id")
+        app_connection = await db.session.get_one(AppConnection, app_connection_id)
 
         return WerkzeugResponse(
             json.dumps(
@@ -259,8 +253,13 @@ def create_app() -> Quart:
         if grant_type == "authorization_code":
             client_id = request_data.get("client_id")
             code = request_data.get("code")
+            redirect_uri = request_data.get("redirect_uri")
+            code_verifier = request_data.get("code_verifier")
             response = await authorization_server.get_exchange_token_response(
-                client_id=client_id, code=code
+                client_id=client_id,
+                code=code,
+                redirect_uri=redirect_uri,
+                code_verifier=code_verifier,
             )
             return response
         elif grant_type == "refresh_token":

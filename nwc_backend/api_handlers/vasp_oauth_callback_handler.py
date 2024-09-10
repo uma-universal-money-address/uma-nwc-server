@@ -12,7 +12,10 @@ from werkzeug import Response as WerkzeugResponse
 
 from nwc_backend.client_app_identity_lookup import look_up_client_app_identity
 from nwc_backend.db import db
-from nwc_backend.exceptions import InvalidBudgetFormatException
+from nwc_backend.exceptions import (
+    InvalidBudgetFormatException,
+)
+from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
@@ -23,6 +26,7 @@ from nwc_backend.models.permissions_grouping import (
 )
 from nwc_backend.models.spending_limit import SpendingLimit
 from nwc_backend.models.user import User
+from nwc_backend.oauth import OauthStorage
 
 
 async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
@@ -169,12 +173,20 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
         db.session.add(spending_limit)
         await db.session.commit()
 
+    oauth_storage = OauthStorage()
+    app_connection: AppConnection = await oauth_storage.create_app_connection(
+        nwc_connection_id=nwc_connection.id,
+        redirect_uri=request.args.get("redirect_uri"),
+        code_challenge=request.args.get("code_challenge"),
+        code_challenge_method=request.args.get("code_challenge_method"),
+    )
+
     # TODO: Verify these are saved on nwc frontend session
     session["short_lived_vasp_token"] = short_lived_vasp_token
     session["nwc_connection_id"] = nwc_connection.id
+    session["app_connection_id"] = app_connection.id
     session["user_id"] = user.id
     session["client_id"] = request.args.get("client_id")
-    session["client_redirect_uri"] = request.args.get("redirect_uri")
     session["client_state"] = request.args.get("state")
 
     # REMOVE ALWAYS_GRANTED PermissionsGroup from lists if it exists since we won't be sending them to the frontend

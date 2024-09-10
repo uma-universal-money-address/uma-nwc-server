@@ -39,6 +39,9 @@ async def test_app_connection_model(test_client: QuartClient) -> None:
                 (now + timedelta(minutes=10)).timestamp()
             ),
             status=AppConnectionStatus.ACTIVE,
+            redirect_uri="https://example.com",
+            code_challenge=token_hex(),
+            code_challenge_method="S256",
         )
         db.session.add(app_connection)
         await db.session.commit()

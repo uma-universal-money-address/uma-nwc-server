@@ -31,7 +31,7 @@ class AppConnection(ModelBase):
     access_token: Mapped[str] = mapped_column(String(1024), unique=True, nullable=False)
     refresh_token: Mapped[str] = mapped_column(String(1024), index=True, nullable=False)
     authorization_code: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False
+        String(1024), unique=True, nullable=False
     )
     # Expiration times for the tokens are stored as Unix timestamps
     access_token_expires_at: Mapped[int] = mapped_column(Integer(), nullable=False)
@@ -43,6 +43,11 @@ class AppConnection(ModelBase):
     status: Mapped[AppConnectionStatus] = mapped_column(
         DBEnum(AppConnectionStatus, native_enum=False),
         nullable=False,
+    )
+    redirect_uri: Mapped[Optional[str]] = mapped_column(String(1024), nullable=False)
+    code_challenge: Mapped[Optional[str]] = mapped_column(String(1024), nullable=False)
+    code_challenge_method: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=False
     )
 
     nwc_connection: Mapped[NWCConnection] = relationship("NWCConnection", lazy="joined")
