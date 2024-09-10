@@ -250,12 +250,15 @@ def create_app() -> Quart:
         ],
     )
     async def oauth_exchange() -> Response:
-        # authenticate the the oauth code for the access token + details
-        client_id = request.args.get("client_id")
-        grant_type = request.args.get("grant_type")
+        # Default to post body. Fall back to query params if post body is empty.
+        request_data = await request.form
+        if not request_data:
+            request_data = request.args
+        grant_type = request_data.get("grant_type")
 
         if grant_type == "authorization_code":
-            code = request.args.get("code")
+            client_id = request_data.get("client_id")
+            code = request_data.get("code")
             response = await authorization_server.get_exchange_token_response(
                 client_id=client_id, code=code
             )
