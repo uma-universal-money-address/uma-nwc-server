@@ -2,6 +2,7 @@
 # pyre-strict
 
 from datetime import datetime, timedelta
+import re
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -39,7 +40,13 @@ class SpendingLimit(ModelBase):
     )
 
     def get_budget_repr(self) -> str:
-        return f"{self.amount}.{self.currency_code}/{self.frequency.value}"
+        budget = f"{self.amount}"
+        if self.currency_code:
+            budget += f".{self.currency_code}"
+        if self.frequency:
+            budget += f"/{self.frequency.value}"
+
+        return budget
 
     @staticmethod
     def from_budget_repr(
@@ -47,13 +54,19 @@ class SpendingLimit(ModelBase):
         start_time: datetime,
         nwc_connection_id: Optional[UUID] = None,
     ) -> "SpendingLimit":
-        # budget format is <max_amount>.<currency>/<period>
-        if len(budget.split(".")) != 2 and len(budget.split("/")) != 2:
+
+        # Assert budget string is in the format of "amount.currency_code/period"
+        pattern = re.compile(r"^\d+(?:\.\w{3})?(?:/\w+)?$")
+        if not pattern.match(budget):
             raise InvalidBudgetFormatException()
 
-        spending_limit_amount = int(budget.split(".")[0])
-        spending_limit_currency_code = budget.split(".")[1].split("/")[0]
-        period = budget.split("/")[1].lower()
+        parts = budget.split("/")
+        period = parts[1] if len(parts) == 2 else None
+        amount_currency = parts[0].split(".")
+        spending_limit_amount = int(amount_currency[0])
+        spending_limit_currency_code = (
+            amount_currency[1] if len(amount_currency) == 2 else None
+        )
 
         return SpendingLimit(
             id=uuid4(),
