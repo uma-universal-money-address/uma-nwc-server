@@ -33,7 +33,9 @@ from nwc_backend.typing import none_throws
 
 
 @patch.object(aiohttp.ClientSession, "post")
-async def test_pay_keysend_success(mock_post: Mock, test_client: QuartClient) -> None:
+async def test_pay_keysend_success__spending_limit_disabled(
+    mock_post: Mock, test_client: QuartClient
+) -> None:
     vasp_response = {
         "preimage": "b6f1086f61561bacf2f05fa02ab30a06c3432c1aea62817c019ea33c1730eeb3",
     }
