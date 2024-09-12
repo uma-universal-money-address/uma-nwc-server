@@ -264,7 +264,11 @@ def create_app() -> Quart:
             )
             return response
         elif grant_type == "refresh_token":
-            return await authorization_server.get_refresh_token_response()
+            refresh_token = request_data.get("refresh_token")
+            client_id = request_data.get("client_id")
+            return await authorization_server.get_refresh_token_response(
+                refresh_token, client_id
+            )
         else:
             return Response(status=400, response="Invalid grant type")
 

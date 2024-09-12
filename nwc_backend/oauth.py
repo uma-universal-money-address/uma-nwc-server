@@ -101,6 +101,42 @@ class OauthAuthorizationServer:
         ):
             return Response(status=401, response="Invalid authorization code")
 
+        return self._get_token_response(app_connection)
+
+    async def get_refresh_token_response(
+        self, refresh_token: str, client_id: str
+    ) -> Response:
+        app_connection = await AppConnection.from_refresh_token(refresh_token)
+        if (
+            not app_connection
+            or app_connection.nwc_connection.client_app.client_id != client_id
+        ):
+            return Response(status=401, response="Invalid refresh token")
+
+        if app_connection.refresh_token_expires_at < int(time()):
+            return Response(status=401, response="Refresh token expired")
+
+        if (
+            app_connection.nwc_connection.connection_expires_at
+            and app_connection.nwc_connection.connection_expires_at < int(time())
+        ):
+            return Response(status=401, response="Connection expired")
+
+        new_key_pair = generate_access_token_pubkey_pair()
+        new_access_token = new_key_pair.access_token
+        new_nostr_pubkey = new_key_pair.public_key
+        new_refresh_token = generate_refresh_token()
+
+        app_connection.access_token = new_access_token
+        app_connection.nostr_pubkey = new_nostr_pubkey
+        app_connection.access_token_expires_at = int(time()) + ACCESS_TOKEN_EXPIRES_IN
+        app_connection.refresh_token = new_refresh_token
+        app_connection.refresh_token_expires_at = int(time()) + REFRESH_TOKEN_EXPIRES_IN
+        await db.session.commit()
+
+        return self._get_token_response(app_connection)
+
+    def _get_token_response(self, app_connection: AppConnection) -> Response:
         nwc_connection = app_connection.nwc_connection
         spending_limit = nwc_connection.spending_limit
         nostr_config = NostrConfig.instance()
@@ -123,10 +159,6 @@ class OauthAuthorizationServer:
             status=200,
             headers=Headers({"Content-Type": "application/json"}),
         )
-
-    async def get_refresh_token_response(self) -> Response:
-        # TODO: Implement this method
-        raise NotImplementedError()
 
 
 authorization_server = OauthAuthorizationServer(OauthStorage())
