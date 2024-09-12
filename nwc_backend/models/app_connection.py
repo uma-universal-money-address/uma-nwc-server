@@ -65,6 +65,15 @@ class AppConnection(ModelBase):
         )
         return result.scalars().first()
 
+    @staticmethod
+    async def from_refresh_token(
+        refresh_token: str,
+    ) -> Optional["AppConnection"]:
+        result = await db.session.execute(
+            select(AppConnection).filter_by(refresh_token=refresh_token).limit(1)
+        )
+        return result.scalars().first()
+
     def has_command_permission(self, command: Nip47RequestMethod) -> bool:
         return self.nwc_connection.has_command_permission(command)
 
