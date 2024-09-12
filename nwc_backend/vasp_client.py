@@ -289,5 +289,10 @@ class VaspUmaClient:
         )
         return BudgetEstimateResponse.from_json(result)
 
+    async def revoke_token(self, access_token: str) -> None:
+        # TODO: Don't think we have this enpoint scoped out/implemented yet
+        # But we should also revoke token from VASP when user removes connection from NWC
+        pass
+
 
 _vasp_uma_client: Optional[VaspUmaClient] = None

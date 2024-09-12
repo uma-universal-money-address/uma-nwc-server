@@ -39,6 +39,7 @@ from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
 from nwc_backend.nostr_notification_handler import NotificationHandler
 from nwc_backend.oauth import authorization_server
+from nwc_backend.vasp_client import VaspUmaClient
 
 
 def create_app() -> Quart:
@@ -288,6 +289,78 @@ def create_app() -> Quart:
         for connection in result.scalars():
             response.append(await connection.get_connection_response_data())
         return WerkzeugResponse(json.dumps(response), status=200)
+
+    @app.route("/api/connection/<connectionId>", methods=["POST"])
+    async def update_connection(connectionId: str) -> WerkzeugResponse:
+        user_id = session.get("user_id")
+        if not user_id:
+            return WerkzeugResponse("User not authenticated", status=401)
+        connection = await db.session.get(AppConnection, UUID(connectionId))
+        if not connection:
+            return WerkzeugResponse("Connection not found", status=404)
+
+        data = await request.get_data()
+        data = json.loads(data)
+        permissions = data.get("permissions")
+        currency_code = data.get("currencyCode")
+        amount_in_lowest_denom = data.get("amountInLowestDenom")
+        limit_enabled = data.get("limitEnabled")
+        limit_frequency = data.get("limitFrequency")
+        expiration = data.get("expiration")
+
+        for permission in permissions:
+            if permission not in [group.value for group in PermissionsGroup]:
+                return WerkzeugResponse(
+                    f"Invalid permission group: {permission}", status=400
+                )
+
+        nwc_connection = await db.session.get_one(
+            NWCConnection, connection.nwc_connection_id
+        )
+        nwc_connection.granted_permissions_groups = permissions
+        nwc_connection.connection_expires_at = datetime.fromisoformat(
+            expiration
+        ).timestamp()
+
+        if limit_enabled:
+            limit_frequency = (
+                SpendingLimitFrequency(limit_frequency)
+                if limit_frequency
+                else SpendingLimitFrequency.NONE
+            )
+            spending_limit = SpendingLimit(
+                id=uuid4(),
+                nwc_connection_id=connection.nwc_connection_id,
+                currency_code=currency_code or "SAT",
+                amount=amount_in_lowest_denom,
+                frequency=limit_frequency,
+                start_time=datetime.now(timezone.utc),
+            )
+            db.session.add(spending_limit)
+            nwc_connection.spending_limit_id = spending_limit.id
+        else:
+            nwc_connection.spending_limit_id = None
+        await db.session.commit()
+
+        response = await connection.get_connection_reponse_data()
+        return WerkzeugResponse(json.dumps(response), status=200)
+
+    @app.route("/api/connection/<connectionId>", methods=["DELETE"])
+    async def delete_connection(connectionId: str) -> WerkzeugResponse:
+        user_id = session.get("user_id")
+        if not user_id:
+            return WerkzeugResponse("User not authenticated", status=401)
+        connection = await db.session.get(AppConnection, UUID(connectionId))
+        if not connection:
+            return WerkzeugResponse("Connection not found", status=404)
+
+        connection.status = AppConnectionStatus.INACTIVE
+        VaspUmaClient.instance().revoke_token(
+            connection.nwc_connection.long_lived_vasp_token
+        )
+        await db.session.commit()
+
+        return WerkzeugResponse(status=204)
 
     @app.route("/api/app", methods=["GET"])
     async def get_client_app() -> WerkzeugResponse:
