@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 import aiohttp
 from quart import current_app
 from uma_auth.models.budget_estimate_response import BudgetEstimateResponse
+from uma_auth.models.execute_quote_request import ExecuteQuoteRequest
 from uma_auth.models.execute_quote_response import ExecuteQuoteResponse
 from uma_auth.models.get_balance_response import GetBalanceResponse
 from uma_auth.models.get_info_response import GetInfoResponse
@@ -122,11 +123,15 @@ class VaspUmaClient:
                 return text
 
     async def execute_quote(
-        self, access_token: str, payment_hash: str
+        self,
+        access_token: str,
+        payment_hash: str,
+        request: ExecuteQuoteRequest,
     ) -> ExecuteQuoteResponse:
         result = await self._make_http_post(
             path=f"/quote/{payment_hash}",
             access_token=access_token,
+            data=request.to_json(),
         )
         return ExecuteQuoteResponse.from_json(result)
 

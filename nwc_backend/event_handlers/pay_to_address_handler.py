@@ -61,8 +61,8 @@ async def pay_to_address(
                 ):
                     settled_budget_currency_amount = response.quote.total_sending_amount
                 else:
-                    logging.debug(
-                        "Expect vasp to return total_budget_currency_amount on pay_to_address request %s.",
+                    logging.warning(
+                        "Expected vasp to return total_budget_currency_amount on pay_to_address request %s.",
                         request.id,
                     )
                     settled_budget_currency_amount = payment.estimated_amount

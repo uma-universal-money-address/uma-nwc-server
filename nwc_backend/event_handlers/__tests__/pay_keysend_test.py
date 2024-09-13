@@ -21,7 +21,7 @@ from nwc_backend.event_handlers.pay_keysend_handler import pay_keysend
 from nwc_backend.exceptions import InsufficientBudgetException, Nip47RequestException
 from nwc_backend.models.__tests__.model_examples import (
     create_nip47_request,
-    create_nip47_with_spending_limit,
+    create_nip47_request_with_spending_limit,
 )
 from nwc_backend.models.nip47_request import ErrorCode
 from nwc_backend.models.spending_cycle import SpendingCycle
@@ -109,7 +109,7 @@ async def test_pay_keysend_success__spending_limit_SAT_enabled(
         payment_amount_msats = 1023
         payment_amount_sats = 2
         params = {"pubkey": token_hex(), "amount": payment_amount_msats}
-        request = await create_nip47_with_spending_limit("SAT", 1000, params)
+        request = await create_nip47_request_with_spending_limit("SAT", 1000, params)
         response = await pay_keysend(access_token=token_hex(), request=request)
 
         mock_pay_keysend.assert_called_once_with(
@@ -162,7 +162,7 @@ async def test_pay_keysend_payment_failed__spending_limit_SAT_enabled(
         payment_amount_msats = 5000
         payment_amount_sats = 5
         params = {"pubkey": token_hex(), "amount": payment_amount_msats}
-        request = await create_nip47_with_spending_limit("SAT", 1000, params)
+        request = await create_nip47_request_with_spending_limit("SAT", 1000, params)
 
         with pytest.raises(Nip47RequestException):
             await pay_keysend(access_token=token_hex(), request=request)
@@ -203,7 +203,7 @@ async def test_budget_not_enough__spending_limit_SAT_enabled(
     async with test_client.app.app_context():
         payment_amount_msats = 1200_000
         params = {"pubkey": token_hex(), "amount": payment_amount_msats}
-        request = await create_nip47_with_spending_limit("SAT", 1000, params)
+        request = await create_nip47_request_with_spending_limit("SAT", 1000, params)
 
         with pytest.raises(InsufficientBudgetException):
             await pay_keysend(access_token=token_hex(), request=request)
@@ -252,7 +252,7 @@ async def test_pay_keysend_success__spending_limit_USD_enabled(
         payment_amount_msats = 1000_000
         payment_amount_sats = 1000
         params = {"pubkey": token_hex(), "amount": payment_amount_msats}
-        request = await create_nip47_with_spending_limit("USD", 10000, params)
+        request = await create_nip47_request_with_spending_limit("USD", 10000, params)
         response = await pay_keysend(access_token=token_hex(), request=request)
 
         params["budget_currency_code"] = "USD"
@@ -327,7 +327,7 @@ async def test_pay_keysend_payment_failed__spending_limit_USD_enabled(
         payment_amount_msats = 1000_000
         payment_amount_sats = 1000
         params = {"pubkey": token_hex(), "amount": payment_amount_msats}
-        request = await create_nip47_with_spending_limit("USD", 10000, params)
+        request = await create_nip47_request_with_spending_limit("USD", 10000, params)
 
         with pytest.raises(Nip47RequestException):
             await pay_keysend(access_token=token_hex(), request=request)
@@ -391,7 +391,7 @@ async def test_budget_not_enough__spending_limit_USD_enabled(
         payment_amount_msats = 1000_000
         payment_amount_sats = 1000
         params = {"pubkey": token_hex(), "amount": payment_amount_msats}
-        request = await create_nip47_with_spending_limit("USD", 100, params)
+        request = await create_nip47_request_with_spending_limit("USD", 100, params)
 
         with pytest.raises(InsufficientBudgetException):
             await pay_keysend(access_token=token_hex(), request=request)

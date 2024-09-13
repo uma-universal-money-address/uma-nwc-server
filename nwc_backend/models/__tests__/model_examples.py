@@ -151,7 +151,7 @@ async def create_nip47_request(
     return nip47_request
 
 
-async def create_nip47_with_spending_limit(
+async def create_nip47_request_with_spending_limit(
     spending_limit_currency_code,
     spending_limit_currency_amount,
     params: dict[str, Any],
@@ -184,14 +184,16 @@ async def create_spending_cycle() -> SpendingCycle:
     return spending_cycle
 
 
-async def create_spending_cycle_quote() -> SpendingCycleQuote:
+async def create_spending_cycle_quote(
+    sending_currency_code: str = "USD", sending_currency_amount: int = 10_00
+) -> SpendingCycleQuote:
     nip47_request = await create_nip47_request()
     quote = SpendingCycleQuote(
         id=uuid4(),
         nip47_request_id=nip47_request.id,
         payment_hash=token_hex(),
-        estimated_amount__amount=100,
-        estimated_amount__currency="USD",
+        sending_currency_code=sending_currency_code,
+        sending_currency_amount=sending_currency_amount,
     )
     db.session.add(quote)
     await db.session.commit()

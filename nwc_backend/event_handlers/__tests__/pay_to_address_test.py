@@ -26,7 +26,7 @@ from nwc_backend.exceptions import (
 )
 from nwc_backend.models.__tests__.model_examples import (
     create_nip47_request,
-    create_nip47_with_spending_limit,
+    create_nip47_request_with_spending_limit,
 )
 from nwc_backend.models.nip47_request import ErrorCode
 from nwc_backend.models.spending_cycle import SpendingCycle
@@ -38,7 +38,7 @@ from nwc_backend.typing import none_throws
 
 
 @patch.object(aiohttp.ClientSession, "post")
-async def test_pay_to_address_success__spending_limit_disableds(
+async def test_pay_to_address_success__spending_limit_disabled(
     mock_post: Mock, test_client: QuartClient
 ) -> None:
     now = datetime.now(timezone.utc)
@@ -180,7 +180,7 @@ async def test_pay_to_address_success__sending_SAT_budget_SAT(
             "sending_currency_code": "SAT",
             "sending_currency_amount": total_sending_amount,
         }
-        request = await create_nip47_with_spending_limit("SAT", 5000, params)
+        request = await create_nip47_request_with_spending_limit("SAT", 5000, params)
         response = await pay_to_address(access_token=token_hex(), request=request)
 
         params["receiver_address"] = params.pop("receiver")["lud16"]  # pyre-ignore[16]
@@ -237,7 +237,7 @@ async def test_pay_to_address_payment_failed__sending_SAT_budget_SAT(
             "sending_currency_code": "SAT",
             "sending_currency_amount": total_sending_amount,
         }
-        request = await create_nip47_with_spending_limit("SAT", 5000, params)
+        request = await create_nip47_request_with_spending_limit("SAT", 5000, params)
 
         with pytest.raises(Nip47RequestException):
             await pay_to_address(access_token=token_hex(), request=request)
@@ -286,7 +286,7 @@ async def test_budget_not_enough__sending_SAT_budget_SAT(
             "sending_currency_code": "SAT",
             "sending_currency_amount": total_sending_amount,
         }
-        request = await create_nip47_with_spending_limit("SAT", 5000, params)
+        request = await create_nip47_request_with_spending_limit("SAT", 5000, params)
 
         with pytest.raises(InsufficientBudgetException):
             await pay_to_address(access_token=token_hex(), request=request)
@@ -350,7 +350,7 @@ async def test_pay_to_address_success__sending_SAT_budget_USD(
             "sending_currency_code": "SAT",
             "sending_currency_amount": total_sending_amount,
         }
-        request = await create_nip47_with_spending_limit("USD", 10000, params)
+        request = await create_nip47_request_with_spending_limit("USD", 10000, params)
         response = await pay_to_address(access_token=token_hex(), request=request)
 
         params["budget_currency_code"] = "USD"
@@ -429,7 +429,7 @@ async def test_pay_to_address_payment_failed__sending_SAT_budget_USD(
             "sending_currency_code": "SAT",
             "sending_currency_amount": total_sending_amount,
         }
-        request = await create_nip47_with_spending_limit("USD", 1000, params)
+        request = await create_nip47_request_with_spending_limit("USD", 1000, params)
 
         with pytest.raises(Nip47RequestException):
             await pay_to_address(access_token=token_hex(), request=request)
@@ -499,7 +499,7 @@ async def test_budget_not_enough__sending_SAT_budget_USD(
             "sending_currency_code": "SAT",
             "sending_currency_amount": total_sending_amount,
         }
-        request = await create_nip47_with_spending_limit("USD", 100, params)
+        request = await create_nip47_request_with_spending_limit("USD", 100, params)
 
         with pytest.raises(InsufficientBudgetException):
             await pay_to_address(access_token=token_hex(), request=request)
