@@ -20,8 +20,8 @@ async def test_spending_cycle_quote(test_client: QuartClient) -> None:
             id=uuid4(),
             nip47_request_id=nip47_request.id,
             payment_hash=payment_hash,
-            estimated_amount__amount=amount,
-            estimated_amount__currency=currency_code,
+            sending_currency_code=currency_code,
+            sending_currency_amount=amount,
         )
         db.session.add(quote)
         await db.session.commit()
@@ -29,7 +29,7 @@ async def test_spending_cycle_quote(test_client: QuartClient) -> None:
         quote = await SpendingCycleQuote.from_payment_hash(payment_hash)
         assert quote
         assert quote.nip47_request_id == nip47_request.id
-        assert quote.estimated_amount__amount == amount
-        assert quote.estimated_amount__currency == currency_code
+        assert quote.sending_currency_amount == amount
+        assert quote.sending_currency_code == currency_code
 
         assert not await SpendingCycleQuote.from_payment_hash("abcde")

@@ -13,16 +13,19 @@ from quart.app import QuartClient
 from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
 from nwc_backend.event_handlers.fetch_quote_handler import fetch_quote
 from nwc_backend.exceptions import InvalidInputException, NotImplementedException
+from nwc_backend.models.__tests__.model_examples import create_nip47_request
 from nwc_backend.models.nip47_request import Nip47Request
+from nwc_backend.models.spending_cycle_quote import SpendingCycleQuote
 
 
 @patch.object(aiohttp.ClientSession, "get")
 async def test_fetch_quote_success(mock_get: Mock, test_client: QuartClient) -> None:
     now = datetime.now(timezone.utc)
+    payment_hash = token_hex()
     vasp_response = {
         "sending_currency_code": "SAT",
         "receiving_currency_code": "USD",
-        "payment_hash": token_hex(),
+        "payment_hash": payment_hash,
         "expires_at": int((now + timedelta(minutes=5)).timestamp()),
         "multiplier": 15351.4798,
         "fees": 10,
@@ -44,15 +47,23 @@ async def test_fetch_quote_success(mock_get: Mock, test_client: QuartClient) -> 
         "locked_currency_side": "sending",
     }
     async with test_client.app.app_context():
+        request = await create_nip47_request(params=params)
         quote = await fetch_quote(
             access_token=token_hex(),
-            request=Nip47Request(params=params),
+            request=request,
         )
 
         params.pop("receiver")
         params["receiver_address"] = receiver_address
         mock_get.assert_called_once_with(url="/quote/lud16", params=params, headers=ANY)
         assert exclude_none_values(quote.to_dict()) == vasp_response
+
+        stored_quote = await SpendingCycleQuote.from_payment_hash(
+            payment_hash=payment_hash
+        )
+        assert stored_quote
+        assert stored_quote.sending_currency_code == quote.sending_currency_code
+        assert stored_quote.sending_currency_amount == quote.total_sending_amount
 
 
 async def test_fetch_quote_failure__no_receivers(test_client: QuartClient) -> None:
