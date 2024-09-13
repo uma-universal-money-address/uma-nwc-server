@@ -129,6 +129,7 @@ async def create_spending_limit(
 async def create_nip47_request(
     app_connection: Optional[AppConnection] = None,
     params: Optional[dict[str, Any]] = None,
+    event_id: Optional[str] = None,
 ) -> Nip47Request:
     if params is None:
         params = {
@@ -138,7 +139,7 @@ async def create_nip47_request(
     nip47_request = Nip47Request(
         id=uuid4(),
         app_connection=app_connection,
-        event_id=token_hex(),
+        event_id=event_id or token_hex(),
         method=Nip47RequestMethod.PAY_INVOICE,
         params=params,
         response_event_id=token_hex(),

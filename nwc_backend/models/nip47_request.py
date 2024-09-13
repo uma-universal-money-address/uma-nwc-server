@@ -24,7 +24,9 @@ class Nip47Request(ModelBase):
     app_connection_id: Mapped[UUID] = Column(
         DBUUID(), ForeignKey("app_connection.id"), nullable=False
     )
-    event_id: Mapped[str] = mapped_column(String(length=255), nullable=False)
+    event_id: Mapped[str] = mapped_column(
+        String(length=255), nullable=False, unique=True
+    )
     method: Mapped[Nip47RequestMethod] = mapped_column(
         DBEnum(Nip47RequestMethod, native_enum=False), nullable=False
     )

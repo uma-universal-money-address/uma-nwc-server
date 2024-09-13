@@ -27,11 +27,14 @@ from uma_auth.models.error_response import ErrorResponse as VaspErrorResponse
 from nwc_backend.db import db
 from nwc_backend.event_handlers.event_builder import EventBuilder
 from nwc_backend.event_handlers.nip47_event_handler import handle_nip47_event
-from nwc_backend.models.__tests__.model_examples import create_app_connection
+from nwc_backend.models.__tests__.model_examples import (
+    create_app_connection,
+    create_nip47_request,
+)
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
-from nwc_backend.nostr_config import NostrConfig
 from nwc_backend.models.permissions_grouping import PermissionsGroup
+from nwc_backend.nostr_config import NostrConfig
 
 
 @dataclass
@@ -269,3 +272,31 @@ async def test_failed__vasp_error_response(
         content = harness.validate_response_event(response_event, request_event.id())
         assert content["error"]["code"] == vasp_response.code.value
         assert content["error"]["message"] == vasp_response.message
+
+
+@patch("nwc_backend.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
+@patch.object(aiohttp.ClientSession, "post")
+async def test_duplicate_event(
+    mock_vasp_pay_invoice: Mock,
+    mock_nostr_send: AsyncMock,
+    test_client: QuartClient,
+) -> None:
+    async with test_client.app.app_context():
+        harness = Harness.prepare()
+        await create_app_connection(
+            granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
+            keys=harness.client_app_keys,
+        )
+        request_event = harness.create_request_event()
+        nip47_event = await create_nip47_request(event_id=request_event.id().to_hex())
+
+    async with test_client.app.app_context():
+        await handle_nip47_event(request_event)
+
+        mock_nostr_send.assert_not_called()
+        mock_vasp_pay_invoice.assert_not_called()
+
+    async with test_client.app.app_context():
+        result = await db.session.execute(select(Nip47Request))
+        request = result.scalars().one()
+        assert request.id == nip47_event.id
