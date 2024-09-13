@@ -8,12 +8,14 @@ from sqlalchemy import JSON
 from sqlalchemy import Enum as DBEnum
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.dialects.postgresql.json import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from nwc_backend.db import UUID as DBUUID
 from nwc_backend.db import Column, db
+from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.model_base import ModelBase
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
+from nwc_backend.models.spending_limit import SpendingLimit
 
 
 class Nip47Request(ModelBase):
@@ -37,16 +39,18 @@ class Nip47Request(ModelBase):
         DBEnum(ErrorCode, native_enum=False)
     )
 
+    app_connection: Mapped[AppConnection] = relationship("AppConnection", lazy="joined")
+
     @staticmethod
     async def create_and_save(
-        app_connection_id: UUID,
+        app_connection: AppConnection,
         event_id: str,
         method: Nip47RequestMethod,
         params: Optional[dict[str, Any]],
     ) -> "Nip47Request":
         request = Nip47Request(
             id=uuid4(),
-            app_connection_id=app_connection_id,
+            app_connection=app_connection,
             event_id=event_id,
             method=method,
             params=params,
@@ -69,3 +73,6 @@ class Nip47Request(ModelBase):
             self.response_result = response
         db.session.add(self)
         await db.session.commit()
+
+    def get_spending_limit(self) -> Optional[SpendingLimit]:
+        return self.app_connection.nwc_connection.spending_limit

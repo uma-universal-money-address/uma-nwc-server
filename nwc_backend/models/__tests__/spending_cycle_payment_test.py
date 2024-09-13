@@ -40,3 +40,4 @@ async def test_spending_cycle_payment(test_client: QuartClient) -> None:
         assert payment.budget_on_hold == budget_on_hold
         assert payment.status == status
         assert not payment.settled_amount
+        assert payment.spending_cycle.id == spending_cycle.id

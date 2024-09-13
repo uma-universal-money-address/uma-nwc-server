@@ -4,10 +4,11 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional
+from urllib.parse import urlparse
 
 import aiohttp
 from quart import current_app
-from urllib.parse import urlparse
+from uma_auth.models.budget_estimate_response import BudgetEstimateResponse
 from uma_auth.models.execute_quote_response import ExecuteQuoteResponse
 from uma_auth.models.get_balance_response import GetBalanceResponse
 from uma_auth.models.get_info_response import GetInfoResponse
@@ -263,6 +264,25 @@ class VaspUmaClient:
             data=request.to_json(),
         )
         return PayToAddressResponse.from_json(result)
+
+    async def get_budget_estimate(
+        self,
+        access_token: str,
+        sending_currency_code: str,
+        sending_currency_amount: int,
+        budget_currency_code: str,
+    ) -> BudgetEstimateResponse:
+        params = {
+            "sending_currency_code": sending_currency_code,
+            "sending_currency_amount": sending_currency_amount,
+            "budget_currency_code": budget_currency_code,
+        }
+        result = await self._make_http_get(
+            path="/budget_estimate",
+            access_token=access_token,
+            params=params,
+        )
+        return BudgetEstimateResponse.from_json(result)
 
 
 _vasp_uma_client: Optional[VaspUmaClient] = None

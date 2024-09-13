@@ -1,18 +1,20 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-from datetime import datetime, timedelta
 import re
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import BigInteger
 from sqlalchemy import Enum as DBEnum
 from sqlalchemy import ForeignKey, String
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.sql import select
 
 from nwc_backend.db import UUID as DBUUID
-from nwc_backend.db import DateTime
+from nwc_backend.db import DateTime, db
 from nwc_backend.exceptions import InvalidBudgetFormatException
 from nwc_backend.models.model_base import ModelBase
 from nwc_backend.models.spending_cycle import SpendingCycle
@@ -83,9 +85,9 @@ class SpendingLimit(ModelBase):
 
     def create_spending_cycle(self, start_time: datetime) -> SpendingCycle:
         assert start_time >= self.start_time
-        delta = SpendingLimitFrequency.get_time_delta(self.frequency)
-        if delta:
-            assert (start_time - self.start_time) % delta == timedelta(0)
+        cycle_length = SpendingLimitFrequency.get_cycle_length(self.frequency)
+        if cycle_length:
+            assert (start_time - self.start_time) % cycle_length == timedelta(0)
 
         return SpendingCycle(
             id=uuid4(),
@@ -93,7 +95,47 @@ class SpendingLimit(ModelBase):
             limit_currency=self.currency_code,
             limit_amount=self.amount,
             start_time=start_time,
-            end_time=start_time + delta if delta else None,
+            end_time=start_time + cycle_length if cycle_length else None,
             total_spent=0,
             total_spent_on_hold=0,
         )
+
+    async def get_current_spending_cycle(self) -> SpendingCycle:
+        now = datetime.now(timezone.utc)
+        query = (
+            select(SpendingCycle)
+            .filter(SpendingCycle.spending_limit_id == self.id)
+            .order_by(SpendingCycle.start_time.desc())
+            .limit(1)
+        )
+        results = await db.session.execute(query)
+        last_spending_cycle = results.scalars().first()
+        if last_spending_cycle and last_spending_cycle.end_time > now:
+            return last_spending_cycle
+
+        current_cycle_start_time = self._calculate_current_cycle_start_time()
+        try:
+            spending_cycle = self.create_spending_cycle(current_cycle_start_time)
+            db.session.add(spending_cycle)
+            await db.session.commit()
+            return spending_cycle
+        except IntegrityError:
+            query = (
+                select(SpendingCycle)
+                .filter(
+                    SpendingCycle.spending_limit_id == self.id,
+                    SpendingCycle.start_time == current_cycle_start_time,
+                )
+                .limit(1)
+            )
+            results = await db.session.execute(query)
+            return results.scalar_one()
+
+    def _calculate_current_cycle_start_time(self) -> datetime:
+        elapsed_time = datetime.now(timezone.utc) - self.start_time
+        cycle_length = SpendingLimitFrequency.get_cycle_length(self.frequency)
+        if not cycle_length:
+            return self.start_time
+
+        num_full_cycles = elapsed_time // cycle_length
+        return self.start_time + (num_full_cycles * cycle_length)

@@ -1,6 +1,6 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
@@ -105,3 +105,38 @@ async def test_budget_repr_invalid_format(test_client: QuartClient) -> None:
     budget = f"{amount}.Bitcoin/weekly"
     with pytest.raises(InvalidBudgetFormatException):
         SpendingLimit.from_budget_repr(budget=budget, start_time=start_time)
+
+
+async def test_get_current_spending_cycle(test_client: QuartClient) -> None:
+    id = uuid4()
+    currency_code = "USD"
+    amount = 100
+    frequency = SpendingLimitFrequency.WEEKLY
+    start_time = datetime.now(timezone.utc) - timedelta(days=9)
+
+    async with test_client.app.app_context():
+        nwc_connection_id = (await create_nwc_connection()).id
+        spending_limit = SpendingLimit(
+            id=id,
+            nwc_connection_id=nwc_connection_id,
+            currency_code=currency_code,
+            amount=amount,
+            frequency=frequency,
+            start_time=start_time,
+        )
+        db.session.add(spending_limit)
+        await db.session.commit()
+
+    async with test_client.app.app_context():
+        spending_limit = await db.session.get_one(SpendingLimit, id)
+        spending_cycle = await spending_limit.get_current_spending_cycle()
+        assert spending_cycle.spending_limit_id == spending_limit.id
+        assert spending_cycle.limit_currency == currency_code
+        assert spending_cycle.limit_amount == amount
+        assert spending_cycle.start_time == start_time + timedelta(days=7)
+        assert spending_cycle.end_time == start_time + timedelta(days=14)
+
+        # test fetching existing spending cycle
+        assert (
+            await spending_limit.get_current_spending_cycle()
+        ).id == spending_cycle.id

@@ -89,7 +89,7 @@ async def handle_nip47_event(event: Event) -> None:
     params = content["params"]
 
     nip47_request = await Nip47Request.create_and_save(
-        app_connection_id=app_connection.id,
+        app_connection=app_connection,
         event_id=event.id().to_hex(),
         method=method,
         params=params,
