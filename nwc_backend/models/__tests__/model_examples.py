@@ -152,8 +152,8 @@ async def create_nip47_request(
 
 
 async def create_nip47_with_spending_limit(
-    spending_limit_currency_code: str,
-    spending_limit_currency_amount: int,
+    spending_limit_currency_code,
+    spending_limit_currency_amount,
     params: dict[str, Any],
 ) -> Nip47Request:
     nwc_connection = await create_nwc_connection()

@@ -20,8 +20,8 @@ class SpendingCycleQuote(ModelBase):
         DBUUID(), ForeignKey("nip47_request.id"), nullable=False
     )
     payment_hash: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    estimated_amount__amount: Mapped[int] = mapped_column(BigInteger(), nullable=False)
-    estimated_amount__currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    sending_currency_code: Mapped[str] = mapped_column(String(3), nullable=False)
+    sending_currency_amount: Mapped[int] = mapped_column(BigInteger(), nullable=False)
 
     @staticmethod
     async def from_payment_hash(payment_hash: str) -> Optional["SpendingCycleQuote"]:
