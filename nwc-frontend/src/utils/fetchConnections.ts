@@ -29,6 +29,11 @@ export const MOCKED_CONNECTIONS: Connection[] = [
         description: "Send payments from your UMA",
       },
       {
+        type: PermissionType.RECEIVE_PAYMENTS,
+        description: "Receive payments to your UMA",
+        optional: true,
+      },
+      {
         type: PermissionType.READ_BALANCE,
         description: "Read your balance",
         optional: true,
@@ -63,6 +68,11 @@ export const MOCKED_CONNECTIONS: Connection[] = [
       {
         type: PermissionType.SEND_PAYMENTS,
         description: "Send payments from your UMA",
+      },
+      {
+        type: PermissionType.RECEIVE_PAYMENTS,
+        description: "Receive payments to your UMA",
+        optional: true,
       },
       {
         type: PermissionType.READ_BALANCE,
@@ -101,6 +111,11 @@ export const MOCKED_CONNECTIONS: Connection[] = [
         description: "Send payments from your UMA",
       },
       {
+        type: PermissionType.RECEIVE_PAYMENTS,
+        description: "Receive payments to your UMA",
+        optional: true,
+      },
+      {
         type: PermissionType.READ_BALANCE,
         description: "Read your balance",
         optional: true,
@@ -134,6 +149,11 @@ export const MOCKED_CONNECTIONS: Connection[] = [
       {
         type: PermissionType.SEND_PAYMENTS,
         description: "Send payments from your UMA",
+      },
+      {
+        type: PermissionType.RECEIVE_PAYMENTS,
+        description: "Receive payments to your UMA",
+        optional: true,
       },
       {
         type: PermissionType.READ_BALANCE,

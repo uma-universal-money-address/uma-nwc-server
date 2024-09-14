@@ -4,12 +4,14 @@ export enum PermissionType {
   SEND_PAYMENTS = "send_payments",
   READ_BALANCE = "read_balance",
   READ_TRANSACTIONS = "read_transactions",
+  RECEIVE_PAYMENTS = "receive_payments",
 }
 
 export const PERMISSION_DESCRIPTIONS = {
   [PermissionType.SEND_PAYMENTS]: "Send payments from your UMA",
   [PermissionType.READ_BALANCE]: "Read your balance",
   [PermissionType.READ_TRANSACTIONS]: "Read transaction history",
+  [PermissionType.RECEIVE_PAYMENTS]: "Receive payments",
 };
 
 export interface Permission {
@@ -79,6 +81,14 @@ export const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
         description: "Send payments from your UMA",
       },
       enabled: true,
+    },
+    {
+      permission: {
+        type: PermissionType.RECEIVE_PAYMENTS,
+        description: "Receive payments to your UMA",
+        optional: true,
+      },
+      enabled: false,
     },
     {
       permission: {
