@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from nostr_sdk import ErrorCode, Event, Nip47Error, TagKind, nip04_decrypt
 from pydantic_core import ValidationError as PydanticValidationError
+from sqlalchemy.exc import IntegrityError
 
 from nwc_backend.event_handlers.event_builder import (
     create_nip47_error_response,
@@ -88,12 +89,16 @@ async def handle_nip47_event(event: Event) -> None:
 
     params = content["params"]
 
-    nip47_request = await Nip47Request.create_and_save(
-        app_connection=app_connection,
-        event_id=event.id().to_hex(),
-        method=method,
-        params=params,
-    )
+    try:
+        nip47_request = await Nip47Request.create_and_save(
+            app_connection=app_connection,
+            event_id=event.id().to_hex(),
+            method=method,
+            params=params,
+        )
+    except IntegrityError:
+        logging.debug("Event %s has been processed already.", event.id().to_hex())
+        return
 
     uma_access_token = none_throws(app_connection.nwc_connection.long_lived_vasp_token)
     try:
