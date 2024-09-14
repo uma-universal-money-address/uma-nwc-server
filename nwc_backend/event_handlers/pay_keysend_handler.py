@@ -45,8 +45,8 @@ async def pay_keysend(access_token: str, request: Nip47Request) -> PayKeysendRes
                 if payment.spending_cycle.limit_currency == "SAT":
                     settled_budget_currency_amount = payment_amount_sats
                 else:
-                    logging.debug(
-                        "Expect vasp to return total_budget_currency_amount on pay_keysend request %s.",
+                    logging.warning(
+                        "Expected vasp to return total_budget_currency_amount on pay_keysend request %s.",
                         request.id,
                     )
                     settled_budget_currency_amount = payment.estimated_amount

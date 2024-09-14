@@ -56,8 +56,8 @@ async def pay_invoice(access_token: str, request: Nip47Request) -> PayInvoiceRes
                 if payment.spending_cycle.limit_currency == "SAT":
                     settled_budget_currency_amount = payment_amount_sats
                 else:
-                    logging.debug(
-                        "Expect vasp to return total_budget_currency_amount on pay_invoice request %s.",
+                    logging.warning(
+                        "Expected vasp to return total_budget_currency_amount on pay_invoice request %s.",
                         request.id,
                     )
                     settled_budget_currency_amount = payment.estimated_amount
