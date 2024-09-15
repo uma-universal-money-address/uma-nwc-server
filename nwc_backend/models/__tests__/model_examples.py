@@ -97,7 +97,6 @@ async def create_app_connection(
         status=AppConnectionStatus.ACTIVE,
         redirect_uri="https://example.com",
         code_challenge=token_hex(),
-        code_challenge_method="S256",
     )
 
     db.session.add(app_connection)
