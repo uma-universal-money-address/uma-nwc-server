@@ -19,6 +19,7 @@ import { useAuth } from "src/utils/auth";
 import { formatConnectionString } from "src/utils/formatConnectionString";
 import { PermissionsList } from "./PermissionsList";
 import { ConnectionSettings, PersonalizePage } from "./PersonalizePage";
+import { AppInfo } from "src/types/AppInfo";
 
 async function initConnection({
   appInfo,
@@ -158,7 +159,7 @@ export const PermissionsPage = () => {
       {header}
       <Intro>
         <Title content="Connect your UMA" />
-        <Uma uma={uma} />
+        <Uma uma={uma ?? ""} />
       </Intro>
 
       <PermissionsContainer>

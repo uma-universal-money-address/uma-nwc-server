@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 from uuid import uuid4
+from multidict import MultiDict
 from quart_cors import route_cors
 
 import jwt
@@ -251,10 +252,14 @@ def create_app() -> Quart:
         grant_type = request_data.get("grant_type")
 
         if grant_type == "authorization_code":
-            client_id = request_data.get("client_id")
-            code = request_data.get("code")
-            redirect_uri = request_data.get("redirect_uri")
-            code_verifier = request_data.get("code_verifier")
+            try:
+                client_id = _require_param(request_data, "client_id")
+                code = _require_param(request_data, "code")
+                redirect_uri = _require_param(request_data, "redirect_uri")
+                code_verifier = _require_param(request_data, "code_verifier")
+            except ValueError as e:
+                return Response(status=400, response=str(e))
+
             response = await authorization_server.get_exchange_token_response(
                 client_id=client_id,
                 code=code,
@@ -334,6 +339,15 @@ def create_app() -> Quart:
         )
 
     return app
+
+
+def _require_param(dict: MultiDict[str, str], param: str) -> str:
+    value = dict.get(param)
+    if not value:
+        raise ValueError(f"Missing required parameter: {param}")
+    if not isinstance(value, str):
+        raise ValueError(f"Invalid type for parameter {param}: {type(value)}")
+    return value
 
 
 async def init_nostr_client() -> None:

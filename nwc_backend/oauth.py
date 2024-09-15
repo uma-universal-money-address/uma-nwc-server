@@ -48,7 +48,6 @@ class OauthStorage:
         self,
         nwc_connection_id: UUID,
         code_challenge: str,
-        code_challenge_method: str,
         redirect_uri: str,
     ) -> AppConnection:
         auth_code = generate_auth_code()
@@ -69,8 +68,7 @@ class OauthStorage:
             authorization_code_expires_at=int(time()) + AUTHORIZATION_CODE_EXPIRES_IN,
             status=AppConnectionStatus.ACTIVE,
             redirect_uri=redirect_uri,
-            code_challenge=code_challenge,
-            code_challenge_method=code_challenge_method,
+            code_challenge=code_challenge
         )
         db.session.add(app_connection)
         await db.session.commit()
@@ -104,7 +102,6 @@ class OauthAuthorizationServer:
         # Verify the code challenge
         saved_redirect_uri = app_connection.redirect_uri
         saved_code_challenge = app_connection.code_challenge
-        # TODO: couldn't find the method for plain code challenge method in the library - implement that
         computed_code_challenge = create_s256_code_challenge(code_verifier)
 
         if saved_redirect_uri != redirect_uri:

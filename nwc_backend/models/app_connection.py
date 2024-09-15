@@ -46,9 +46,6 @@ class AppConnection(ModelBase):
     )
     redirect_uri: Mapped[Optional[str]] = mapped_column(String(1024), nullable=False)
     code_challenge: Mapped[Optional[str]] = mapped_column(String(1024), nullable=False)
-    code_challenge_method: Mapped[Optional[str]] = mapped_column(
-        String(255), nullable=False
-    )
 
     nwc_connection: Mapped[NWCConnection] = relationship("NWCConnection", lazy="joined")
 

@@ -37,14 +37,6 @@ def upgrade() -> None:
                 server_default="",
             )
         )
-        batch_op.add_column(
-            sa.Column(
-                "code_challenge_method",
-                sa.String(length=255),
-                nullable=False,
-                server_default="",
-            )
-        )
         batch_op.alter_column(
             "authorization_code",
             existing_type=sa.VARCHAR(length=255),
@@ -63,7 +55,6 @@ def downgrade() -> None:
             type_=sa.VARCHAR(length=255),
             existing_nullable=False,
         )
-        batch_op.drop_column("code_challenge_method")
         batch_op.drop_column("code_challenge")
         batch_op.drop_column("redirect_uri")
 

@@ -15,6 +15,19 @@ import { PendingConnectionPage } from "./PendingConnectionPage";
 
 export default function ConnectionPage() {
   const { connectionId } = useParams<{ connectionId: string }>();
+  if (!connectionId) {
+    return (
+      <Content>
+        <Title content="No connection ID requested" />
+        <Section>
+          <p>
+            Please provide a connection ID in the URL to view the connection
+            details.
+          </p>
+        </Section>
+      </Content>
+    )
+  }
   const {
     connection,
     updateConnection,

@@ -37,6 +37,11 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
         return WerkzeugResponse("Required commands not provided", status=400)
     optional_commands = request.args.get("optional_commands")
     client_id = request.args.get("client_id")
+    code_challenge_method = request.args.get("code_challenge_method")
+    if code_challenge_method != "S256":
+        return WerkzeugResponse(
+            "Only S256 code challenge method is supported", status=400
+        )
 
     now = datetime.now(timezone.utc)
     budget = request.args.get("budget")
@@ -177,11 +182,9 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
     app_connection: AppConnection = await oauth_storage.create_app_connection(
         nwc_connection_id=nwc_connection.id,
         redirect_uri=request.args.get("redirect_uri"),
-        code_challenge=request.args.get("code_challenge"),
-        code_challenge_method=request.args.get("code_challenge_method"),
+        code_challenge=request.args.get("code_challenge")
     )
 
-    # TODO: Verify these are saved on nwc frontend session
     session["short_lived_vasp_token"] = short_lived_vasp_token
     session["nwc_connection_id"] = nwc_connection.id
     session["app_connection_id"] = app_connection.id
