@@ -9,40 +9,38 @@ from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 from uuid import uuid4
-from multidict import MultiDict
-from quart_cors import route_cors
 
 import jwt
 import requests
 from nostr_sdk import Filter, Kind, KindEnum
 from quart import Quart, Response, redirect, request, send_from_directory, session
+from quart_cors import route_cors
 from sqlalchemy.sql import select
 from werkzeug import Response as WerkzeugResponse
+from werkzeug.datastructures import MultiDict
 
 import nwc_backend.alembic_importer  # noqa: F401
+from nwc_backend.api_handlers.vasp_oauth_callback_handler import (
+    handle_vasp_oauth_callback,
+)
 from nwc_backend.client_app_identity_lookup import look_up_client_app_identity
 from nwc_backend.db import UUID, db, setup_rds_iam_auth
 from nwc_backend.event_handlers.event_builder import EventBuilder
-from nwc_backend.exceptions import (
-    PublishEventFailedException,
-)
+from nwc_backend.exceptions import PublishEventFailedException
 from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.app_connection_status import AppConnectionStatus
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
+from nwc_backend.models.permissions_grouping import (
+    PERMISSIONS_GROUP_TO_METHODS,
+    PermissionsGroup,
+)
 from nwc_backend.models.spending_limit import SpendingLimit
 from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
 from nwc_backend.nostr_notification_handler import NotificationHandler
 from nwc_backend.oauth import authorization_server
-from nwc_backend.models.permissions_grouping import (
-    PERMISSIONS_GROUP_TO_METHODS,
-    PermissionsGroup,
-)
-from nwc_backend.api_handlers.vasp_oauth_callback_handler import (
-    handle_vasp_oauth_callback,
-)
 
 
 def create_app() -> Quart:
