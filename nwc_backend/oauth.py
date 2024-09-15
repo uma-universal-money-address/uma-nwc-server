@@ -68,7 +68,7 @@ class OauthStorage:
             authorization_code_expires_at=int(time()) + AUTHORIZATION_CODE_EXPIRES_IN,
             status=AppConnectionStatus.ACTIVE,
             redirect_uri=redirect_uri,
-            code_challenge=code_challenge
+            code_challenge=code_challenge,
         )
         db.session.add(app_connection)
         await db.session.commit()

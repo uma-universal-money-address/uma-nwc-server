@@ -182,7 +182,7 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
     app_connection: AppConnection = await oauth_storage.create_app_connection(
         nwc_connection_id=nwc_connection.id,
         redirect_uri=request.args.get("redirect_uri"),
-        code_challenge=request.args.get("code_challenge")
+        code_challenge=request.args.get("code_challenge"),
     )
 
     session["short_lived_vasp_token"] = short_lived_vasp_token
