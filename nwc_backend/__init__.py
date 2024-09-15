@@ -159,7 +159,8 @@ def create_app() -> Quart:
     async def register_new_app_connection() -> WerkzeugResponse:
         uma_vasp_token_exchange_url = app.config["UMA_VASP_TOKEN_EXCHANGE_URL"]
         short_lived_vasp_token = session["short_lived_vasp_token"]
-        nwc_connection_id = session["nwc_connection_id"]
+        if not short_lived_vasp_token:
+            return WerkzeugResponse("Unauthorized", status=401)
 
         data = await request.get_data()
         data = json.loads(data)
@@ -170,7 +171,15 @@ def create_app() -> Quart:
         limit_frequency = data.get("limitFrequency")
         expiration = data.get("expiration")
 
-        nwc_connection = await db.session.get_one(NWCConnection, nwc_connection_id)
+        app_connection_id = session.get("app_connection_id")
+        if not app_connection_id:
+            return WerkzeugResponse("Missing app connection ID", status=400)
+        try:
+            app_connection = await db.session.get_one(AppConnection, app_connection_id)
+        except Exception:
+            return WerkzeugResponse("Invalid app connection id", status=400)
+
+        nwc_connection = app_connection.nwc_connection
 
         expires_at = datetime.fromisoformat(expiration)
         nwc_connection.connection_expires_at = expires_at.timestamp()
@@ -183,7 +192,7 @@ def create_app() -> Quart:
             )
             spending_limit = SpendingLimit(
                 id=uuid4(),
-                nwc_connection_id=nwc_connection_id,
+                nwc_connection_id=app_connection.nwc_connection_id,
                 currency_code=currency_code or "SAT",
                 amount=amount_in_lowest_denom,
                 frequency=limit_frequency,
@@ -222,9 +231,6 @@ def create_app() -> Quart:
 
         nwc_connection.long_lived_vasp_token = long_lived_vasp_token
         await db.session.commit()
-
-        app_connection_id = session.get("app_connection_id")
-        app_connection = await db.session.get_one(AppConnection, app_connection_id)
 
         return WerkzeugResponse(
             json.dumps(

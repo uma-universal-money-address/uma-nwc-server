@@ -186,10 +186,8 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
     )
 
     session["short_lived_vasp_token"] = short_lived_vasp_token
-    session["nwc_connection_id"] = nwc_connection.id
     session["app_connection_id"] = app_connection.id
     session["user_id"] = user.id
-    session["client_id"] = request.args.get("client_id")
     session["client_state"] = request.args.get("state")
 
     # REMOVE ALWAYS_GRANTED PermissionsGroup from lists if it exists since we won't be sending them to the frontend
