@@ -355,7 +355,7 @@ def create_app() -> Quart:
             return WerkzeugResponse("Connection not found", status=404)
 
         connection.status = AppConnectionStatus.INACTIVE
-        VaspUmaClient.instance().revoke_token(
+        await VaspUmaClient.instance().revoke_token(
             connection.nwc_connection.long_lived_vasp_token
         )
         await db.session.commit()
