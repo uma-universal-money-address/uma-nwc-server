@@ -50,7 +50,9 @@ class NWCConnection(ModelBase):
 
     def get_all_granted_granular_permissions(self) -> list[str]:
         all_permissions = set()
-        for group in self.granted_permissions_groups:
+        for group in self.granted_permissions_groups + [
+            PermissionsGroup.ALWAYS_GRANTED.value
+        ]:
             all_permissions.update(
                 PERMISSIONS_GROUP_TO_METHODS[PermissionsGroup(group)]
             )
