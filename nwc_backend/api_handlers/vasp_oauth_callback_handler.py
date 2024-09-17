@@ -55,8 +55,6 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
         # TODO: verify the aud and iss
         options={"verify_aud": False, "verify_iss": False},
     )
-    # TODO: Should probably let the VASP's tokens be opaque to the NWC backend and just have the
-    # VASP send this info explicitly
     vasp_user_id = vasp_token_payload["sub"]
     uma_address = vasp_token_payload["address"]
     expiry = vasp_token_payload["exp"]
@@ -190,6 +188,7 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
         "uma_address": uma_address,
         "redirect_uri": request.args.get("redirect_uri"),
         "expiry": expiry,
+        "currency": request.args.get("currency"),
     }
     nwc_frontend_new_app = nwc_frontend_new_app + "?" + urlencode(query_params)
     return redirect(nwc_frontend_new_app)

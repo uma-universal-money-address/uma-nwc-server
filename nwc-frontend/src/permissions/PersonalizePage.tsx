@@ -7,7 +7,6 @@ import { useState } from "react";
 import { useLoaderData } from "react-router-dom";
 import { Avatar } from "src/components/Avatar";
 import { LoaderData } from "src/loaders/LoaderData";
-import { userCurrencies } from "src/loaders/userCurrencies";
 import { AppInfo } from "src/types/AppInfo";
 import {
   ExpirationPeriod,
@@ -18,6 +17,7 @@ import { formatConnectionString } from "src/utils/formatConnectionString";
 import { EditExpiration } from "./EditExpiration";
 import { EditLimit } from "./EditLimit";
 import { PermissionsEditableList } from "./PermissionsEditableList";
+import { useAuth } from "src/utils/auth";
 
 export interface ConnectionSettings {
   permissionStates: PermissionState[];
@@ -47,9 +47,8 @@ export const PersonalizePage = ({
     useState<boolean>(false);
   const [internalConnectionSettings, setInternalConnectionSettings] =
     useState<ConnectionSettings>(connectionSettings);
-  const { defaultCurrency } = useLoaderData() as LoaderData<
-    typeof userCurrencies
-  >;
+  const auth = useAuth();
+  const currency = auth.getCurrency();
 
   const { name, domain, avatar, verified } = appInfo;
 
@@ -133,7 +132,7 @@ export const PersonalizePage = ({
         <Limit onClick={handleEditLimit}>
           <LimitDescription>
             {internalConnectionSettings.limitEnabled
-              ? `${formatConnectionString({ currency: defaultCurrency, limitFrequency: internalConnectionSettings.limitFrequency, amountInLowestDenom: internalConnectionSettings.amountInLowestDenom })} spending limit`
+              ? `${formatConnectionString({ currency, limitFrequency: internalConnectionSettings.limitFrequency, amountInLowestDenom: internalConnectionSettings.amountInLowestDenom })} spending limit`
               : "No spending limit"}
           </LimitDescription>
           <Icon name="Pencil" width={12} />
@@ -163,7 +162,7 @@ export const PersonalizePage = ({
         title="Spending limit"
         visible={isEditLimitVisible}
         amountInLowestDenom={internalConnectionSettings.amountInLowestDenom}
-        currency={defaultCurrency}
+        currency={currency}
         frequency={internalConnectionSettings.limitFrequency}
         enabled={internalConnectionSettings.limitEnabled}
         handleSubmit={handleSubmitEditLimit}

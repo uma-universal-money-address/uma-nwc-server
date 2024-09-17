@@ -6,7 +6,6 @@ import { Currency } from "./Currency";
 interface LoaderDataBase {
   appInfo: AppInfo;
   connectionSettings: ConnectionSettings;
-  defaultCurrency: Currency;
 }
 
 interface LoaderDataFromUrl extends LoaderDataBase {

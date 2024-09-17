@@ -1,10 +1,12 @@
 import { useConfig } from "src/hooks/useConfig";
 import { getBackendUrl } from "./backendUrl";
+import { Currency } from "src/types/Currency";
 
 type LoginState = {
   umaAddress: string;
   authToken: string;
   validUntil: Date | null;
+  currency: Currency;
 };
 
 let globalLoginState: LoginState | null = null;
@@ -24,15 +26,22 @@ export class Auth {
     if (token) {
       const expiryStr = params.get("expiry");
       const expiry = expiryStr ? new Date(parseFloat(expiryStr) * 1000) : null;
+      const currencyStr = params.get("currency") || null;
+      if (!currencyStr) {
+        throw new Error("Currency is required in auth response");
+      }
+      const currency = JSON.parse(currencyStr);
       globalLoginState = {
         umaAddress: params.get("uma_address") || "",
         authToken: token,
         validUntil: expiry,
+        currency,
       };
       const url = new URL(window.location.href);
       url.searchParams.delete("token");
       url.searchParams.delete("expiry");
       url.searchParams.delete("uma_address");
+      url.searchParams.delete("currency");
       window.history.replaceState({}, document.title, url.toString());
     }
   }
@@ -85,6 +94,13 @@ export class Auth {
       return null;
     }
     return globalLoginState?.umaAddress;
+  }
+
+  getCurrency() {
+    if (!this.isLoggedIn()) {
+      return null;
+    }
+    return globalLoginState?.currency;
   }
 }
 

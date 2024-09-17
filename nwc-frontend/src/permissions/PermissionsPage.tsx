@@ -64,6 +64,7 @@ export const PermissionsPage = () => {
   } = useLoaderData() as PermissionPageLoaderData;
   const auth = useAuth();
   const uma = auth.getUmaAddress();
+  const currency = auth.getCurrency();
   const navigate = useNavigate();
 
   const [isPersonalizeVisible, setIsPersonalizeVisible] =
@@ -101,7 +102,7 @@ export const PermissionsPage = () => {
       initConnection({
         appInfo,
         connectionSettings,
-        currencyCode: defaultCurrency.code,
+        currencyCode: currency.code,
         redirectUri: oauthParams.redirectUri,
         expiration,
       });
@@ -136,7 +137,7 @@ export const PermissionsPage = () => {
       .map((permissionState) => permissionState.permission);
   if (connectionSettings.limitEnabled) {
     permissions.push(
-      `Set a ${formatConnectionString({ currency: defaultCurrency, limitFrequency: connectionSettings.limitFrequency, amountInLowestDenom: connectionSettings.amountInLowestDenom })} spend limit`,
+      `Set a ${formatConnectionString({ currency, limitFrequency: connectionSettings.limitFrequency, amountInLowestDenom: connectionSettings.amountInLowestDenom })} spend limit`,
     );
   }
   if (connectionSettings.expirationPeriod !== ExpirationPeriod.NONE) {
