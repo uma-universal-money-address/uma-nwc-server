@@ -3,7 +3,9 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
+import pytest
 from quart.app import QuartClient
+from sqlalchemy.exc import IntegrityError
 
 from nwc_backend.db import db
 from nwc_backend.models.__tests__.model_examples import create_client_app, create_user
@@ -73,3 +75,47 @@ async def test_creation_with_spending_limit(
     async with test_client.app.app_context():
         nwc_connection = await db.session.get_one(NWCConnection, nwc_connection_id)
         assert nwc_connection.spending_limit.id == spending_limit_id
+
+
+async def test_client_app_id_or_custom_name_constraint(
+    test_client: QuartClient,
+) -> None:
+    async with test_client.app.app_context():
+        user = await create_user()
+
+    async with test_client.app.app_context():
+        client_app_id = (await create_client_app()).id
+        nwc_connection = NWCConnection(
+            id=uuid4(),
+            user_id=user.id,
+            client_app_id=client_app_id,
+            granted_permissions_groups=[
+                PermissionsGroup.RECEIVE_PAYMENTS.value,
+            ],
+        )
+        db.session.add(nwc_connection)
+        await db.session.commit()
+
+    async with test_client.app.app_context():
+        nwc_connection = NWCConnection(
+            id=uuid4(),
+            user_id=user.id,
+            custom_name="manual connection",
+            granted_permissions_groups=[
+                PermissionsGroup.RECEIVE_PAYMENTS.value,
+            ],
+        )
+        db.session.add(nwc_connection)
+        await db.session.commit()
+
+    async with test_client.app.app_context():
+        with pytest.raises(IntegrityError):
+            nwc_connection = NWCConnection(
+                id=uuid4(),
+                user_id=user.id,
+                granted_permissions_groups=[
+                    PermissionsGroup.RECEIVE_PAYMENTS.value,
+                ],
+            )
+            db.session.add(nwc_connection)
+            await db.session.commit()

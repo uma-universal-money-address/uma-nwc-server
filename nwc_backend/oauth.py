@@ -13,7 +13,11 @@ from nwc_backend.typing import none_throws
 class OauthAuthorizationServer:
     async def get_exchange_token_response(self, client_id: str, code: str) -> Response:
         nwc_connection = await NWCConnection.from_oauth_authorization_code(code)
-        if not nwc_connection or nwc_connection.client_app.client_id != client_id:
+        if (
+            not nwc_connection
+            or not nwc_connection.client_app
+            or nwc_connection.client_app.client_id != client_id
+        ):
             return Response(status=401, response="Invalid authorization code")
 
         response = await nwc_connection.refresh_oauth_tokens()
@@ -27,7 +31,11 @@ class OauthAuthorizationServer:
         self, refresh_token: str, client_id: str
     ) -> Response:
         nwc_connection = await NWCConnection.from_oauth_refresh_token(refresh_token)
-        if not nwc_connection or nwc_connection.client_app.client_id != client_id:
+        if (
+            not nwc_connection
+            or not nwc_connection.client_app
+            or nwc_connection.client_app.client_id != client_id
+        ):
             return Response(status=401, response="Invalid refresh token")
 
         if none_throws(nwc_connection.refresh_token_expires_at) < int(time()):
