@@ -7,7 +7,7 @@ from uuid import UUID
 
 from aioauth.utils import generate_token
 from nostr_sdk import Keys
-from sqlalchemy import JSON, ForeignKey, Integer, String
+from sqlalchemy import JSON, CheckConstraint, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql.json import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import select
@@ -41,9 +41,10 @@ class NWCConnection(ModelBase):
     user_id: Mapped[UUID] = mapped_column(
         DBUUID(), ForeignKey("user.id"), nullable=False
     )
-    client_app_id: Mapped[UUID] = mapped_column(
-        DBUUID(), ForeignKey("client_app.id"), nullable=False
+    client_app_id: Mapped[Optional[UUID]] = mapped_column(
+        DBUUID(), ForeignKey("client_app.id")
     )
+    custom_name: Mapped[Optional[str]] = mapped_column(String(255))
     granted_permissions_groups: Mapped[list[str]] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"), nullable=False
     )
@@ -63,9 +64,16 @@ class NWCConnection(ModelBase):
     authorization_code_expires_at: Mapped[Optional[int]] = mapped_column(Integer())
 
     user: Mapped[User] = relationship("User", lazy="joined")
-    client_app: Mapped[ClientApp] = relationship("ClientApp", lazy="joined")
+    client_app: Mapped[Optional[ClientApp]] = relationship("ClientApp", lazy="joined")
     spending_limit: Mapped[Optional[SpendingLimit]] = relationship(
         "SpendingLimit", foreign_keys=[spending_limit_id], lazy="joined"
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "client_app_id IS NOT NULL OR custom_name IS NOT NULL",
+            name="check_client_app_or_custom_name",
+        ),
     )
 
     def get_all_granted_granular_permissions(self) -> list[str]:
@@ -155,12 +163,24 @@ class NWCConnection(ModelBase):
         return now >= none_throws(self.connection_expires_at)
 
     async def get_connection_response_data(self) -> dict[str, Any]:
-        client_app = self.client_app
+        if self.client_app:
+            client_app = {
+                "clientId": self.client_app.client_id,
+                "avatar": self.client_app.image_url,
+            }
+        else:
+            client_app = None
+
         spending_limit = self.spending_limit
+        connection_name = (
+            self.custom_name
+            if self.custom_name is not None
+            else none_throws(self.client_app).app_name
+        )
         response = {
             "connectionId": self.id,
-            "clientId": client_app.client_id,
-            "name": client_app.app_name,
+            "client_app": client_app,
+            "name": connection_name,
             "createdAt": self.created_at,
             "lastUsedAt": "TODO",
             "amountInLowestDenom": "TODO",
@@ -176,7 +196,6 @@ class NWCConnection(ModelBase):
                 "type": "fiat",
             },
             "permissions": self.granted_permissions_groups,
-            "avatar": client_app.image_url,
         }
 
         return response
