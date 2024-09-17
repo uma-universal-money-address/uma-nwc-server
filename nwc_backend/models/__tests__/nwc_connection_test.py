@@ -9,8 +9,8 @@ from nwc_backend.db import db
 from nwc_backend.models.__tests__.model_examples import create_client_app, create_user
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
-from nwc_backend.models.spending_limit import SpendingLimit, SpendingLimitFrequency
 from nwc_backend.models.permissions_grouping import PermissionsGroup
+from nwc_backend.models.spending_limit import SpendingLimit, SpendingLimitFrequency
 
 
 async def test_nwc_connection_model(test_client: QuartClient) -> None:

@@ -28,8 +28,8 @@ from nwc_backend.db import db
 from nwc_backend.event_handlers.event_builder import EventBuilder
 from nwc_backend.event_handlers.nip47_event_handler import handle_nip47_event
 from nwc_backend.models.__tests__.model_examples import (
-    create_app_connection,
     create_nip47_request,
+    create_nwc_connection,
 )
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
@@ -98,7 +98,7 @@ class Harness:
 
 
 @patch("nwc_backend.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
-async def test_failed__no_app_connection(
+async def test_failed__no_nwc_connection(
     mock_nostr_send: AsyncMock,
     test_client: QuartClient,
 ) -> None:
@@ -120,7 +120,7 @@ async def test_failed__access_token_expired(
 ) -> None:
     async with test_client.app.app_context():
         harness = Harness.prepare()
-        await create_app_connection(
+        await create_nwc_connection(
             keys=harness.client_app_keys,
             granted_permissions_groups=[
                 PermissionsGroup.SEND_PAYMENTS,
@@ -145,7 +145,7 @@ async def test_failed__no_permission(
 ) -> None:
     async with test_client.app.app_context():
         harness = Harness.prepare()
-        await create_app_connection(
+        await create_nwc_connection(
             granted_permissions_groups=[PermissionsGroup.READ_BALANCE],
             keys=harness.client_app_keys,
         )
@@ -170,7 +170,7 @@ async def test_failed__invalid_input_params(
     )
     async with test_client.app.app_context():
         harness = Harness.prepare()
-        await create_app_connection(
+        await create_nwc_connection(
             granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
             keys=harness.client_app_keys,
         )
@@ -207,7 +207,7 @@ async def test_succeeded(
 
     async with test_client.app.app_context():
         harness = Harness.prepare()
-        app_connection = await create_app_connection(
+        nwc_connection = await create_nwc_connection(
             granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
             keys=harness.client_app_keys,
         )
@@ -227,7 +227,7 @@ async def test_succeeded(
             .limit(1)
         )
         request = result.scalars().one()
-        assert request.app_connection_id == app_connection.id
+        assert request.nwc_connection_id == nwc_connection.id
         assert request.method == Nip47RequestMethod.PAY_INVOICE
         assert request.params == harness.get_default_request_params()
         assert request.response_event_id == response_id.to_hex()
@@ -260,7 +260,7 @@ async def test_failed__vasp_error_response(
 
     async with test_client.app.app_context():
         harness = Harness.prepare()
-        await create_app_connection(
+        await create_nwc_connection(
             granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
             keys=harness.client_app_keys,
         )
@@ -283,7 +283,7 @@ async def test_duplicate_event(
 ) -> None:
     async with test_client.app.app_context():
         harness = Harness.prepare()
-        await create_app_connection(
+        await create_nwc_connection(
             granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
             keys=harness.client_app_keys,
         )

@@ -6,7 +6,7 @@ from uuid import uuid4
 from quart.app import QuartClient
 
 from nwc_backend.db import db
-from nwc_backend.models.__tests__.model_examples import create_app_connection
+from nwc_backend.models.__tests__.model_examples import create_nwc_connection
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 
@@ -24,10 +24,10 @@ async def test_nip47_request_model(test_client: QuartClient) -> None:
     }
 
     async with test_client.app.app_context():
-        app_connection_id = (await create_app_connection()).id
+        nwc_connection_id = (await create_nwc_connection()).id
         nip47_request = Nip47Request(
             id=id,
-            app_connection_id=app_connection_id,
+            nwc_connection_id=nwc_connection_id,
             event_id=event_id,
             method=method,
             params=params,
@@ -40,7 +40,7 @@ async def test_nip47_request_model(test_client: QuartClient) -> None:
     async with test_client.app.app_context():
         nip47_request = await db.session.get_one(Nip47Request, id)
         assert nip47_request.event_id == event_id
-        assert nip47_request.app_connection_id == app_connection_id
+        assert nip47_request.nwc_connection_id == nwc_connection_id
         assert nip47_request.method == method
         assert nip47_request.params == params
         assert nip47_request.response_event_id == response_event_id

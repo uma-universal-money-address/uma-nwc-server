@@ -8,6 +8,7 @@ import sqlalchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from nwc_backend.db import UUID as DBUUID
+from nwc_backend.db import DateTime
 
 
 class ModelBase(DeclarativeBase):
@@ -16,12 +17,12 @@ class ModelBase(DeclarativeBase):
 
     id: Mapped[UUID] = mapped_column(DBUUID(), primary_key=True)
     created_at: Mapped[datetime] = mapped_column(
-        sqlalchemy.DateTime(timezone=True),
+        DateTime(),
         nullable=False,
         server_default=sqlalchemy.func.now(),
     )
     updated_at: Mapped[datetime] = mapped_column(
-        sqlalchemy.DateTime(timezone=True),
+        DateTime(),
         nullable=False,
         server_default=sqlalchemy.func.now(),
         onupdate=sqlalchemy.func.now(),

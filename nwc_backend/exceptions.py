@@ -63,10 +63,6 @@ class VaspErrorResponseException(Nip47RequestException):
             super().__init__(error_code=error_code, error_message=response)
 
 
-class ActiveAppConnectionAlreadyExistsException(Exception):
-    pass
-
-
 class InvalidBudgetFormatException(Exception):
     def __init__(self) -> None:
         self.error_message = (

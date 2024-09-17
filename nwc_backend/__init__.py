@@ -6,43 +6,39 @@ import json
 import logging
 import os
 from datetime import datetime, timezone
+from time import time
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 from uuid import uuid4
-from quart_cors import route_cors
 
 import jwt
 import requests
 from nostr_sdk import Filter, Kind, KindEnum
 from quart import Quart, Response, redirect, request, send_from_directory, session
+from quart_cors import route_cors
 from sqlalchemy.sql import select
 from werkzeug import Response as WerkzeugResponse
 
 import nwc_backend.alembic_importer  # noqa: F401
+from nwc_backend.api_handlers.vasp_oauth_callback_handler import (
+    handle_vasp_oauth_callback,
+)
 from nwc_backend.client_app_identity_lookup import look_up_client_app_identity
 from nwc_backend.db import UUID, db, setup_rds_iam_auth
 from nwc_backend.event_handlers.event_builder import EventBuilder
-from nwc_backend.exceptions import (
-    ActiveAppConnectionAlreadyExistsException,
-    PublishEventFailedException,
-)
-from nwc_backend.models.app_connection import AppConnection
-from nwc_backend.models.app_connection_status import AppConnectionStatus
+from nwc_backend.exceptions import PublishEventFailedException
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
+from nwc_backend.models.permissions_grouping import (
+    PERMISSIONS_GROUP_TO_METHODS,
+    PermissionsGroup,
+)
 from nwc_backend.models.spending_limit import SpendingLimit
 from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
 from nwc_backend.nostr_notification_handler import NotificationHandler
-from nwc_backend.oauth import OauthStorage, authorization_server
-from nwc_backend.models.permissions_grouping import (
-    PERMISSIONS_GROUP_TO_METHODS,
-    PermissionsGroup,
-)
-from nwc_backend.api_handlers.vasp_oauth_callback_handler import (
-    handle_vasp_oauth_callback,
-)
+from nwc_backend.oauth import authorization_server
 
 
 def create_app() -> Quart:
@@ -221,20 +217,13 @@ def create_app() -> Quart:
         long_lived_vasp_token = response.json()["token"]
 
         nwc_connection.long_lived_vasp_token = long_lived_vasp_token
+        auth_code = nwc_connection.create_oauth_auth_code()
         await db.session.commit()
-
-        oauth_storage = OauthStorage()
-        try:
-            app_connection = await oauth_storage.create_app_connection(
-                nwc_connection_id=nwc_connection_id,
-            )
-        except ActiveAppConnectionAlreadyExistsException:
-            return WerkzeugResponse("Active app connection already exists", status=400)
 
         return WerkzeugResponse(
             json.dumps(
                 {
-                    "code": app_connection.authorization_code,
+                    "code": auth_code,
                     "state": session["client_state"],
                 }
             )
@@ -277,10 +266,10 @@ def create_app() -> Quart:
         user_id = session.get("user_id")
         if not user_id:
             return WerkzeugResponse("User not authenticated", status=401)
-        connection = await db.session.get(AppConnection, UUID(connectionId))
+        connection = await db.session.get(NWCConnection, UUID(connectionId))
         if not connection:
             return WerkzeugResponse("Connection not found", status=404)
-        response = await connection.get_connection_reponse_data()
+        response = await connection.get_connection_response_data()
         return WerkzeugResponse(json.dumps(response), status=200)
 
     @app.route("/api/connections", methods=["GET"])
@@ -290,16 +279,14 @@ def create_app() -> Quart:
             return WerkzeugResponse("User not authenticated", status=401)
 
         result = await db.session.execute(
-            select(AppConnection)
-            .join(AppConnection.nwc_connection)  # Join with NWCConnection
-            .filter(
+            select(NWCConnection).filter(
                 NWCConnection.user_id == user_id,
-                AppConnection.status == AppConnectionStatus.ACTIVE,
+                NWCConnection.connection_expires_at > int(time()),
             )
         )
         response = []
         for connection in result.scalars():
-            response.append(await connection.get_connection_reponse_data())
+            response.append(await connection.get_connection_response_data())
         return WerkzeugResponse(json.dumps(response), status=200)
 
     @app.route("/api/app", methods=["GET"])
