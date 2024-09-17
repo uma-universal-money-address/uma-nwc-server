@@ -8,8 +8,6 @@ from uuid import uuid4
 from nostr_sdk import Keys
 
 from nwc_backend.db import db
-from nwc_backend.models.app_connection import AppConnection
-from nwc_backend.models.app_connection_status import AppConnectionStatus
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
@@ -49,9 +47,17 @@ async def create_nwc_connection(
         PermissionsGroup.RECEIVE_PAYMENTS,
         PermissionsGroup.SEND_PAYMENTS,
     ],
+    keys: Optional[Keys] = None,
+    access_token_expired: bool = False,
 ) -> NWCConnection:
     user = await create_user()
     client_app = await create_client_app()
+    keys = keys or Keys.generate()
+    now = datetime.now(timezone.utc)
+    if access_token_expired:
+        access_token_expires_at = now - timedelta(days=30)
+    else:
+        access_token_expires_at = now + timedelta(days=30)
     nwc_connection = NWCConnection(
         id=uuid4(),
         client_app=client_app,
@@ -63,46 +69,16 @@ async def create_nwc_connection(
         connection_expires_at=int(
             (datetime.now(timezone.utc) + timedelta(days=365)).timestamp()
         ),
-    )
-    db.session.add(nwc_connection)
-    await db.session.commit()
-    return nwc_connection
-
-
-async def create_app_connection(
-    nwc_connection: Optional[NWCConnection] = None,
-    granted_permissions_groups: list[PermissionsGroup] = [
-        PermissionsGroup.RECEIVE_PAYMENTS,
-        PermissionsGroup.SEND_PAYMENTS,
-    ],
-    keys: Optional[Keys] = None,
-    access_token_expired: bool = False,
-) -> AppConnection:
-    nwc_connection = nwc_connection or await create_nwc_connection(
-        granted_permissions_groups
-    )
-    keys = keys or Keys.generate()
-    now = datetime.now(timezone.utc)
-    if access_token_expired:
-        access_token_expires_at = now - timedelta(days=30)
-    else:
-        access_token_expires_at = now + timedelta(days=30)
-    app_connection = AppConnection(
-        id=uuid4(),
-        nwc_connection=nwc_connection,
         nostr_pubkey=keys.public_key().to_hex(),
-        access_token=keys.secret_key().to_hex(),
         access_token_expires_at=int(access_token_expires_at.timestamp()),
         refresh_token=token_hex(),
         refresh_token_expires_at=int((now + timedelta(days=120)).timestamp()),
         authorization_code=token_hex(),
         authorization_code_expires_at=int((now + timedelta(minutes=10)).timestamp()),
-        status=AppConnectionStatus.ACTIVE,
     )
-
-    db.session.add(app_connection)
+    db.session.add(nwc_connection)
     await db.session.commit()
-    return app_connection
+    return nwc_connection
 
 
 async def create_spending_limit(
@@ -127,7 +103,7 @@ async def create_spending_limit(
 
 
 async def create_nip47_request(
-    app_connection: Optional[AppConnection] = None,
+    nwc_connection: Optional[NWCConnection] = None,
     params: Optional[dict[str, Any]] = None,
     event_id: Optional[str] = None,
 ) -> Nip47Request:
@@ -135,10 +111,10 @@ async def create_nip47_request(
         params = {
             "invoice": "lnbcrt1pjrsa37pp50geu5vxkzn4ddc4hmfkz9x308tw9lrrqtktz2hpm0rccjyhcyp5qdqh2d68yetpd45kueeqv3jk6mccqzpgxq9z0rgqsp5ge2rdw0tzvakxslmtvfmqf2fr7eucg9ughps5vdvp6fm2utk20rs9q8pqqqssqjs3k4nzrzg2nu9slu9c3srv2ae8v69ge097q9seukyw2nger8arj93m6erz8u657hfdzztfmc55wjjm9k337krl00fyw6s9nnwaafaspcqp2uv"
         }
-    app_connection = app_connection or await create_app_connection()
+    nwc_connection = nwc_connection or await create_nwc_connection()
     nip47_request = Nip47Request(
         id=uuid4(),
-        app_connection=app_connection,
+        nwc_connection=nwc_connection,
         event_id=event_id or token_hex(),
         method=Nip47RequestMethod.PAY_INVOICE,
         params=params,
@@ -163,8 +139,7 @@ async def create_nip47_request_with_spending_limit(
         currency_code=spending_limit_currency_code,
         amount=spending_limit_currency_amount,
     )
-    app_connection = await create_app_connection(nwc_connection=nwc_connection)
-    return await create_nip47_request(app_connection=app_connection, params=params)
+    return await create_nip47_request(nwc_connection=nwc_connection, params=params)
 
 
 async def create_spending_cycle() -> SpendingCycle:

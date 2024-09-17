@@ -12,17 +12,17 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from nwc_backend.db import UUID as DBUUID
 from nwc_backend.db import Column, db
-from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.model_base import ModelBase
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
+from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.spending_limit import SpendingLimit
 
 
 class Nip47Request(ModelBase):
     __tablename__ = "nip47_request"
 
-    app_connection_id: Mapped[UUID] = Column(
-        DBUUID(), ForeignKey("app_connection.id"), nullable=False
+    nwc_connection_id: Mapped[UUID] = Column(
+        DBUUID(), ForeignKey("nwc_connection.id"), nullable=False
     )
     event_id: Mapped[str] = mapped_column(
         String(length=255), nullable=False, unique=True
@@ -41,18 +41,18 @@ class Nip47Request(ModelBase):
         DBEnum(ErrorCode, native_enum=False)
     )
 
-    app_connection: Mapped[AppConnection] = relationship("AppConnection", lazy="joined")
+    nwc_connection: Mapped[NWCConnection] = relationship("NWCConnection", lazy="joined")
 
     @staticmethod
     async def create_and_save(
-        app_connection: AppConnection,
+        nwc_connection: NWCConnection,
         event_id: str,
         method: Nip47RequestMethod,
         params: Optional[dict[str, Any]],
     ) -> "Nip47Request":
         request = Nip47Request(
             id=uuid4(),
-            app_connection=app_connection,
+            nwc_connection=nwc_connection,
             event_id=event_id,
             method=method,
             params=params,
@@ -77,4 +77,4 @@ class Nip47Request(ModelBase):
         await db.session.commit()
 
     def get_spending_limit(self) -> Optional[SpendingLimit]:
-        return self.app_connection.nwc_connection.spending_limit
+        return self.nwc_connection.spending_limit

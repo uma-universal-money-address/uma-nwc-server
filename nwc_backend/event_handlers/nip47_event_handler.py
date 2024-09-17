@@ -25,17 +25,17 @@ from nwc_backend.event_handlers.pay_invoice_handler import pay_invoice
 from nwc_backend.event_handlers.pay_keysend_handler import pay_keysend
 from nwc_backend.event_handlers.pay_to_address_handler import pay_to_address
 from nwc_backend.exceptions import Nip47RequestException
-from nwc_backend.models.app_connection import AppConnection
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
+from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
 from nwc_backend.typing import none_throws
 
 
 async def handle_nip47_event(event: Event) -> None:
-    app_connection = await AppConnection.from_nostr_pubkey(event.author().to_hex())
-    if not app_connection:
+    nwc_connection = await NWCConnection.from_nostr_pubkey(event.author().to_hex())
+    if not nwc_connection:
         error_response = create_nip47_error_response(
             event=event,
             method=None,
@@ -63,7 +63,7 @@ async def handle_nip47_event(event: Event) -> None:
     )
 
     method = Nip47RequestMethod(content["method"])
-    if not app_connection.has_command_permission(method):
+    if not nwc_connection.has_command_permission(method):
         error_response = create_nip47_error_response(
             event=event,
             method=method,
@@ -75,7 +75,7 @@ async def handle_nip47_event(event: Event) -> None:
         await nostr_client.send_event(error_response)
         return
 
-    if app_connection.is_access_token_expired():
+    if nwc_connection.is_oauth_access_token_expired():
         error_response = create_nip47_error_response(
             event=event,
             method=method,
@@ -91,7 +91,7 @@ async def handle_nip47_event(event: Event) -> None:
 
     try:
         nip47_request = await Nip47Request.create_and_save(
-            app_connection=app_connection,
+            nwc_connection=nwc_connection,
             event_id=event.id().to_hex(),
             method=method,
             params=params,
@@ -100,7 +100,7 @@ async def handle_nip47_event(event: Event) -> None:
         logging.debug("Event %s has been processed already.", event.id().to_hex())
         return
 
-    uma_access_token = none_throws(app_connection.nwc_connection.long_lived_vasp_token)
+    uma_access_token = none_throws(nwc_connection.long_lived_vasp_token)
     try:
         match method:
             case Nip47RequestMethod.EXECUTE_QUOTE:
