@@ -135,6 +135,9 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
         # TODO: Sync with @brian on how we want to handle this
         return WerkzeugResponse("Client app not found", status=404)
 
+    if not client_app_info.is_redirect_url_allowed(redirect_uri):
+        return WerkzeugResponse("Redirect url not allowed", status=403)
+
     client_app = await ClientApp.from_client_id(client_id)
     if client_app:
         client_app.app_name = client_app_info.name

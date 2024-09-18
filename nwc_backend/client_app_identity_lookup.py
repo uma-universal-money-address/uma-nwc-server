@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from enum import Enum
 from typing import Optional
+from urllib.parse import urlparse
 
 from nostr_sdk import (
     Client,
@@ -75,6 +76,25 @@ class ClientAppInfo:
     nip05: Optional[Nip05]
     display_name: Optional[str]
     allowed_redirect_urls: Optional[list[str]]
+
+    def is_redirect_url_allowed(self, redirect_url: str) -> bool:
+        if not self.allowed_redirect_urls:
+            return True
+
+        parsed_redirect_url = urlparse(redirect_url)
+        for allowed_redirect_url in self.allowed_redirect_urls:  # pyre-ignore[16]
+            parsed_allowed_redirect_url = urlparse(allowed_redirect_url)
+            if (
+                parsed_redirect_url.scheme,
+                parsed_redirect_url.netloc,
+                parsed_redirect_url.path,
+            ) == (
+                parsed_allowed_redirect_url.scheme,
+                parsed_allowed_redirect_url.netloc,
+                parsed_allowed_redirect_url.path,
+            ):
+                return True
+        return False
 
 
 async def look_up_client_app_identity(client_id: str) -> Optional[ClientAppInfo]:
