@@ -33,6 +33,17 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
         return WerkzeugResponse("Required commands not provided", status=400)
     optional_commands = request.args.get("optional_commands")
     client_id = request.args.get("client_id")
+    code_challenge_method = request.args.get("code_challenge_method")
+    if code_challenge_method != "S256":
+        return WerkzeugResponse(
+            "Only S256 code challenge method is supported", status=400
+        )
+    redirect_uri = request.args.get("redirect_uri")
+    code_challenge = request.args.get("code_challenge")
+    if not code_challenge:
+        return WerkzeugResponse("Code challenge not provided", status=400)
+    if not redirect_uri:
+        return WerkzeugResponse("Redirect URI not provided", status=400)
 
     now = datetime.now(timezone.utc)
     budget = request.args.get("budget")
@@ -154,6 +165,8 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
         granted_permissions_groups=[
             group.value for group in granted_permissions_groups
         ],
+        redirect_uri=redirect_uri,
+        code_challenge=code_challenge,
     )
     # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
     connection_expires_at = int((now + timedelta(days=365)).timestamp())
@@ -171,8 +184,6 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
     session["short_lived_vasp_token"] = short_lived_vasp_token
     session["nwc_connection_id"] = nwc_connection.id
     session["user_id"] = user.id
-    session["client_id"] = request.args.get("client_id")
-    session["client_redirect_uri"] = request.args.get("redirect_uri")
     session["client_state"] = request.args.get("state")
 
     # REMOVE ALWAYS_GRANTED PermissionsGroup from lists if it exists since we won't be sending them to the frontend
