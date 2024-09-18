@@ -6,6 +6,7 @@ from time import time
 from typing import Any, Optional
 from uuid import UUID
 
+from quart import current_app
 from aioauth.utils import generate_token
 from nostr_sdk import Keys
 from sqlalchemy import JSON, CheckConstraint, ForeignKey, Integer, String
@@ -49,12 +50,14 @@ class NWCConnection(ModelBase):
     granted_permissions_groups: Mapped[list[str]] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"), nullable=False
     )
-    long_lived_vasp_token: Mapped[Optional[str]] = mapped_column(String(1024))
     connection_expires_at: Mapped[Optional[int]] = mapped_column(Integer())
     spending_limit_id: Mapped[Optional[UUID]] = mapped_column(
         DBUUID(), ForeignKey("spending_limit.id", use_alter=True)
     )
+
+    # These should be set as soon as the connection is confirmed by the user.
     nostr_pubkey: Mapped[Optional[str]] = mapped_column(String(255), unique=True)
+    long_lived_vasp_token: Mapped[Optional[str]] = mapped_column(String(1024))
 
     # The following fields are only for client app oauth
     refresh_token: Mapped[Optional[str]] = mapped_column(String(1024), unique=True)
@@ -81,11 +84,16 @@ class NWCConnection(ModelBase):
 
     def get_all_granted_granular_permissions(self) -> list[str]:
         all_permissions = set()
+        vasp_supported_commands = current_app.config.get("VASP_SUPPORTED_COMMANDS")
         for group in self.granted_permissions_groups + [
             PermissionsGroup.ALWAYS_GRANTED.value
         ]:
             all_permissions.update(
-                PERMISSIONS_GROUP_TO_METHODS[PermissionsGroup(group)]
+                [
+                    p
+                    for p in PERMISSIONS_GROUP_TO_METHODS[PermissionsGroup(group)]
+                    if p in vasp_supported_commands
+                ]
             )
         return list(all_permissions)
 
@@ -119,14 +127,14 @@ class NWCConnection(ModelBase):
             "refresh_token": self.refresh_token,
             "expires_in": ACCESS_TOKEN_EXPIRES_IN,
             "token_type": "Bearer",
-            "nwc_connection_uri": self._get_nwc_connection_uri(access_token),
+            "nwc_connection_uri": self.get_nwc_connection_uri(access_token),
             "budget": spending_limit.get_budget_repr() if spending_limit else None,
             "commands": self.get_all_granted_granular_permissions(),
             "nwc_expires_at": self.connection_expires_at,
             "uma_address": self.user.uma_address,
         }
 
-    def _get_nwc_connection_uri(self, access_token: str) -> str:
+    def get_nwc_connection_uri(self, access_token: str) -> str:
         nostr_config = NostrConfig.instance()
         wallet_pubkey = nostr_config.identity_keys.public_key().to_hex()
         wallet_relay = nostr_config.relay_url
