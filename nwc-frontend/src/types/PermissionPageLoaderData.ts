@@ -1,7 +1,6 @@
 import { ConnectionSettings } from "src/permissions/PersonalizePage";
 import { AppInfo } from "./AppInfo";
 import { Connection } from "./Connection";
-import { Currency } from "./Currency";
 
 interface LoaderDataBase {
   appInfo: AppInfo;

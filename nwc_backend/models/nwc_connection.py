@@ -4,6 +4,7 @@
 from time import time
 from typing import Any, Optional
 from uuid import UUID
+from datetime import datetime, timezone
 
 from aioauth.utils import generate_token
 from nostr_sdk import Keys
@@ -167,7 +168,7 @@ class NWCConnection(ModelBase):
     async def get_connection_response_data(self) -> dict[str, Any]:
         if self.client_app:
             client_app = {
-                "clientId": self.client_app.client_id,
+                "client_id": self.client_app.client_id,
                 "avatar": self.client_app.image_url,
             }
         else:
@@ -180,15 +181,17 @@ class NWCConnection(ModelBase):
             else none_throws(self.client_app).app_name
         )
         response = {
-            "connectionId": self.id,
+            "connection_id": str(self.id),
             "client_app": client_app,
             "name": connection_name,
-            "createdAt": self.created_at,
-            "lastUsedAt": "TODO",
-            "amountInLowestDenom": "TODO",
-            "amountInLowestDenomUsed": "TODO",
-            "limitFrequency": spending_limit.frequency if spending_limit else None,
-            "limitEnabled": bool(spending_limit),
+            "created_at": self.created_at.isoformat(),
+            "last_used_at": "TODO",
+            "amount_in_lowest_denom": "TODO",
+            "amount_in_lowest_denom_used": "TODO",
+            "limit_frequency": (
+                spending_limit.frequency.value if spending_limit else None
+            ),
+            "limit_enabled": bool(spending_limit),
             # TODO: currency should be fetched from somewhere
             "currency": {
                 "code": "USD",
@@ -197,6 +200,13 @@ class NWCConnection(ModelBase):
                 "decimals": 2,
                 "type": "fiat",
             },
+            "expires_at": (
+                datetime.fromtimestamp(
+                    float(self.connection_expires_at), timezone.utc
+                ).isoformat()
+                if self.connection_expires_at
+                else None
+            ),
             "permissions": self.granted_permissions_groups,
         }
 

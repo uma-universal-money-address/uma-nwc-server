@@ -1,6 +1,6 @@
 import { useConfig } from "src/hooks/useConfig";
-import { getBackendUrl } from "./backendUrl";
 import { Currency } from "src/types/Currency";
+import { getBackendUrl } from "./backendUrl";
 
 type LoginState = {
   umaAddress: string;
