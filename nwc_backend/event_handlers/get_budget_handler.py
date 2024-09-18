@@ -17,7 +17,11 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
         return Nip47BudgetResponse(
             total_budget_msats=spending_cycle.limit_amount * 1000,
             remaining_budget_msats=spending_cycle.get_available_budget_amount() * 1000,
-            renews_at=round(spending_cycle.end_time.timestamp()),
+            renews_at=(
+                round(spending_cycle.end_time.timestamp())
+                if spending_cycle.end_time
+                else None
+            ),
         )
 
     budget_estimate_response = await VaspUmaClient.instance().get_budget_estimate(
@@ -46,5 +50,9 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
         ),
         total_budget_msats=total_budget_sats * 1000,
         remaining_budget_msats=remaining_budget_sats * 1000,
-        renews_at=round(spending_cycle.end_time.timestamp()),
+        renews_at=(
+            round(spending_cycle.end_time.timestamp())
+            if spending_cycle.end_time
+            else None
+        ),
     )
