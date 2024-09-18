@@ -134,16 +134,20 @@ async def create_nip47_request_with_spending_limit(
     params: dict[str, Any],
 ) -> Nip47Request:
     nwc_connection = await create_nwc_connection()
-    await create_spending_limit(
+    limit = await create_spending_limit(
         nwc_connection=nwc_connection,
         currency_code=spending_limit_currency_code,
         amount=spending_limit_currency_amount,
     )
+    await create_spending_cycle(limit)
     return await create_nip47_request(nwc_connection=nwc_connection, params=params)
 
 
-async def create_spending_cycle() -> SpendingCycle:
-    spending_limit = await create_spending_limit()
+async def create_spending_cycle(
+    spending_limit: Optional[SpendingLimit] = None,
+) -> SpendingCycle:
+    if spending_limit is None:
+        spending_limit = await create_spending_limit()
     cycle_length = SpendingLimitFrequency.get_cycle_length(spending_limit.frequency)
     spending_cycle = SpendingCycle(
         id=uuid4(),

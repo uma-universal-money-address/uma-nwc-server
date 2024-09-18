@@ -16,6 +16,7 @@ from nwc_backend.event_handlers.event_builder import (
 from nwc_backend.event_handlers.execute_quote_handler import execute_quote
 from nwc_backend.event_handlers.fetch_quote_handler import fetch_quote
 from nwc_backend.event_handlers.get_balance_handler import get_balance
+from nwc_backend.event_handlers.get_budget_handler import get_budget
 from nwc_backend.event_handlers.get_info_handler import get_info
 from nwc_backend.event_handlers.list_transactions_handler import list_transactions
 from nwc_backend.event_handlers.lookup_invoice_handler import lookup_invoice
@@ -109,6 +110,8 @@ async def handle_nip47_event(event: Event) -> None:
                 response = await fetch_quote(uma_access_token, nip47_request)
             case Nip47RequestMethod.GET_BALANCE:
                 response = await get_balance(uma_access_token, nip47_request)
+            case Nip47RequestMethod.GET_BUDGET:
+                response = await get_budget(uma_access_token, nip47_request)
             case Nip47RequestMethod.GET_INFO:
                 response = await get_info(uma_access_token, nip47_request)
             case Nip47RequestMethod.LIST_TRANSACTIONS:

@@ -9,6 +9,7 @@ class Nip47RequestMethod(Enum):
     MAKE_INVOICE = "make_invoice"
     LOOKUP_INVOICE = "lookup_invoice"
     GET_BALANCE = "get_balance"
+    GET_BUDGET = "get_budget"
     GET_INFO = "get_info"
     LIST_TRANSACTIONS = "list_transactions"
     PAY_KEYSEND = "pay_keysend"
