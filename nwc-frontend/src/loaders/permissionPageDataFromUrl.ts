@@ -9,7 +9,6 @@ import { Currency } from "src/types/Currency";
 import { PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
 
 export interface InitialPermissionsResponse {
-  defaultCurrency: Currency;
   currencies: Currency[];
 }
 
@@ -104,28 +103,12 @@ export const permissionsPageDataFromUrl = (async ({ request }) => {
     expirationPeriod: params.get("expiration_period"),
   };
 
-  // const { defaultCurrency } =  await fetch(
-  //   "/user/currencies",
-  //   {
-  //     method: "GET",
-  //   },
-  // );
-
-  const defaultCurrency = {
-    code: "USD",
-    name: "United States Dollar",
-    symbol: "$",
-    decimals: 2,
-    type: "fiat",
-  };
-
   const appInfo = await fetchAppInfo(oauthParams.clientId);
 
   return json(
     {
       appInfo,
       connectionSettings: getClientAppDefaultSettings(nwcParams),
-      defaultCurrency,
       oauthParams,
     } as PermissionPageLoaderData,
     { status: 200 },

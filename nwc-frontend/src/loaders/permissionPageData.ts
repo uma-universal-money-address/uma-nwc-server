@@ -5,7 +5,6 @@ import { PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
 import { MOCKED_CONNECTIONS } from "src/utils/fetchConnections";
 
 export interface InitialPermissionsResponse {
-  defaultCurrency: Currency;
   currencies: Currency[];
 }
 
@@ -35,28 +34,12 @@ export const permissionsPageData = (async ({ params }) => {
     throw new Response("Connection not found", { status: 404 });
   }
 
-  // const { defaultCurrency } =  await fetch(
-  //   "/user/currencies",
-  //   {
-  //     method: "GET",
-  //   },
-  // );
-
-  const defaultCurrency = {
-    code: "USD",
-    name: "United States Dollar",
-    symbol: "$",
-    decimals: 2,
-    type: "fiat",
-  };
-
   const appInfo = await fetchAppInfo(connection.clientId);
 
   return json(
     {
       appInfo,
       connectionSettings: getConnectionSettings(connection),
-      defaultCurrency,
       connection,
     } as PermissionPageLoaderData,
     { status: 200 },

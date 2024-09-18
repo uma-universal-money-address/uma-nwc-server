@@ -11,7 +11,6 @@ import { GlobalStyles } from "./GlobalStyles";
 import { LayoutInnerContent } from "./LayoutInnerContent";
 import { permissionsPageData } from "./loaders/permissionPageData";
 import { permissionsPageDataFromUrl } from "./loaders/permissionPageDataFromUrl";
-import { userCurrencies } from "./loaders/userCurrencies";
 import { Nav } from "./Nav";
 import { NotificationLayout } from "./NotificationLayout";
 import { PermissionsPage } from "./permissions/PermissionsPage";
@@ -33,7 +32,6 @@ const router = createBrowserRouter([
       {
         path: "new",
         element: <ManualConnectionPage />,
-        loader: userCurrencies,
       },
       {
         path: "update/:connectionId",

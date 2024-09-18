@@ -99,8 +99,6 @@ def create_app() -> Quart:
             # TODO: verify the aud and iss
             options={"verify_aud": False, "verify_iss": False},
         )
-        # TODO: Should probably let the VASP's tokens be opaque to the NWC backend and just have the
-        # VASP send this info explicitly
         uma_address = vasp_token_payload["address"]
         expiry = vasp_token_payload["exp"]
 
@@ -121,6 +119,7 @@ def create_app() -> Quart:
         query_params["token"] = short_lived_vasp_token
         query_params["uma_address"] = uma_address
         query_params["expiry"] = expiry
+        query_params["currency"] = request.args.get("currency")
         parsed_url = parsed_url._replace(query=urlencode(query_params, doseq=True))
         frontend_redirect_url = str(urlunparse(parsed_url))
 

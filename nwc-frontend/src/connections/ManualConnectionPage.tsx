@@ -11,7 +11,6 @@ import { useLoaderData, useNavigate } from "react-router-dom";
 import { initializeManualConnection } from "src/hooks/useConnection";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
 import { LoaderData } from "src/loaders/LoaderData";
-import { userCurrencies } from "src/loaders/userCurrencies";
 import { EditExpiration } from "src/permissions/EditExpiration";
 import { EditLimit } from "src/permissions/EditLimit";
 import { PermissionsEditableList } from "src/permissions/PermissionsEditableList";
@@ -24,6 +23,7 @@ import {
 import { formatConnectionString } from "src/utils/formatConnectionString";
 import { ManualConnectionHowItWorksModal } from "./ManualConnectionHowItWorksModal";
 import { PendingConnectionPage } from "./PendingConnectionPage";
+import { useAuth } from "src/utils/auth";
 
 export default function ManualConnectionPage() {
   const navigate = useNavigate();
@@ -40,9 +40,8 @@ export default function ManualConnectionPage() {
   const [pairingUri, setPairingUri] = useState<{ pairingUri: string } | null>(
     null,
   );
-  const { defaultCurrency } = useLoaderData() as LoaderData<
-    typeof userCurrencies
-  >;
+  const auth = useAuth();
+  const currency = auth.getCurrency();
 
   if (pairingUri) {
     return (
@@ -120,7 +119,7 @@ export default function ManualConnectionPage() {
         permissions: connectionSettings.permissionStates
           .filter((permissionState) => permissionState.enabled)
           .map((permissionState) => permissionState.permission),
-        currencyCode: defaultCurrency!.code,
+        currencyCode: currency!.code,
         amountInLowestDenom: connectionSettings.amountInLowestDenom,
         limitEnabled: connectionSettings.limitEnabled,
         limitFrequency: connectionSettings.limitFrequency,
