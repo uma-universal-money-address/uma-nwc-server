@@ -21,6 +21,7 @@ VASP_SUPPORTED_COMMANDS = [
     "make_invoice",
     "lookup_invoice",
     "get_balance",
+    "get_budget",
     "get_info",
     "list_transactions",
     "pay_keysend",
