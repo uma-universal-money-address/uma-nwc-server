@@ -21,6 +21,7 @@ from werkzeug import Response as WerkzeugResponse
 from werkzeug.datastructures import MultiDict
 
 import nwc_backend.alembic_importer  # noqa: F401
+from nwc_backend.api_handlers import spending_limit_handler
 from nwc_backend.api_handlers.vasp_oauth_callback_handler import (
     handle_vasp_oauth_callback,
 )
@@ -332,6 +333,12 @@ def create_app() -> Quart:
                 }
             )
         )
+
+    app.add_url_rule(
+        "/api/budget/disable",
+        view_func=spending_limit_handler.disable_spending_limit,
+        methods=["POST"],
+    )
 
     return app
 
