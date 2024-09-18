@@ -321,9 +321,9 @@ def create_app() -> Quart:
 
         connection.granted_permissions_groups = permissions
         if expiration:
-            connection.connection_expires_at = datetime.fromisoformat(
-                expiration
-            ).timestamp()
+            connection.connection_expires_at = round(
+                datetime.fromisoformat(expiration).timestamp()
+            )
 
         if limit_enabled:
             limit_frequency = (
