@@ -279,7 +279,7 @@ def create_app() -> Quart:
         if not user_id:
             return WerkzeugResponse("User not authenticated", status=401)
         connection = await db.session.get(NWCConnection, UUID(connectionId))
-        if not connection:
+        if not connection or connection.user_id != user_id:
             return WerkzeugResponse("Connection not found", status=404)
         response = await connection.get_connection_response_data()
         return WerkzeugResponse(json.dumps(response), status=200)
