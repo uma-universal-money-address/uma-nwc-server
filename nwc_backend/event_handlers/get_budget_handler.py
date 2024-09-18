@@ -28,7 +28,7 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
     )
 
     total_budget_sats = budget_estimate_response.estimated_budget_currency_amount
-    remaining_budget_sats = (
+    remaining_budget_sats = round(
         total_budget_sats
         / spending_cycle.limit_amount
         * spending_cycle.get_available_budget_amount()
