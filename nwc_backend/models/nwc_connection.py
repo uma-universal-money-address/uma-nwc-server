@@ -137,6 +137,15 @@ class NWCConnection(ModelBase):
         return result.scalars().one_or_none()
 
     @staticmethod
+    async def from_user_id_and_connection_id(
+        user_id: str, connection_id: str
+    ) -> Optional["NWCConnection"]:
+        result = await db.session.execute(
+            select(NWCConnection).filter_by(user_id=user_id, id=connection_id)
+        )
+        return result.scalars().one_or_none()
+
+    @staticmethod
     async def from_oauth_authorization_code(
         authorization_code: str,
     ) -> Optional["NWCConnection"]:

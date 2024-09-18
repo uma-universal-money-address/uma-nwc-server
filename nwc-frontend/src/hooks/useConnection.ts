@@ -49,9 +49,9 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
     status: ConnectionStatus;
   }) => {
     try {
-      // const response = await fetch("/connection", {
+      // const response = await fetch(`api/connection/${connectionId}`, {
       //   method: "POST",
-      //   body: JSON.stringify({ connectionId: connection.connectionId, amountInLowestDenom, limitFrequency, limitEnabled, status }),
+      //   body: JSON.stringify({ amountInLowestDenom, limitFrequency, limitEnabled, status }),
       // });
       setConnection({
         ...connection,
@@ -95,9 +95,9 @@ export const updateConnection = async ({
   status: ConnectionStatus;
 }) => {
   try {
-    // const response = await fetch("/connection", {
+    // const response = await fetch(`api/connection/${connectionId}`, {
     //   method: "POST",
-    //   body: JSON.stringify({ connectionId: connectionId, amountInLowestDenom, limitFrequency, limitEnabled, expiration, status }),
+    //   body: JSON.stringify({ amountInLowestDenom, limitFrequency, limitEnabled, expiration, status }),
     // });
     return true;
   } catch (e) {

@@ -262,12 +262,14 @@ def create_app() -> Quart:
         else:
             return Response(status=400, response="Invalid grant type")
 
-    @app.route("/api/connection/<connectionId>", methods=["GET"])
-    async def get_connection(connectionId: str) -> WerkzeugResponse:
+    @app.route("/api/connection/<connection_id>", methods=["GET"])
+    async def get_connection(connection_id: str) -> WerkzeugResponse:
         user_id = session.get("user_id")
         if not user_id:
             return WerkzeugResponse("User not authenticated", status=401)
-        connection = await db.session.get(NWCConnection, UUID(connectionId))
+        connection = await NWCConnection.from_user_id_and_connection_id(
+            user_id=user_id, connection_id=connection_id
+        )
         if not connection:
             return WerkzeugResponse("Connection not found", status=404)
         response = await connection.get_connection_response_data()
@@ -290,18 +292,21 @@ def create_app() -> Quart:
             response.append(await connection.get_connection_response_data())
         return WerkzeugResponse(json.dumps(response), status=200)
 
-    @app.route("/api/connection/<connectionId>", methods=["POST"])
-    async def update_connection(connectionId: str) -> WerkzeugResponse:
+    @app.route("/api/connection/<connection_id>", methods=["POST"])
+    async def update_connection(connection_id: str) -> WerkzeugResponse:
         user_id = session.get("user_id")
         if not user_id:
             return WerkzeugResponse("User not authenticated", status=401)
-        connection = await db.session.get(AppConnection, UUID(connectionId))
+
+        connection = await NWCConnection.from_user_id_and_connection_id(
+            user_id=user_id, connection_id=connection_id
+        )
         if not connection:
             return WerkzeugResponse("Connection not found", status=404)
 
         data = await request.get_data()
         data = json.loads(data)
-        permissions = data.get("permissions")
+        permissions = data.get("permissions") or []
         currency_code = data.get("currencyCode")
         amount_in_lowest_denom = data.get("amountInLowestDenom")
         limit_enabled = data.get("limitEnabled")
@@ -314,13 +319,11 @@ def create_app() -> Quart:
                     f"Invalid permission group: {permission}", status=400
                 )
 
-        nwc_connection = await db.session.get_one(
-            NWCConnection, connection.nwc_connection_id
-        )
-        nwc_connection.granted_permissions_groups = permissions
-        nwc_connection.connection_expires_at = datetime.fromisoformat(
-            expiration
-        ).timestamp()
+        connection.granted_permissions_groups = permissions
+        if expiration:
+            connection.connection_expires_at = datetime.fromisoformat(
+                expiration
+            ).timestamp()
 
         if limit_enabled:
             limit_frequency = (
@@ -328,21 +331,25 @@ def create_app() -> Quart:
                 if limit_frequency
                 else SpendingLimitFrequency.NONE
             )
+            try:
+                amount = int(amount_in_lowest_denom)
+            except ValueError:
+                return WerkzeugResponse("Invalid amount", status=400)
             spending_limit = SpendingLimit(
                 id=uuid4(),
-                nwc_connection_id=connection.nwc_connection_id,
+                nwc_connection_id=connection_id,
                 currency_code=currency_code or "SAT",
-                amount=amount_in_lowest_denom,
+                amount=amount,
                 frequency=limit_frequency,
                 start_time=datetime.now(timezone.utc),
             )
             db.session.add(spending_limit)
-            nwc_connection.spending_limit_id = spending_limit.id
+            connection.spending_limit_id = spending_limit.id
         else:
-            nwc_connection.spending_limit_id = None
+            connection.spending_limit_id = None
         await db.session.commit()
 
-        response = await connection.get_connection_reponse_data()
+        response = await connection.get_connection_response_data()
         return WerkzeugResponse(json.dumps(response), status=200)
 
     @app.route("/api/connection/<connectionId>", methods=["DELETE"])
@@ -350,14 +357,12 @@ def create_app() -> Quart:
         user_id = session.get("user_id")
         if not user_id:
             return WerkzeugResponse("User not authenticated", status=401)
-        connection = await db.session.get(AppConnection, UUID(connectionId))
+        connection = await db.session.get(NWCConnection, UUID(connectionId))
         if not connection:
             return WerkzeugResponse("Connection not found", status=404)
 
-        connection.status = AppConnectionStatus.INACTIVE
-        await VaspUmaClient.instance().revoke_token(
-            connection.nwc_connection.long_lived_vasp_token
-        )
+        db.session.delete(connection)
+        await VaspUmaClient.instance().revoke_token(connection.long_lived_vasp_token)
         await db.session.commit()
 
         return WerkzeugResponse(status=204)
