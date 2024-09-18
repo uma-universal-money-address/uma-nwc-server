@@ -51,7 +51,7 @@ class NWCConnection(ModelBase):
     long_lived_vasp_token: Mapped[Optional[str]] = mapped_column(String(1024))
     connection_expires_at: Mapped[Optional[int]] = mapped_column(Integer())
     spending_limit_id: Mapped[Optional[UUID]] = mapped_column(
-        DBUUID(), ForeignKey("spending_limit.id")
+        DBUUID(), ForeignKey("spending_limit.id", use_alter=True)
     )
     nostr_pubkey: Mapped[Optional[str]] = mapped_column(String(255), unique=True)
 
