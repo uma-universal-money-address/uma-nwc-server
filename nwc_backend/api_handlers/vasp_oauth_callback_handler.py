@@ -38,7 +38,7 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
         return WerkzeugResponse(
             "Only S256 code challenge method is supported", status=400
         )
-    redirect_uri = (request.args.get("redirect_uri"),)
+    redirect_uri = request.args.get("redirect_uri")
     code_challenge = request.args.get("code_challenge")
     if not code_challenge:
         return WerkzeugResponse("Code challenge not provided", status=400)

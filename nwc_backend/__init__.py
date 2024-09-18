@@ -250,10 +250,10 @@ def create_app() -> Quart:
 
         if grant_type == "authorization_code":
             try:
-                client_id = _require_param(request_data, "client_id")
-                code = _require_param(request_data, "code")
-                redirect_uri = _require_param(request_data, "redirect_uri")
-                code_verifier = _require_param(request_data, "code_verifier")
+                client_id = _require_string_param(request_data, "client_id")
+                code = _require_string_param(request_data, "code")
+                redirect_uri = _require_string_param(request_data, "redirect_uri")
+                code_verifier = _require_string_param(request_data, "code_verifier")
             except ValueError as e:
                 return Response(status=400, response=str(e))
             if not client_id or not code or not redirect_uri or not code_verifier:
@@ -337,7 +337,7 @@ def create_app() -> Quart:
     return app
 
 
-def _require_param(dict: MultiDict[str, str], param: str) -> str:
+def _require_string_param(dict: MultiDict, param: str) -> str:
     value = dict.get(param)
     if not value:
         raise ValueError(f"Missing required parameter: {param}")
