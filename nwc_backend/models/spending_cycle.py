@@ -1,7 +1,8 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import BigInteger, ForeignKey, Index, String
@@ -24,7 +25,7 @@ class SpendingCycle(ModelBase):
         DateTime(),
         nullable=False,
     )
-    end_time: Mapped[datetime] = mapped_column(
+    end_time: Mapped[Optional[datetime]] = mapped_column(
         DateTime(),
         nullable=True,
     )
@@ -39,6 +40,9 @@ class SpendingCycle(ModelBase):
             self.limit_amount - self.total_spent - self.total_spent_on_hold
             >= estimate_amount
         )
+
+    def has_ended(self) -> bool:
+        return self.end_time < datetime.now(timezone.utc) if self.end_time else False
 
 
 Index(

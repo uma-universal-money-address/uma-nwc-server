@@ -101,7 +101,6 @@ class SpendingLimit(ModelBase):
         )
 
     async def get_current_spending_cycle(self) -> SpendingCycle:
-        now = datetime.now(timezone.utc)
         query = (
             select(SpendingCycle)
             .filter(SpendingCycle.spending_limit_id == self.id)
@@ -110,7 +109,7 @@ class SpendingLimit(ModelBase):
         )
         results = await db.session.execute(query)
         last_spending_cycle = results.scalars().first()
-        if last_spending_cycle and last_spending_cycle.end_time > now:
+        if last_spending_cycle and not last_spending_cycle.has_ended():
             return last_spending_cycle
 
         current_cycle_start_time = self._calculate_current_cycle_start_time()
