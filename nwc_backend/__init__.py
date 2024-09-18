@@ -18,6 +18,7 @@ from quart import Quart, Response, redirect, request, send_from_directory, sessi
 from quart_cors import route_cors
 from sqlalchemy.sql import select
 from werkzeug import Response as WerkzeugResponse
+from werkzeug.datastructures import MultiDict
 
 import nwc_backend.alembic_importer  # noqa: F401
 from nwc_backend.api_handlers.vasp_oauth_callback_handler import (
@@ -154,7 +155,9 @@ def create_app() -> Quart:
     @app.route("/apps/new", methods=["POST"])
     async def register_new_app_connection() -> WerkzeugResponse:
         uma_vasp_token_exchange_url = app.config["UMA_VASP_TOKEN_EXCHANGE_URL"]
-        short_lived_vasp_token = session["short_lived_vasp_token"]
+        short_lived_vasp_token = session.get("short_lived_vasp_token")
+        if not short_lived_vasp_token:
+            return WerkzeugResponse("Unauthorized", status=401)
         nwc_connection_id = session["nwc_connection_id"]
 
         data = await request.get_data()
@@ -246,10 +249,20 @@ def create_app() -> Quart:
         grant_type = request_data.get("grant_type")
 
         if grant_type == "authorization_code":
-            client_id = request_data.get("client_id")
-            code = request_data.get("code")
+            try:
+                client_id = _require_param(request_data, "client_id")
+                code = _require_param(request_data, "code")
+                redirect_uri = _require_param(request_data, "redirect_uri")
+                code_verifier = _require_param(request_data, "code_verifier")
+            except ValueError as e:
+                return Response(status=400, response=str(e))
+            if not client_id or not code or not redirect_uri or not code_verifier:
+                return Response(status=400, response="Missing required parameters")
             response = await authorization_server.get_exchange_token_response(
-                client_id=client_id, code=code
+                client_id=client_id,
+                code=code,
+                code_verifier=code_verifier,
+                redirect_uri=redirect_uri,
             )
             return response
         elif grant_type == "refresh_token":
@@ -322,6 +335,15 @@ def create_app() -> Quart:
         )
 
     return app
+
+
+def _require_param(dict: MultiDict[str, str], param: str) -> str:
+    value = dict.get(param)
+    if not value:
+        raise ValueError(f"Missing required parameter: {param}")
+    if not isinstance(value, str):
+        raise ValueError(f"Invalid type for parameter {param}: {type(value)}")
+    return value
 
 
 async def init_nostr_client() -> None:

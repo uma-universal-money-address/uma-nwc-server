@@ -57,7 +57,9 @@ class NWCConnection(ModelBase):
 
     # The following fields are only for client app oauth
     refresh_token: Mapped[Optional[str]] = mapped_column(String(1024), unique=True)
-    authorization_code: Mapped[Optional[str]] = mapped_column(String(255), unique=True)
+    authorization_code: Mapped[Optional[str]] = mapped_column(String(1024), unique=True)
+    redirect_uri: Mapped[Optional[str]] = mapped_column(String(2048))
+    code_challenge: Mapped[Optional[str]] = mapped_column(String(1024))
     # Expiration times for the tokens are stored as Unix timestamps
     access_token_expires_at: Mapped[Optional[int]] = mapped_column(Integer())
     refresh_token_expires_at: Mapped[Optional[int]] = mapped_column(Integer())

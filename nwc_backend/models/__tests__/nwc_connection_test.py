@@ -1,6 +1,7 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 
 from datetime import datetime, timezone
+from secrets import token_hex
 from uuid import uuid4
 
 import pytest
@@ -27,6 +28,8 @@ async def test_nwc_connection_model(test_client: QuartClient) -> None:
             granted_permissions_groups=[
                 PermissionsGroup.RECEIVE_PAYMENTS.value,
             ],
+            code_challenge=token_hex(),
+            redirect_uri="https://example.com",
         )
         db.session.add(nwc_connection)
         await db.session.commit()
@@ -67,6 +70,8 @@ async def test_creation_with_spending_limit(
                 PermissionsGroup.RECEIVE_PAYMENTS.value,
             ],
             spending_limit_id=spending_limit_id,
+            code_challenge=token_hex(),
+            redirect_uri="https://example.com",
         )
         db.session.add(nwc_connection)
         db.session.add(spending_limit)
@@ -92,6 +97,8 @@ async def test_client_app_id_or_custom_name_constraint(
             granted_permissions_groups=[
                 PermissionsGroup.RECEIVE_PAYMENTS.value,
             ],
+            code_challenge=token_hex(),
+            redirect_uri="https://example.com",
         )
         db.session.add(nwc_connection)
         await db.session.commit()
@@ -104,6 +111,8 @@ async def test_client_app_id_or_custom_name_constraint(
             granted_permissions_groups=[
                 PermissionsGroup.RECEIVE_PAYMENTS.value,
             ],
+            code_challenge=token_hex(),
+            redirect_uri="https://example.com",
         )
         db.session.add(nwc_connection)
         await db.session.commit()
@@ -116,6 +125,8 @@ async def test_client_app_id_or_custom_name_constraint(
                 granted_permissions_groups=[
                     PermissionsGroup.RECEIVE_PAYMENTS.value,
                 ],
+                code_challenge=token_hex(),
+                redirect_uri="https://example.com",
             )
             db.session.add(nwc_connection)
             await db.session.commit()
