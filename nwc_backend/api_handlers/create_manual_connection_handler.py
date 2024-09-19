@@ -2,7 +2,7 @@ import json
 from uuid import uuid4
 
 from nostr_sdk import Keys
-from quart import current_app, request, session
+from quart import request, session
 from werkzeug import Response as WerkzeugResponse
 
 from nwc_backend.api_handlers.connection_initializer import initialize_connection_data
