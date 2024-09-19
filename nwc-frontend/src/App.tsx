@@ -11,6 +11,7 @@ import {
   LoadingConnectionRow,
 } from "src/components/ConnectionTable";
 import { LearnMoreModal } from "./LearnMoreModal";
+import { useConfig } from "./hooks/useConfig";
 import { useConnections } from "./hooks/useConnections";
 import { ConnectionStatus } from "./types/Connection";
 
@@ -22,7 +23,7 @@ function App() {
     isLoading: isLoadingConnections,
     error,
   } = useConnections();
-  const vasp = "Exchange";
+  const { vaspName } = useConfig();
 
   const handleLearnMore = () => {
     setIsLearnMoreVisible(true);
@@ -87,7 +88,7 @@ function App() {
 
       <LearnMoreModal
         visible={isLearnMoreVisible}
-        vaspName={vasp}
+        vaspName={vaspName}
         onClose={() => setIsLearnMoreVisible(false)}
       />
     </Main>

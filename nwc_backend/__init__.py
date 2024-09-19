@@ -25,7 +25,7 @@ from nwc_backend.api_handlers.vasp_oauth_callback_handler import (
     handle_vasp_oauth_callback,
 )
 from nwc_backend.client_app_identity_lookup import look_up_client_app_identity
-from nwc_backend.db import UUID, db, setup_rds_iam_auth
+from nwc_backend.db import db, setup_rds_iam_auth
 from nwc_backend.event_handlers.event_builder import EventBuilder
 from nwc_backend.exceptions import PublishEventFailedException
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
@@ -278,7 +278,7 @@ def create_app() -> Quart:
         user_id = session.get("user_id")
         if not user_id:
             return WerkzeugResponse("User not authenticated", status=401)
-        connection = await db.session.get(NWCConnection, UUID(connectionId))
+        connection = await db.session.get(NWCConnection, connectionId)
         if not connection or connection.user_id != user_id:
             return WerkzeugResponse("Connection not found", status=404)
         response = await connection.to_dict()
