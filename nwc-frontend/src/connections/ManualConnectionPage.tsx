@@ -108,7 +108,7 @@ export default function ManualConnectionPage() {
   const handleContinue = () => {
     const today = dayjs();
     const expiration = today
-      .add(1, connectionSettings.expirationPeriod)
+      .add(1, connectionSettings.expirationPeriod.toLowerCase())
       .toISOString();
 
     async function submitConnection() {
@@ -117,7 +117,7 @@ export default function ManualConnectionPage() {
         name: connectionName,
         permissions: connectionSettings.permissionStates
           .filter((permissionState) => permissionState.enabled)
-          .map((permissionState) => permissionState.permission),
+          .map((permissionState) => permissionState.permission.type),
         currencyCode: currency!.code,
         amountInLowestDenom: connectionSettings.amountInLowestDenom,
         limitEnabled: connectionSettings.limitEnabled,
@@ -170,7 +170,7 @@ export default function ManualConnectionPage() {
         <EditSection onClick={handleEditLimit}>
           <EditDescription>
             {connectionSettings.limitEnabled
-              ? `${formatConnectionString({ currency: defaultCurrency, limitFrequency: connectionSettings.limitFrequency, amountInLowestDenom: connectionSettings.amountInLowestDenom })} spending limit`
+              ? `${formatConnectionString({ currency, limitFrequency: connectionSettings.limitFrequency, amountInLowestDenom: connectionSettings.amountInLowestDenom })} spending limit`
               : "No spending limit"}
           </EditDescription>
           <Icon name="Pencil" width={12} />
@@ -194,7 +194,7 @@ export default function ManualConnectionPage() {
         title="Edit spending limit"
         visible={isEditLimitVisible}
         amountInLowestDenom={connectionSettings.amountInLowestDenom}
-        currency={defaultCurrency}
+        currency={currency}
         frequency={connectionSettings.limitFrequency}
         enabled={connectionSettings.limitEnabled}
         handleCancel={() => setIsEditLimitVisible(false)}

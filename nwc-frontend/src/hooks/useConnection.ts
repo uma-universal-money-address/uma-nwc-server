@@ -118,6 +118,9 @@ export const initializeConnection = async (
   try {
     const response = await fetch("/apps/new", {
       method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
       body: JSON.stringify({ ...initialConnection }),
     });
     if (!response.ok) {
@@ -134,16 +137,21 @@ export const initializeManualConnection = async (
   initialConnection: InitialConnection,
 ) => {
   try {
-    // const response = await fetch("/manual-connection", {
-    //   method: "POST",
-    //   body: JSON.stringify({ ...initialConnection, }),
-    // });
+    const response = await fetchWithAuth(
+      `${getBackendUrl()}/api/connection/manual`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ ...initialConnection }),
+      },
+    );
+    if (!response.ok) {
+      return { error: response.statusText };
+    }
     console.log("Connection initialized", initialConnection);
-    return {
-      connectionId: "1",
-      pairingUri:
-        "nostr+walletconnect://test_id?relay=wss://relay.getalby.com/v1&secret=test_secret&lud16=$test@uma.me",
-    };
+    return response.json();
   } catch (e) {
     return { error: e };
   }

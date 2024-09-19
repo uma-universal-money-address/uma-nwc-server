@@ -2,11 +2,10 @@
 # pyre-strict
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from urllib.parse import urlencode
 from uuid import uuid4
 
-import jwt
 from quart import Quart, redirect, request, session
 from werkzeug import Response as WerkzeugResponse
 
@@ -14,15 +13,14 @@ from nwc_backend.client_app_identity_lookup import look_up_client_app_identity
 from nwc_backend.db import db
 from nwc_backend.exceptions import InvalidBudgetFormatException
 from nwc_backend.models.client_app import ClientApp
-from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.permissions_grouping import (
     METHOD_TO_PERMISSIONS_GROUP,
-    PERMISSIONS_GROUP_TO_METHODS,
     PermissionsGroup,
 )
 from nwc_backend.models.spending_limit import SpendingLimit
 from nwc_backend.models.user import User
+from nwc_backend.models.vasp_jwt import VaspJwt
 
 
 async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
@@ -59,73 +57,40 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
                 status=400,
             )
 
-    vasp_token_payload = jwt.decode(
-        short_lived_vasp_token,
-        app.config.get("UMA_VASP_JWT_PUBKEY"),
-        algorithms=["ES256"],
-        # TODO: verify the aud and iss
-        options={"verify_aud": False, "verify_iss": False},
-    )
-    vasp_user_id = vasp_token_payload["sub"]
-    uma_address = vasp_token_payload["address"]
-    expiry = vasp_token_payload["exp"]
+    vasp_jwt = VaspJwt.from_jwt(short_lived_vasp_token)
 
-    # map the required commands to permissions group, if any command in the permissions group is not supported by VASP return error
     vasp_supported_commands = app.config.get("VASP_SUPPORTED_COMMANDS")
-    required_permissions_groups = set()
-    all_granted_granular_commands = set()
+    required_permissions_groups: set[PermissionsGroup] = set()
     for command in required_commands.split():
-        if command not in Nip47RequestMethod.get_values():
+        if command not in vasp_supported_commands:
             return WerkzeugResponse(
                 f"Command {command} is not supported by the NWC",
                 status=400,
             )
         required_permissions_groups.add(METHOD_TO_PERMISSIONS_GROUP[command])
-        all_granted_granular_commands.update(
-            PERMISSIONS_GROUP_TO_METHODS[METHOD_TO_PERMISSIONS_GROUP[command]]
-        )
 
-    for command in all_granted_granular_commands:
-        if command not in vasp_supported_commands:
-            return WerkzeugResponse(
-                f"Command {command} is not supported by the VASP",
-                status=400,
-            )
-
-    # map the optional commands to permissions group, if any command in the permissions group is not supported by VASP don't include in granted permission groups
-    optional_permissions_groups = set()
+    optional_permissions_groups: set[PermissionsGroup] = set()
     if optional_commands:
         optional_commands = optional_commands.split()
         for command in optional_commands:
-            if command not in Nip47RequestMethod.get_values():
-                return WerkzeugResponse(
-                    f"Command {command} is not supported by the NWC",
-                    status=400,
-                )
-            group = METHOD_TO_PERMISSIONS_GROUP[command]
-            all_granular_permissions_in_group = PERMISSIONS_GROUP_TO_METHODS[group]
-            if any(
-                command not in vasp_supported_commands
-                for command in all_granular_permissions_in_group
-            ):
+            if command not in vasp_supported_commands:
                 continue
+            group = METHOD_TO_PERMISSIONS_GROUP[command]
             optional_permissions_groups.add(group)
     granted_permissions_groups = required_permissions_groups.union(
         optional_permissions_groups
     )
     granted_permissions_groups.add(PermissionsGroup.ALWAYS_GRANTED)
 
-    # save the app connection and nwc connection in the db
-    user = await User.from_vasp_user_id(vasp_user_id)
+    user = await User.from_vasp_user_id(vasp_jwt.user_id)
     if not user:
         user = User(
             id=uuid4(),
-            vasp_user_id=vasp_user_id,
-            uma_address=uma_address,
+            vasp_user_id=vasp_jwt.user_id,
+            uma_address=vasp_jwt.uma_address,
         )
         db.session.add(user)
 
-    # update client app info, or create a new one if it doesn't exist
     client_app_info = await look_up_client_app_identity(client_id)
     if not client_app_info:
         logging.error(
@@ -171,9 +136,7 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
         redirect_uri=redirect_uri,
         code_challenge=code_challenge,
     )
-    # TODO: explore how to deal with expiration of the nwc connection from user input - right now defaulted at 1 year
-    connection_expires_at = int((now + timedelta(days=365)).timestamp())
-    nwc_connection.connection_expires_at = connection_expires_at
+
     db.session.add(nwc_connection)
     await db.session.commit()
 
@@ -183,7 +146,6 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
         db.session.add(spending_limit)
         await db.session.commit()
 
-    # TODO: Verify these are saved on nwc frontend session
     session["short_lived_vasp_token"] = short_lived_vasp_token
     session["nwc_connection_id"] = nwc_connection.id
     session["user_id"] = user.id
@@ -199,9 +161,10 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
         "optional_commands": ",".join([c.value for c in optional_permissions_groups]),
         "required_commands": ",".join([c.value for c in required_permissions_groups]),
         "token": short_lived_vasp_token,
-        "uma_address": uma_address,
+        "budget": budget,
+        "uma_address": vasp_jwt.uma_address,
         "redirect_uri": request.args.get("redirect_uri"),
-        "expiry": expiry,
+        "expiry": vasp_jwt.expiry,
         "currency": request.args.get("currency"),
     }
     nwc_frontend_new_app = nwc_frontend_new_app + "?" + urlencode(query_params)

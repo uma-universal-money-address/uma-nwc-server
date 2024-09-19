@@ -60,7 +60,6 @@ export const PermissionsPage = () => {
     oauthParams,
     connection,
     connectionSettings: initialConnectionSettings,
-    defaultCurrency,
   } = useLoaderData() as PermissionPageLoaderData;
   const auth = useAuth();
   const uma = auth.getUmaAddress();

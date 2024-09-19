@@ -5,14 +5,10 @@ import asyncio
 import json
 import logging
 import os
-from datetime import datetime, timezone
 from time import time
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
-from uuid import uuid4
 
-import jwt
-import requests
 from nostr_sdk import Filter, Kind, KindEnum
 from quart import Quart, Response, redirect, request, send_from_directory, session
 from quart_cors import route_cors
@@ -21,6 +17,10 @@ from werkzeug import Response as WerkzeugResponse
 from werkzeug.datastructures import MultiDict
 
 import nwc_backend.alembic_importer  # noqa: F401
+from nwc_backend.api_handlers.connection_initializer import initialize_connection_data
+from nwc_backend.api_handlers.create_manual_connection_handler import (
+    create_manual_connection,
+)
 from nwc_backend.api_handlers.vasp_oauth_callback_handler import (
     handle_vasp_oauth_callback,
 )
@@ -30,12 +30,7 @@ from nwc_backend.event_handlers.event_builder import EventBuilder
 from nwc_backend.exceptions import PublishEventFailedException
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
-from nwc_backend.models.permissions_grouping import (
-    PERMISSIONS_GROUP_TO_METHODS,
-    PermissionsGroup,
-)
-from nwc_backend.models.spending_limit import SpendingLimit
-from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
+from nwc_backend.models.vasp_jwt import VaspJwt
 from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
 from nwc_backend.nostr_notification_handler import NotificationHandler
@@ -93,15 +88,9 @@ def create_app() -> Quart:
     @app.route("/auth/vasp_token_callback", methods=["GET"])
     async def vasp_token_callback() -> WerkzeugResponse:
         short_lived_vasp_token = request.args.get("token")
-        vasp_token_payload = jwt.decode(
-            short_lived_vasp_token,
-            app.config.get("UMA_VASP_JWT_PUBKEY"),
-            algorithms=["ES256"],
-            # TODO: verify the aud and iss
-            options={"verify_aud": False, "verify_iss": False},
-        )
-        uma_address = vasp_token_payload["address"]
-        expiry = vasp_token_payload["exp"]
+        if not short_lived_vasp_token:
+            return WerkzeugResponse("No token provided", status=400)
+        vasp_jwt = VaspJwt.from_jwt(short_lived_vasp_token)
 
         fe_redirect_path = request.args.get("fe_redirect")
         if fe_redirect_path:
@@ -118,8 +107,8 @@ def create_app() -> Quart:
 
         query_params = parse_qs(parsed_url.query)
         query_params["token"] = short_lived_vasp_token
-        query_params["uma_address"] = uma_address
-        query_params["expiry"] = expiry
+        query_params["uma_address"] = [vasp_jwt.uma_address]
+        query_params["expiry"] = [vasp_jwt.expiry]
         query_params["currency"] = request.args.get("currency")
         parsed_url = parsed_url._replace(query=urlencode(query_params, doseq=True))
         frontend_redirect_url = str(urlunparse(parsed_url))
@@ -153,75 +142,20 @@ def create_app() -> Quart:
 
     @app.route("/apps/new", methods=["POST"])
     async def register_new_app_connection() -> WerkzeugResponse:
-        uma_vasp_token_exchange_url = app.config["UMA_VASP_TOKEN_EXCHANGE_URL"]
         short_lived_vasp_token = session.get("short_lived_vasp_token")
         if not short_lived_vasp_token:
             return WerkzeugResponse("Unauthorized", status=401)
         nwc_connection_id = session["nwc_connection_id"]
+        nwc_connection = await db.session.get(NWCConnection, nwc_connection_id)
+        if not nwc_connection:
+            return WerkzeugResponse("Invalid Connection", status=400)
 
-        data = await request.get_data()
-        data = json.loads(data)
-        permissions = data.get("permissions")
-        currency_code = data.get("currencyCode")
-        amount_in_lowest_denom = data.get("amountInLowestDenom")
-        limit_enabled = data.get("limitEnabled")
-        limit_frequency = data.get("limitFrequency")
-        expiration = data.get("expiration")
-
-        nwc_connection = await db.session.get_one(NWCConnection, nwc_connection_id)
-
-        expires_at = datetime.fromisoformat(expiration)
-        nwc_connection.connection_expires_at = expires_at.timestamp()
-
-        if limit_enabled:
-            limit_frequency = (
-                SpendingLimitFrequency(limit_frequency)
-                if limit_frequency
-                else SpendingLimitFrequency.NONE
-            )
-            spending_limit = SpendingLimit(
-                id=uuid4(),
-                nwc_connection_id=nwc_connection_id,
-                currency_code=currency_code or "SAT",
-                amount=amount_in_lowest_denom,
-                frequency=limit_frequency,
-                start_time=datetime.now(timezone.utc),
-            )
-            db.session.add(spending_limit)
-            nwc_connection.spending_limit_id = spending_limit.id
-        else:
-            nwc_connection.spending_limit_id = None
-
-        # the frontend will always send grouped permissions so we can directly save
-        nwc_connection.granted_permissions_groups = permissions
-        all_granted_granular_permissions = set()
-        for permission in permissions:
-            all_granted_granular_permissions.update(
-                PERMISSIONS_GROUP_TO_METHODS[PermissionsGroup(permission)]
-            )
-        all_granted_granular_permissions.update(
-            PERMISSIONS_GROUP_TO_METHODS[PermissionsGroup.ALWAYS_GRANTED]
+        await initialize_connection_data(
+            nwc_connection, await request.get_json(), short_lived_vasp_token
         )
 
-        # save the long lived token in the db and create the app connection
-        response = requests.post(
-            uma_vasp_token_exchange_url,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + short_lived_vasp_token,
-            },
-            json={
-                "permissions": list(all_granted_granular_permissions),
-                "expiration": nwc_connection.connection_expires_at,
-            },
-        )
-        response.raise_for_status()
-        long_lived_vasp_token = response.json()["token"]
-
-        nwc_connection.long_lived_vasp_token = long_lived_vasp_token
         auth_code = nwc_connection.create_oauth_auth_code()
         await db.session.commit()
-
         return WerkzeugResponse(
             json.dumps(
                 {
@@ -332,6 +266,12 @@ def create_app() -> Quart:
                 }
             )
         )
+
+    app.add_url_rule(
+        "/api/connection/manual",
+        view_func=create_manual_connection,
+        methods=["POST"],
+    )
 
     return app
 

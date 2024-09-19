@@ -5,6 +5,7 @@
 DATABASE_URI: str = "sqlite+aiosqlite:///:memory:"
 SECRET_KEY = "tests_secret_key"
 UMA_VASP_JWT_PUBKEY = "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\nq9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==\n-----END PUBLIC KEY-----"
+UMA_VASP_JWT_PRIVKEY = "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2\nOF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r\n1RTwjmYSi9R/zpBnuQ4EiMnCqfMPWiZqB4QdbAd0E7oH50VpuZ1P087G\n-----END PRIVATE KEY-----"
 FRONTEND_BUILD_PATH = "../nwc-frontend/dist"
 UMA_VASP_LOGIN_URL = "http://local:5001/auth/nwcsession"
 VASP_NAME = "Pink Drink NWC"
