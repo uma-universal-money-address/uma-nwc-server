@@ -9,7 +9,6 @@ Create Date: 2024-09-18 17:34:38.203809
 from typing import Sequence, Union
 
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql.json import JSONB
 
 from alembic import op
