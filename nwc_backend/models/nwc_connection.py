@@ -127,18 +127,19 @@ class NWCConnection(ModelBase):
             "refresh_token": self.refresh_token,
             "expires_in": ACCESS_TOKEN_EXPIRES_IN,
             "token_type": "Bearer",
-            "nwc_connection_uri": self.get_nwc_connection_uri(access_token),
+            "nwc_connection_uri": await self.get_nwc_connection_uri(access_token),
             "budget": spending_limit.get_budget_repr() if spending_limit else None,
             "commands": self.get_all_granted_granular_permissions(),
             "nwc_expires_at": self.connection_expires_at,
             "uma_address": self.user.uma_address,
         }
 
-    def get_nwc_connection_uri(self, access_token: str) -> str:
+    async def get_nwc_connection_uri(self, access_token: str) -> str:
         nostr_config = NostrConfig.instance()
         wallet_pubkey = nostr_config.identity_keys.public_key().to_hex()
         wallet_relay = nostr_config.relay_url
-        return f"nostr+walletconnect://{wallet_pubkey}?relay={wallet_relay}&lud16={self.user.uma_address}&secret={access_token}"
+        user = await self.awaitable_attrs.user
+        return f"nostr+walletconnect://{wallet_pubkey}?relay={wallet_relay}&lud16={user.uma_address}&secret={access_token}"
 
     @staticmethod
     async def from_nostr_pubkey(nostr_pubkey: str) -> Optional["NWCConnection"]:

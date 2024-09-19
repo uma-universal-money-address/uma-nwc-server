@@ -1,6 +1,7 @@
 # Copyright ©, 2024, Lightspark Group, Inc. - All Rights Reserved
 import json
 from unittest.mock import Mock, patch
+from urllib.parse import urlparse
 import requests
 from nwc_backend.db import db
 from nwc_backend.models.nwc_connection import NWCConnection
@@ -53,6 +54,11 @@ async def test_create_manual_connection_success(
 
     response = await test_client.post("/api/connection/manual", json=request_data)
     assert response.status_code == 200
-    response_json = json.loads(response.data)
+    response_json = await response.get_json()
     assert response_json["connectionId"] is not None
-    assert response_json["pairingUri"] is not None
+    pairing_uri = response_json["pairingUri"]
+    assert pairing_uri is not None
+    parsed_uri = urlparse(pairing_uri)
+    query_params = dict([pair.split("=") for pair in parsed_uri.query.split("&")])
+    assert query_params["secret"] is not None
+    assert query_params["lud16"] == user.uma_address
