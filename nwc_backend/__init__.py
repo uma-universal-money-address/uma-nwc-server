@@ -146,13 +146,12 @@ def create_app() -> Quart:
         if not short_lived_vasp_token:
             return WerkzeugResponse("Unauthorized", status=401)
         nwc_connection_id = session["nwc_connection_id"]
-        nwc_connection = await db.session.get(NWCConnection, UUID(nwc_connection_id))
+        nwc_connection = await db.session.get(NWCConnection, nwc_connection_id)
         if not nwc_connection:
             return WerkzeugResponse("Invalid Connection", status=400)
 
-        request_data = await request.get_json()
         await initialize_connection_data(
-            nwc_connection, request_data, short_lived_vasp_token
+            nwc_connection, await request.get_json(), short_lived_vasp_token
         )
 
         auth_code = nwc_connection.create_oauth_auth_code()
@@ -268,7 +267,7 @@ def create_app() -> Quart:
         )
 
     app.add_url_rule(
-        "/api/connections/manual",
+        "/api/connection/manual",
         view_func=create_manual_connection,
         methods=["POST"],
     )

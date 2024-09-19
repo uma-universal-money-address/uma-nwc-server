@@ -1,108 +1,58 @@
+# Copyright ©, 2024, Lightspark Group, Inc. - All Rights Reserved
 import json
-from unittest import TestCase, mock
-from quart import Response
-from nwc_backend.api_handlers.create_manual_connection_handler import create_manual_connection
+from unittest.mock import Mock, patch
+import requests
 from nwc_backend.db import db
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.permissions_grouping import PermissionsGroup
-from nwc_backend.nostr_client import nostr_client
-from nwc_backend.nostr_config import NostrConfig
-from nwc_backend.nostr_jwt import VaspJwt
-from nwc_backend.utils import initialize_connection_data
-from nwc_backend.utils import WerkzeugResponse
 
-class CreateManualConnectionTest(TestCase):
-    @mock.patch("nwc_backend.api_handlers.create_manual_connection_handler.Keys")
-    @mock.patch("nwc_backend.api_handlers.create_manual_connection_handler.NWCConnection")
-    @mock.patch("nwc_backend.api_handlers.create_manual_connection_handler.initialize_connection_data")
-    @mock.patch("nwc_backend.api_handlers.create_manual_connection_handler.VaspJwt")
-    @mock.patch("nwc_backend.api_handlers.create_manual_connection_handler.WerkzeugResponse")
-    @mock.patch("nwc_backend.api_handlers.create_manual_connection_handler.request")
-    def test_create_manual_connection(
-        self,
-        mock_request,
-        mock_werkzeug_response,
-        mock_vasp_jwt,
-        mock_initialize_connection_data,
-        mock_nwc_connection,
-        mock_keys,
-    ):
-        # Mock session
-        session = {"short_lived_vasp_token": "dummy_token"}
+from secrets import token_hex
+from uuid import uuid4
 
-        # Mock request
-        request_data = {"dummy_key": "dummy_value"}
-        mock_request.get_json.return_value = request_data
+import pytest
+from quart.app import QuartClient
 
-        # Mock VaspJwt
-        mock_vasp_jwt.from_jwt.return_value = mock_vasp_jwt
+from nwc_backend.models.__tests__.model_examples import (
+    create_client_app,
+    create_user,
+    jwt_for_user,
+)
+from nwc_backend.models.nwc_connection import NWCConnection
+from nwc_backend.models.permissions_grouping import PermissionsGroup
 
-        # Mock keypair
-        mock_keypair = mock.Mock()
-        mock_keypair.public_key.return_value.to_hex.return_value = "dummy_public_key"
-        mock_keypair.secret_key.return_value.to_hex.return_value = "dummy_secret_key"
 
-        # Mock NWCConnection
-        mock_nwc_connection.return_value = mock.Mock(
-            id="dummy_id",
-            get_nwc_connection_uri=mock.Mock(return_value="dummy_uri"),
-        )
+@pytest.mark.asyncio
+@patch.object(requests, "post")
+async def test_create_manual_connection_success(
+    mock_post: Mock,
+    test_client: QuartClient,
+) -> None:
+    vasp_response = {
+        "token": token_hex(),
+    }
+    mock_response = Mock()
+    mock_response.json = Mock(return_value=vasp_response)
+    mock_response.ok = True
+    mock_post.return_value = mock_response
 
-        # Mock Keys
-        mock_keys.generate.return_value = mock_keypair
+    async with test_client.app.app_context():
+        user = await create_user()
+    async with test_client.session_transaction() as session:
+        session["user_id"] = user.id
+        session["short_lived_vasp_token"] = jwt_for_user(user)
 
-        # Mock WerkzeugResponse
-        mock_werkzeug_response.return_value = "dummy_response"
+    request_data = {
+        "permissions": ["receive_payments", "send_payments"],
+        "currencyCode": "USD",
+        "amountInLowestDenom": 1000,
+        "limitEnabled": True,
+        "limitFrequency": "monthly",
+        "expiration": "2025-01-01T00:00:00Z",
+        "customName": "Test Connection",
+    }
 
-        # Mock db
-        mock_db_session = mock.Mock()
-        mock_db_session.add.return_value = None
-        mock_db_session.commit.return_value = None
-        mock_db.session = mock_db_session
-
-        # Mock nostr_client
-        mock_nostr_send = mock.Mock()
-        mock_nostr_send.return_value = SendEventOutput(
-            id=EventId.from_hex(token_hex()),
-            output=Output(success=["wss://relay.getalby.com/v1"], failed={}),
-        )
-        nostr_client.send_event = mock_nostr_send
-
-        # Mock NostrConfig
-        mock_nostr_config = mock.Mock()
-        mock_nostr_config.get.return_value = "dummy_config"
-        NostrConfig.get_instance = mock.Mock(return_value=mock_nostr_config)
-
-        # Call the function
-        with mock.patch.dict("nwc_backend.api_handlers.create_manual_connection_handler.session", session):
-            with mock.patch("nwc_backend.api_handlers.create_manual_connection_handler.VaspJwt", mock_vasp_jwt):
-                with mock.patch("nwc_backend.api_handlers.create_manual_connection_handler.request", mock_request):
-                    with mock.patch("nwc_backend.api_handlers.create_manual_connection_handler.WerkzeugResponse", mock_werkzeug_response):
-                        response = create_manual_connection()
-
-        # Assertions
-        self.assertEqual(response, "dummy_response")
-        mock_vasp_jwt.from_jwt.assert_called_once_with("dummy_token")
-        mock_keys.generate.assert_called_once()
-        mock_nwc_connection.assert_called_once_with(
-            id=mock.ANY,
-            user_id=mock_vasp_jwt.user_id,
-            granted_permissions_groups=[],
-            nostr_pubkey="dummy_public_key",
-        )
-        mock_db_session.add.assert_called_once_with(mock_nwc_connection.return_value)
-        mock_db_session.commit.assert_called_once()
-        mock_initialize_connection_data.assert_called_once_with(
-            mock_nwc_connection.return_value,
-            request_data=request_data,
-            short_lived_vasp_token="dummy_token",
-        )
-        mock_nwc_connection.return_value.get_nwc_connection_uri.assert_called_once_with("dummy_secret_key")
-        mock_werkzeug_response.assert_called_once_with(
-            json.dumps(
-                {
-                    "connectionId": "dummy_id",
-                    "pairingUri": "dummy_uri",
-                }
-            )
-        )
+    response = await test_client.post("/api/connection/manual", json=request_data)
+    assert response.status_code == 200
+    response_json = json.loads(response.data)
+    assert response_json["connectionId"] is not None
+    assert response_json["pairingUri"] is not None

@@ -5,8 +5,10 @@ from secrets import token_hex
 from typing import Any, Optional
 from uuid import uuid4
 
+import jwt
 from nostr_sdk import Keys
 
+from quart import current_app
 from nwc_backend.db import db
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request import Nip47Request
@@ -40,6 +42,21 @@ async def create_client_app() -> ClientApp:
     db.session.add(client_app)
     await db.session.commit()
     return client_app
+
+
+def jwt_for_user(user: User) -> str:
+    jwt_private_key = current_app.config["UMA_VASP_JWT_PRIVKEY"]
+    return jwt.encode(
+        {
+            "sub": str(user.id),
+            "address": user.uma_address,
+            "iss": "https://example.com",
+            "aud": "https://example.com",
+            "exp": int((datetime.now(timezone.utc) + timedelta(days=30)).timestamp()),
+        },
+        jwt_private_key,
+        algorithm="ES256",
+    )
 
 
 async def create_nwc_connection(

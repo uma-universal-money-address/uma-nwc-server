@@ -5,7 +5,7 @@ from uuid import uuid4
 import requests
 from quart import current_app
 
-from nwc_backend import db
+from nwc_backend.db import db
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.permissions_grouping import (
     PERMISSIONS_GROUP_TO_METHODS,
