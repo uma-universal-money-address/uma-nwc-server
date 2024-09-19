@@ -1,21 +1,21 @@
-"""initial models
+"""Initial setup
 
-Revision ID: fd238818515f
+Revision ID: 22e5c17990be
 Revises: 
-Create Date: 2024-09-16 21:08:28.403421
+Create Date: 2024-09-18 17:34:38.203809
 
 """
 
 from typing import Sequence, Union
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql.json import JSONB
+from sqlalchemy.dialects import postgresql
 
 from alembic import op
 from nwc_backend.db import UUID, DateTime
 
 # revision identifiers, used by Alembic.
-revision: str = "fd238818515f"
+revision: str = "22e5c17990be"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -48,15 +48,37 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("client_id", name="client_app_unique_client_id"),
+        sa.UniqueConstraint("client_id"),
+    )
+    op.create_table(
+        "user",
+        sa.Column("vasp_user_id", sa.String(length=255), nullable=False),
+        sa.Column("uma_address", sa.String(length=255), nullable=False),
+        sa.Column("id", UUID(), nullable=False),
+        sa.Column(
+            "created_at",
+            DateTime(),
+            server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            DateTime(),
+            server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("uma_address"),
+        sa.UniqueConstraint("vasp_user_id"),
     )
     op.create_table(
         "nwc_connection",
         sa.Column("user_id", UUID(), nullable=False),
-        sa.Column("client_app_id", UUID(), nullable=False),
+        sa.Column("client_app_id", UUID(), nullable=True),
+        sa.Column("custom_name", sa.String(length=255), nullable=True),
         sa.Column(
             "granted_permissions_groups",
-            sa.JSON().with_variant(JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
             nullable=False,
         ),
         sa.Column("long_lived_vasp_token", sa.String(length=1024), nullable=True),
@@ -64,7 +86,9 @@ def upgrade() -> None:
         sa.Column("spending_limit_id", UUID(), nullable=True),
         sa.Column("nostr_pubkey", sa.String(length=255), nullable=True),
         sa.Column("refresh_token", sa.String(length=1024), nullable=True),
-        sa.Column("authorization_code", sa.String(length=255), nullable=True),
+        sa.Column("authorization_code", sa.String(length=1024), nullable=True),
+        sa.Column("redirect_uri", sa.String(length=2048), nullable=True),
+        sa.Column("code_challenge", sa.String(length=1024), nullable=True),
         sa.Column("access_token_expires_at", sa.Integer(), nullable=True),
         sa.Column("refresh_token_expires_at", sa.Integer(), nullable=True),
         sa.Column("authorization_code_expires_at", sa.Integer(), nullable=True),
@@ -81,29 +105,98 @@ def upgrade() -> None:
             server_default=sa.text("(CURRENT_TIMESTAMP)"),
             nullable=False,
         ),
+        sa.CheckConstraint(
+            "client_app_id IS NOT NULL OR custom_name IS NOT NULL",
+            name="check_client_app_or_custom_name",
+        ),
         sa.ForeignKeyConstraint(
             ["client_app_id"],
             ["client_app.id"],
-            name="nwc_connection_client_app_id_fkey",
         ),
         sa.ForeignKeyConstraint(
-            ["spending_limit_id"],
-            ["spending_limit.id"],
-            name="nwc_connection_spending_limit_id_fkey",
+            ["spending_limit_id"], ["spending_limit.id"], use_alter=True
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
             ["user.id"],
-            name="nwc_connection_user_id_fkey",
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "authorization_code", name="nwc_connection_unique_authorization_code"
+        sa.UniqueConstraint("authorization_code"),
+        sa.UniqueConstraint("nostr_pubkey"),
+        sa.UniqueConstraint("refresh_token"),
+    )
+    op.create_table(
+        "nip47_request",
+        sa.Column("nwc_connection_id", UUID(), nullable=False),
+        sa.Column("event_id", sa.String(length=255), nullable=False),
+        sa.Column(
+            "method",
+            sa.Enum(
+                "PAY_INVOICE",
+                "MAKE_INVOICE",
+                "LOOKUP_INVOICE",
+                "GET_BALANCE",
+                "GET_BUDGET",
+                "GET_INFO",
+                "LIST_TRANSACTIONS",
+                "PAY_KEYSEND",
+                "LOOKUP_USER",
+                "FETCH_QUOTE",
+                "EXECUTE_QUOTE",
+                "PAY_TO_ADDRESS",
+                name="nip47requestmethod",
+                native_enum=False,
+            ),
+            nullable=False,
         ),
-        sa.UniqueConstraint("nostr_pubkey", name="nwc_connection_unique_nostr_pubkey"),
-        sa.UniqueConstraint(
-            "refresh_token", name="nwc_connection_unique_refresh_token"
+        sa.Column(
+            "params",
+            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            nullable=False,
         ),
+        sa.Column("response_event_id", sa.String(length=255), nullable=True),
+        sa.Column(
+            "response_result",
+            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            nullable=True,
+        ),
+        sa.Column(
+            "response_error_code",
+            sa.Enum(
+                "RATE_LIMITED",
+                "NOT_IMPLEMENTED",
+                "INSUFFICIENT_BALANCE",
+                "PAYMENT_FAILED",
+                "NOT_FOUND",
+                "QUOTA_EXCEEDED",
+                "RESTRICTED",
+                "UNAUTHORIZED",
+                "INTERNAL",
+                "OTHER",
+                name="errorcode",
+                native_enum=False,
+            ),
+            nullable=True,
+        ),
+        sa.Column("id", UUID(), nullable=False),
+        sa.Column(
+            "created_at",
+            DateTime(),
+            server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            DateTime(),
+            server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["nwc_connection_id"],
+            ["nwc_connection.id"],
+        ),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("event_id"),
     )
     op.create_table(
         "spending_limit",
@@ -141,103 +234,8 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["nwc_connection_id"],
             ["nwc_connection.id"],
-            name="spending_limit_nwc_connection_id_fkey",
         ),
         sa.PrimaryKeyConstraint("id"),
-    )
-    op.create_table(
-        "user",
-        sa.Column("vasp_user_id", sa.String(length=255), nullable=False),
-        sa.Column("uma_address", sa.String(length=255), nullable=False),
-        sa.Column("id", UUID(), nullable=False),
-        sa.Column(
-            "created_at",
-            DateTime(),
-            server_default=sa.text("(CURRENT_TIMESTAMP)"),
-            nullable=False,
-        ),
-        sa.Column(
-            "updated_at",
-            DateTime(),
-            server_default=sa.text("(CURRENT_TIMESTAMP)"),
-            nullable=False,
-        ),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("uma_address", name="user_unique_uma_address"),
-        sa.UniqueConstraint("vasp_user_id", name="user_unique_vasp_user_id"),
-    )
-    op.create_table(
-        "nip47_request",
-        sa.Column("nwc_connection_id", UUID(), nullable=False),
-        sa.Column("event_id", sa.String(length=255), nullable=False),
-        sa.Column(
-            "method",
-            sa.Enum(
-                "PAY_INVOICE",
-                "MAKE_INVOICE",
-                "LOOKUP_INVOICE",
-                "GET_BALANCE",
-                "GET_INFO",
-                "LIST_TRANSACTIONS",
-                "PAY_KEYSEND",
-                "LOOKUP_USER",
-                "FETCH_QUOTE",
-                "EXECUTE_QUOTE",
-                "PAY_TO_ADDRESS",
-                name="nip47requestmethod",
-                native_enum=False,
-            ),
-            nullable=False,
-        ),
-        sa.Column(
-            "params",
-            sa.JSON().with_variant(JSONB(astext_type=sa.Text()), "postgresql"),
-            nullable=False,
-        ),
-        sa.Column("response_event_id", sa.String(length=255), nullable=True),
-        sa.Column(
-            "response_result",
-            sa.JSON().with_variant(JSONB(astext_type=sa.Text()), "postgresql"),
-            nullable=True,
-        ),
-        sa.Column(
-            "response_error_code",
-            sa.Enum(
-                "RATE_LIMITED",
-                "NOT_IMPLEMENTED",
-                "INSUFFICIENT_BALANCE",
-                "PAYMENT_FAILED",
-                "NOT_FOUND",
-                "QUOTA_EXCEEDED",
-                "RESTRICTED",
-                "UNAUTHORIZED",
-                "INTERNAL",
-                "OTHER",
-                name="errorcode",
-                native_enum=False,
-            ),
-            nullable=True,
-        ),
-        sa.Column("id", UUID(), nullable=False),
-        sa.Column(
-            "created_at",
-            DateTime(),
-            server_default=sa.text("(CURRENT_TIMESTAMP)"),
-            nullable=False,
-        ),
-        sa.Column(
-            "updated_at",
-            DateTime(),
-            server_default=sa.text("(CURRENT_TIMESTAMP)"),
-            nullable=False,
-        ),
-        sa.ForeignKeyConstraint(
-            ["nwc_connection_id"],
-            ["nwc_connection.id"],
-            name="nip47_request_nwc_connection_id_fkey",
-        ),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("event_id", name="nip47_request_unique_event_id"),
     )
     op.create_table(
         "spending_cycle",
@@ -264,7 +262,6 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["spending_limit_id"],
             ["spending_limit.id"],
-            name="spending_cycle_spending_limit_id_fkey",
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -297,12 +294,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["nip47_request_id"],
             ["nip47_request.id"],
-            name="spending_cycle_quote_nip47_request_id_fkey",
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "payment_hash", name="spending_cycle_quote_unique_payment_hash"
-        ),
+        sa.UniqueConstraint("payment_hash"),
     )
     op.create_table(
         "spending_cycle_payment",
@@ -339,17 +333,14 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["nip47_request_id"],
             ["nip47_request.id"],
-            name="spending_cycle_payment_nip47_request_id_fkey",
         ),
         sa.ForeignKeyConstraint(
             ["quote_id"],
             ["spending_cycle_quote.id"],
-            name="spending_cycle_payment_quote_id_fkey",
         ),
         sa.ForeignKeyConstraint(
             ["spending_cycle_id"],
             ["spending_cycle.id"],
-            name="spending_cycle_payment_spending_cycle_id_fkey",
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -364,9 +355,9 @@ def downgrade() -> None:
         batch_op.drop_index("spending_cycle_spending_limit_id_start_time_unique_idx")
 
     op.drop_table("spending_cycle")
-    op.drop_table("nip47_request")
-    op.drop_table("user")
     op.drop_table("spending_limit")
+    op.drop_table("nip47_request")
     op.drop_table("nwc_connection")
+    op.drop_table("user")
     op.drop_table("client_app")
     # ### end Alembic commands ###
