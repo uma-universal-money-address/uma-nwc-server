@@ -1,10 +1,10 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
+from datetime import datetime, timezone
 from time import time
 from typing import Any, Optional
 from uuid import UUID
-from datetime import datetime, timezone
 
 from aioauth.utils import generate_token
 from nostr_sdk import Keys
@@ -165,41 +165,30 @@ class NWCConnection(ModelBase):
 
         return now >= none_throws(self.connection_expires_at)
 
-    async def get_connection_response_data(self) -> dict[str, Any]:
-        if self.client_app:
-            client_app = {
-                "client_id": self.client_app.client_id,
-                "avatar": self.client_app.image_url,
-            }
-        else:
-            client_app = None
-
-        spending_limit = self.spending_limit
+    async def to_dict(self) -> dict[str, Any]:
         connection_name = (
             self.custom_name
             if self.custom_name is not None
             else none_throws(self.client_app).app_name
         )
+        from nwc_backend.models.nip47_request import Nip47Request
+
+        last_request_time = await db.session.scalar(
+            select(Nip47Request.created_at)
+            .filter_by(nwc_connection_id=self.id)
+            .order_by(Nip47Request.created_at.desc())
+            .limit(1)
+        )
         response = {
             "connection_id": str(self.id),
-            "client_app": client_app,
+            "client_app": self.client_app.to_dict() if self.client_app else None,
             "name": connection_name,
             "created_at": self.created_at.isoformat(),
-            "last_used_at": "TODO",
-            "amount_in_lowest_denom": "TODO",
-            "amount_in_lowest_denom_used": "TODO",
-            "limit_frequency": (
-                spending_limit.frequency.value if spending_limit else None
+            "last_used_at": (
+                last_request_time.isoformat()
+                if last_request_time
+                else self.updated_at.isoformat()
             ),
-            "limit_enabled": bool(spending_limit),
-            # TODO: currency should be fetched from somewhere
-            "currency": {
-                "code": "USD",
-                "name": "US Dollar",
-                "symbol": "$",
-                "decimals": 2,
-                "type": "fiat",
-            },
             "expires_at": (
                 datetime.fromtimestamp(
                     float(self.connection_expires_at), timezone.utc
@@ -208,6 +197,9 @@ class NWCConnection(ModelBase):
                 else None
             ),
             "permissions": self.granted_permissions_groups,
+            "spending_limit": (
+                await self.spending_limit.to_dict() if self.spending_limit else None
+            ),
         }
 
         return response

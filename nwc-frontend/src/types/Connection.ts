@@ -1,4 +1,5 @@
 import { Currency } from "./Currency";
+import { ConnectionSettings } from "src/permissions/PersonalizePage";
 
 export enum PermissionType {
   SEND_PAYMENTS = "send_payments",
@@ -71,6 +72,7 @@ export interface Connection {
   expiration?: string;
   lastUsed?: string;
   disconnectedAt?: string;
+  avatar?: string;
 }
 
 export const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {

@@ -281,7 +281,7 @@ def create_app() -> Quart:
         connection = await db.session.get(NWCConnection, UUID(connectionId))
         if not connection or connection.user_id != user_id:
             return WerkzeugResponse("Connection not found", status=404)
-        response = await connection.get_connection_response_data()
+        response = await connection.to_dict()
         return WerkzeugResponse(json.dumps(response), status=200)
 
     @app.route("/api/connections", methods=["GET"])
@@ -298,7 +298,7 @@ def create_app() -> Quart:
         )
         response = []
         for connection in result.scalars():
-            response.append(await connection.get_connection_response_data())
+            response.append(await connection.to_dict())
         return WerkzeugResponse(json.dumps(response), status=200)
 
     @app.route("/api/app", methods=["GET"])
