@@ -60,10 +60,6 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
         limitFrequency,
         limitEnabled,
         status,
-        disconnectedAt:
-          status === ConnectionStatus.INACTIVE
-            ? undefined
-            : new Date().toISOString(),
       });
       return true;
     } catch (e) {

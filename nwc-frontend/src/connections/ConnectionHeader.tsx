@@ -50,7 +50,7 @@ export const ConnectionHeader = ({
   const appDescription =
     connection.status === ConnectionStatus.ACTIVE
       ? `Connected on ${formatTimestamp(connection.createdAt)}`
-      : `Disconnected on ${formatTimestamp(connection.disconnectedAt)}`;
+      : `Disconnected on ${formatTimestamp(connection.expiresAt!)}`;
 
   return (
     <Container>

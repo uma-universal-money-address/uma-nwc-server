@@ -100,9 +100,8 @@ export interface Connection {
   currency: Currency;
   status: ConnectionStatus;
   limitFrequency?: LimitFrequency;
-  expiration?: string;
+  expiresAt?: string;
   lastUsed?: string;
-  disconnectedAt?: string;
   avatar?: string;
 }
 

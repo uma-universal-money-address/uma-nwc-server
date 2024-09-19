@@ -41,4 +41,5 @@ export const mapConnection = (rawConnection: RawConnection): Connection => ({
   permissions: mapPermissions(rawConnection.permissions),
   avatar: rawConnection.client_app?.avatar,
   status: getStatus(rawConnection),
+  expiresAt: rawConnection.expires_at,
 });
