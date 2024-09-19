@@ -3,7 +3,7 @@
 
 import re
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import BigInteger
@@ -100,7 +100,15 @@ class SpendingLimit(ModelBase):
             total_spent_on_hold=0,
         )
 
-    async def get_current_spending_cycle(self) -> SpendingCycle:
+    async def get_current_cycle_total_remaining(self) -> int:
+        current_cycle = await self.get_current_spending_cycle()
+        return (
+            current_cycle.get_available_budget_amount()
+            if current_cycle
+            else self.amount
+        )
+
+    async def get_current_spending_cycle(self) -> Optional[SpendingCycle]:
         query = (
             select(SpendingCycle)
             .filter(SpendingCycle.spending_limit_id == self.id)
@@ -111,8 +119,14 @@ class SpendingLimit(ModelBase):
         last_spending_cycle = results.scalars().first()
         if last_spending_cycle and not last_spending_cycle.has_ended():
             return last_spending_cycle
+        return None
 
-        current_cycle_start_time = self._calculate_current_cycle_start_time()
+    async def get_or_create_current_spending_cycle(self) -> SpendingCycle:
+        current_cycle = await self.get_current_spending_cycle()
+        if current_cycle:
+            return current_cycle
+
+        current_cycle_start_time = self.get_current_cycle_start_time()
         try:
             spending_cycle = self.create_spending_cycle(current_cycle_start_time)
             db.session.add(spending_cycle)
@@ -130,11 +144,38 @@ class SpendingLimit(ModelBase):
             results = await db.session.execute(query)
             return results.scalar_one()
 
-    def _calculate_current_cycle_start_time(self) -> datetime:
-        elapsed_time = datetime.now(timezone.utc) - self.start_time
+    def get_current_cycle_start_time(self) -> datetime:
         cycle_length = SpendingLimitFrequency.get_cycle_length(self.frequency)
         if not cycle_length:
             return self.start_time
 
+        elapsed_time = datetime.now(timezone.utc) - self.start_time
         num_full_cycles = elapsed_time // cycle_length
         return self.start_time + (num_full_cycles * cycle_length)
+
+    def get_current_cycle_end_time(self) -> Optional[datetime]:
+        cycle_length = SpendingLimitFrequency.get_cycle_length(self.frequency)
+        if not cycle_length:
+            return None
+
+        start_time = self.get_current_cycle_start_time()
+        return start_time + cycle_length
+
+    async def to_dict(self) -> dict[str, Any]:
+        current_cycle = await self.get_current_spending_cycle()
+        return {
+            "limit_amount": self.amount,
+            "limit_frequency": self.frequency.value,
+            "amount_used": current_cycle.total_spent if current_cycle else 0,
+            "amount_on_hold": (
+                current_cycle.total_spent_on_hold if current_cycle else 0
+            ),
+            # TODO: currency should be fetched from somewhere
+            "currency": {
+                "code": "USD",
+                "name": "US Dollar",
+                "symbol": "$",
+                "decimals": 2,
+                "type": "fiat",
+            },
+        }

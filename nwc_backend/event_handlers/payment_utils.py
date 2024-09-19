@@ -51,7 +51,7 @@ async def create_spending_cycle_payment(
     sending_currency_amount: int,
     spending_limit: SpendingLimit,
 ) -> SpendingCyclePayment:
-    spending_cycle = await spending_limit.get_current_spending_cycle()
+    spending_cycle = await spending_limit.get_or_create_current_spending_cycle()
     if spending_cycle.get_available_budget_amount() == 0:
         raise InsufficientBudgetException()
 

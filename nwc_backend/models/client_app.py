@@ -1,7 +1,7 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import Enum as DBEnum
 from sqlalchemy import String
@@ -40,3 +40,9 @@ class ClientApp(ModelBase):
             select(ClientApp).filter_by(client_id=client_id).limit(1)
         )
         return result.scalars().first()
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "client_id": self.client_id,
+            "avatar": self.image_url,
+        }

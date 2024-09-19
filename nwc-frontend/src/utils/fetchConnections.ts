@@ -176,22 +176,26 @@ export const MOCKED_CONNECTIONS: Connection[] = [
 
 interface RawConnection {
   connection_id: string;
-  client_app: {
+  client_app?: {
     client_id: string;
     avatar: string;
   };
   name: string;
   created_at: number;
-  last_used: number;
-  amount_in_lowest_denom: number;
-  amount_in_lowest_denom_used: number;
-  limit_frequency: LimitFrequency;
-  limit_enabled: boolean;
-  currency: {
-    code: string;
-    symbol: string;
-    decimals: number;
-  };
+  last_used_at: number;
+  spending_limit?: {
+    limit_amount: number;
+    limit_frequency: LimitFrequency;
+    amount_used: number;
+    amount_on_hold: number;
+    currency: {
+      code: string;
+      symbol: string;
+      name: string;
+      decimals: number;
+      type: string;
+    };
+  }
   permissions: {
     type: PermissionType;
     description: string;
@@ -231,21 +235,23 @@ export const fetchConnections = async () => {
 
   return rawConnections.map((rawConnection) => ({
     connectionId: rawConnection.connection_id,
-    clientId: rawConnection.client_app.client_id,
+    clientId: rawConnection.client_app?.client_id,
     name: rawConnection.name,
     createdAt: rawConnection.created_at,
-    lastUsed: rawConnection.last_used,
-    amountInLowestDenom: rawConnection.amount_in_lowest_denom,
-    amountInLowestDenomUsed: rawConnection.amount_in_lowest_denom_used,
-    limitFrequency: rawConnection.limit_frequency,
-    limitEnabled: rawConnection.limit_enabled,
-    currency: {
-      code: rawConnection.currency.code,
-      symbol: rawConnection.currency.symbol,
-      decimals: rawConnection.currency.decimals,
-    },
+    lastUsed: rawConnection.last_used_at,
+    amountInLowestDenom: rawConnection.spending_limit?.limit_amount,
+    amountInLowestDenomUsed: rawConnection.spending_limit?.amount_used,
+    limitFrequency: rawConnection.spending_limit?.limit_frequency,
+    limitEnabled: Boolean(rawConnection.spending_limit),
+    currency: rawConnection.spending_limit ? {
+      code: rawConnection.spending_limit.currency.code,
+      symbol: rawConnection.spending_limit.currency.symbol,
+      name: rawConnection.spending_limit.currency.name,
+      decimals: rawConnection.spending_limit.currency.decimals,
+      type: rawConnection.spending_limit.currency.type,
+    } : undefined,
     permissions: mapPermissions(rawConnection.permissions),
-    avatar: rawConnection.client_app.avatar,
+    avatar: rawConnection.client_app?.avatar,
     status: getStatus(rawConnection),
   }));
 };
