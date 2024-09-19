@@ -60,7 +60,7 @@ async def create_manual_connection() -> WerkzeugResponse:
         json.dumps(
             {
                 "connectionId": str(nwc_connection.id),
-                "pairingUri": nwc_connection.get_nwc_connection_uri(secret),
+                "pairingUri": await nwc_connection.get_nwc_connection_uri(secret),
             }
         ),
         content_type="application/json",
