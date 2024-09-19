@@ -78,7 +78,9 @@ def upgrade() -> None:
         sa.Column("custom_name", sa.String(length=255), nullable=True),
         sa.Column(
             "granted_permissions_groups",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON().with_variant(
+                postgresql.JSONB(astext_type=sa.Text()), "postgresql"
+            ),
             nullable=False,
         ),
         sa.Column("long_lived_vasp_token", sa.String(length=1024), nullable=True),
@@ -151,13 +153,17 @@ def upgrade() -> None:
         ),
         sa.Column(
             "params",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON().with_variant(
+                postgresql.JSONB(astext_type=sa.Text()), "postgresql"
+            ),
             nullable=False,
         ),
         sa.Column("response_event_id", sa.String(length=255), nullable=True),
         sa.Column(
             "response_result",
-            sa.JSON().with_variant(postgresql.JSONB(astext_type=sa.Text()), "postgresql"),
+            sa.JSON().with_variant(
+                postgresql.JSONB(astext_type=sa.Text()), "postgresql"
+            ),
             nullable=True,
         ),
         sa.Column(
