@@ -2,7 +2,9 @@ import { json, LoaderFunction } from "react-router-dom";
 import { fetchAppInfo } from "src/hooks/useAppInfo";
 import { Connection, DEFAULT_CONNECTION_SETTINGS } from "src/types/Connection";
 import { PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
-import { MOCKED_CONNECTIONS } from "src/utils/fetchConnections";
+import { getBackendUrl } from "src/utils/backendUrl";
+import { fetchWithAuth } from "src/utils/fetchWithAuth";
+import { mapConnection } from "src/utils/mapConnection";
 
 export interface InitialPermissionsResponse {
   currencies: Currency[];
@@ -24,11 +26,16 @@ const getConnectionSettings = (connection: Connection) => {
 };
 
 export const permissionsPageData = (async ({ params }) => {
-  // const response = await fetch(`/connection/${params.connectionId}`);
-  // const connection = await response.json();
-  const connection = MOCKED_CONNECTIONS.find(
-    (c) => c.connectionId === params.connectionId,
-  );
+  let connection: Connection | undefined;
+  try {
+    const response = await fetchWithAuth(
+      `${getBackendUrl()}/api/connection/${params.connectionId}`,
+    );
+    const rawConnection = await response.json();
+    connection = mapConnection(rawConnection);
+  } catch (e) {
+    console.error(e);
+  }
 
   if (!connection) {
     throw new Response("Connection not found", { status: 404 });
