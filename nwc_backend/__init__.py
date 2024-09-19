@@ -107,8 +107,8 @@ def create_app() -> Quart:
 
         query_params = parse_qs(parsed_url.query)
         query_params["token"] = short_lived_vasp_token
-        query_params["uma_address"] = vasp_jwt.uma_address
-        query_params["expiry"] = vasp_jwt.expiry
+        query_params["uma_address"] = [vasp_jwt.uma_address]
+        query_params["expiry"] = [vasp_jwt.expiry]
         query_params["currency"] = request.args.get("currency")
         parsed_url = parsed_url._replace(query=urlencode(query_params, doseq=True))
         frontend_redirect_url = str(urlunparse(parsed_url))
