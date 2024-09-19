@@ -1,14 +1,16 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
+import json
 import re
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import BigInteger
+from sqlalchemy import JSON, BigInteger, Dialect
 from sqlalchemy import Enum as DBEnum
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, TypeDecorator
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import select
@@ -18,6 +20,52 @@ from nwc_backend.db import DateTime, db
 from nwc_backend.models.model_base import ModelBase
 from nwc_backend.models.spending_cycle import SpendingCycle
 from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
+from nwc_backend.vasp_client import VaspUmaClient
+
+
+@dataclass
+class Currency:
+    code: str
+    symbol: str
+    name: str
+    decimals: int
+
+    def get_type(self) -> str:
+        return "crypto" if self.code == "SAT" else "fiat"
+
+    @staticmethod
+    async def from_currency_code(
+        vasp_access_token: str, currency_code: str
+    ) -> Optional["Currency"]:
+        response = await VaspUmaClient.instance().get_info(
+            access_token=vasp_access_token
+        )
+        currencies = [
+            currency
+            for currency in response.currencies or []
+            if currency.code == currency_code
+        ]
+
+        return (
+            Currency(
+                code=currencies[0].code,
+                symbol=currencies[0].symbol,
+                name=currencies[0].name,
+                decimals=currencies[0].decimals,
+            )
+            if currencies
+            else None
+        )
+
+
+class DBCurrency(TypeDecorator):
+    impl = JSON
+
+    def process_bind_param(self, value: Currency, dialect: Dialect) -> Optional[str]:
+        return json.dumps(value.__dict__) if value else None
+
+    def process_result_value(self, value: str, dialect: Dialect) -> Optional[Currency]:
+        return Currency(**json.loads(value)) if value else None
 
 
 class SpendingLimit(ModelBase):
@@ -28,7 +76,7 @@ class SpendingLimit(ModelBase):
         ForeignKey("nwc_connection.id", deferrable=True, initially="DEFERRED"),
         nullable=False,
     )
-    currency_code: Mapped[str] = mapped_column(String(3), nullable=False)
+    currency: Mapped[Currency] = mapped_column(DBCurrency(), nullable=False)
     amount: Mapped[int] = mapped_column(BigInteger(), nullable=False)
     frequency: Mapped[SpendingLimitFrequency] = mapped_column(
         DBEnum(SpendingLimitFrequency, native_enum=False, nullable=False)
@@ -48,13 +96,7 @@ class SpendingLimit(ModelBase):
         return bool(pattern.match(budget))
 
     def get_budget_repr(self) -> str:
-        budget = f"{self.amount}"
-        if self.currency_code:
-            budget += f".{self.currency_code}"
-        if self.frequency:
-            budget += f"/{self.frequency.value}"
-
-        return budget
+        return f"{self.amount}.{self.currency.code}/{self.frequency.value}"
 
     def create_spending_cycle(self, start_time: datetime) -> SpendingCycle:
         assert start_time >= self.start_time
@@ -65,7 +107,7 @@ class SpendingLimit(ModelBase):
         return SpendingCycle(
             id=uuid4(),
             spending_limit_id=self.id,
-            limit_currency=self.currency_code,
+            limit_currency=self.currency.code,
             limit_amount=self.amount,
             start_time=start_time,
             end_time=start_time + cycle_length if cycle_length else None,
@@ -143,12 +185,11 @@ class SpendingLimit(ModelBase):
             "amount_on_hold": (
                 current_cycle.total_spent_on_hold if current_cycle else 0
             ),
-            # TODO: currency should be fetched from somewhere
             "currency": {
-                "code": "USD",
-                "name": "US Dollar",
-                "symbol": "$",
-                "decimals": 2,
-                "type": "fiat",
+                "code": self.currency.code,
+                "name": self.currency.name,
+                "symbol": self.currency.symbol,
+                "decimals": self.currency.decimals,
+                "type": self.currency.get_type(),
             },
         }

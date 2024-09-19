@@ -39,11 +39,11 @@ async def pay_to_address(
             spending_limit=current_spending_limit,
         )
         if (
-            current_spending_limit.currency_code
+            current_spending_limit.currency.code
             != pay_to_address_request.sending_currency_code
         ):
             pay_to_address_request.budget_currency_code = (
-                current_spending_limit.currency_code
+                current_spending_limit.currency.code
             )
 
     try:

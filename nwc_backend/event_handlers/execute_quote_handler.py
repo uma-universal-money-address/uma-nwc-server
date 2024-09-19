@@ -37,8 +37,8 @@ async def execute_quote(
             sending_currency_amount=quote.sending_currency_amount,
             spending_limit=current_spending_limit,
         )
-        if current_spending_limit.currency_code != quote.sending_currency_code:
-            budget_currency_code = current_spending_limit.currency_code
+        if current_spending_limit.currency.code != quote.sending_currency_code:
+            budget_currency_code = current_spending_limit.currency.code
 
     try:
         response = await VaspUmaClient.instance().execute_quote(

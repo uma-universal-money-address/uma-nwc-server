@@ -3,10 +3,11 @@
 import json
 from datetime import datetime, timedelta, timezone
 from secrets import token_hex
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 from urllib.parse import urlencode, urlparse, urlunparse
 from uuid import uuid4
 
+import aiohttp
 import jwt
 import pytest
 import requests
@@ -125,12 +126,38 @@ async def test_create_client_app_connection_success(
         "name": "Test Connection",
     }
     long_lived_token = token_hex()
-    with patch.object(requests, "post") as mock_post:
+    with patch.object(requests, "post") as mock_token_exchange_post, patch.object(
+        aiohttp.ClientSession, "get"
+    ) as mock_vasp_get_info:
         vasp_response = {"token": long_lived_token}
         mock_response = Mock()
         mock_response.json = Mock(return_value=vasp_response)
         mock_response.ok = True
-        mock_post.return_value = mock_response
+        mock_token_exchange_post.return_value = mock_response
+
+        vasp_response = {
+            "pubkey": token_hex(),
+            "network": "mainnet",
+            "methods": [
+                Nip47RequestMethod.FETCH_QUOTE.value,
+                Nip47RequestMethod.EXECUTE_QUOTE.value,
+            ],
+            "currencies": [
+                {
+                    "code": "USD",
+                    "symbol": "$",
+                    "name": "US Dollar",
+                    "multiplier": 15351.4798,
+                    "decimals": 2,
+                    "min": 1,
+                    "max": 1000_00,
+                }
+            ],
+        }
+        mock_response = AsyncMock()
+        mock_response.text = AsyncMock(return_value=json.dumps(vasp_response))
+        mock_response.ok = True
+        mock_vasp_get_info.return_value.__aenter__.return_value = mock_response
 
         response = await test_client.post("/apps/new", json=request_data)
         assert response.status_code == 200
@@ -149,7 +176,7 @@ async def test_create_client_app_connection_success(
         assert nwc_connection.code_challenge == code_challenge
         assert nwc_connection.authorization_code == auth_code
         assert nwc_connection.spending_limit.amount == budget_amount
-        assert nwc_connection.spending_limit.currency_code == budget_currency
+        assert nwc_connection.spending_limit.currency.code == budget_currency
         assert nwc_connection.spending_limit.frequency == budget_frequency
 
     # test fourth client api /oauth/token call

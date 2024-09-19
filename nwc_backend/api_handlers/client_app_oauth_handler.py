@@ -14,6 +14,7 @@ from werkzeug import Response as WerkzeugResponse
 
 from nwc_backend.client_app_identity_lookup import look_up_client_app_identity
 from nwc_backend.db import db
+from nwc_backend.exceptions import InvalidApiParamsException
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.permissions_grouping import (
@@ -26,12 +27,6 @@ from nwc_backend.models.vasp_jwt import VaspJwt
 from nwc_backend.typing import none_throws
 
 
-class InvalidParamsException(Exception):
-    def __init__(self, message: str) -> None:
-        self.message = message
-        super().__init__(message)
-
-
 async def handle_oauth_request() -> Response | WerkzeugResponse:
     short_lived_vasp_token = request.args.get("token")
     try:
@@ -39,7 +34,7 @@ async def handle_oauth_request() -> Response | WerkzeugResponse:
             return await _handle_client_app_oauth_request()
         # if short_lived_jwt is present, means user has logged in and this is redirect  from VASP to frontend, and frontend is making this call
         return await _handle_vasp_oauth_callback(short_lived_vasp_token)
-    except InvalidParamsException as ex:
+    except InvalidApiParamsException as ex:
         return Response(ex.message, status=400)
 
 
@@ -198,7 +193,7 @@ async def handle_token_exchange() -> Response:
             return await _refresh_token(request_data)
         else:
             return Response("Invalid grant type", status=400)
-    except InvalidParamsException as ex:
+    except InvalidApiParamsException as ex:
         return Response(ex.message, status=400)
 
 
@@ -259,9 +254,9 @@ async def _refresh_token(request_data: dict[str, Any]) -> Response:
 def _require_string_param(dict: dict[str, Any], param: str) -> str:
     value = dict.get(param)
     if not value:
-        raise InvalidParamsException(f"Missing required parameter: {param}")
+        raise InvalidApiParamsException(f"Missing required parameter: {param}")
     if not isinstance(value, str):
-        raise InvalidParamsException(
+        raise InvalidApiParamsException(
             f"Invalid type for parameter {param}: {type(value)}"
         )
     return value
