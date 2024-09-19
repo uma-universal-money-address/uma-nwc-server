@@ -71,11 +71,11 @@ class Nip05:
 class ClientAppInfo:
     pubkey: PublicKey
     identity_relay: str
-    name: Optional[str]
-    image_url: Optional[str]
-    nip05: Optional[Nip05]
-    display_name: Optional[str]
-    allowed_redirect_urls: Optional[list[str]]
+    name: Optional[str] = None
+    image_url: Optional[str] = None
+    nip05: Optional[Nip05] = None
+    display_name: Optional[str] = None
+    allowed_redirect_urls: Optional[list[str]] = None
 
     def is_redirect_url_allowed(self, redirect_url: str) -> bool:
         if not self.allowed_redirect_urls:

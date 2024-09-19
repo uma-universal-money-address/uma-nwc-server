@@ -1,4 +1,5 @@
 # Copyright ©, 2024, Lightspark Group, Inc. - All Rights Reserved
+
 from secrets import token_hex
 from unittest.mock import Mock, patch
 from urllib.parse import urlparse

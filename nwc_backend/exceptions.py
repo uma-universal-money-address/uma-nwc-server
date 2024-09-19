@@ -63,14 +63,6 @@ class VaspErrorResponseException(Nip47RequestException):
             super().__init__(error_code=error_code, error_message=response)
 
 
-class InvalidBudgetFormatException(Exception):
-    def __init__(self) -> None:
-        self.error_message = (
-            "Budget should be in the format <max_amount>.<currency>/<period>"
-        )
-        super().__init__(self.error_message)
-
-
 class InsufficientBudgetException(Nip47RequestException):
     def __init__(self) -> None:
         super().__init__(

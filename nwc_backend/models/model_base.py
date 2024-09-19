@@ -6,13 +6,12 @@ from uuid import UUID
 
 import sqlalchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy.ext.asyncio import AsyncAttrs
 
 from nwc_backend.db import UUID as DBUUID
 from nwc_backend.db import DateTime
 
 
-class ModelBase(DeclarativeBase, AsyncAttrs):
+class ModelBase(DeclarativeBase):
     def __setitem__(self, key: str, value: Any) -> None:
         return setattr(self, key, value)
 
