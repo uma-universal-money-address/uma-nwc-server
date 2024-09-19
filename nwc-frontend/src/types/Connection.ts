@@ -1,5 +1,5 @@
-import { Currency } from "./Currency";
 import { ConnectionSettings } from "src/permissions/PersonalizePage";
+import { Currency } from "./Currency";
 
 export enum PermissionType {
   SEND_PAYMENTS = "send_payments",
@@ -55,6 +55,37 @@ export interface InitialConnection {
   limitFrequency?: LimitFrequency;
   expiration?: string;
   clientId?: string;
+}
+
+export interface RawConnection {
+  connection_id: string;
+  client_app?: {
+    client_id: string;
+    avatar: string;
+  };
+  name: string;
+  created_at: number;
+  last_used_at: number;
+  spending_limit?: {
+    limit_amount: number;
+    limit_frequency: LimitFrequency;
+    amount_used: number;
+    amount_on_hold: number;
+    currency: {
+      code: string;
+      symbol: string;
+      name: string;
+      decimals: number;
+      type: string;
+    };
+  };
+  permissions: {
+    type: PermissionType;
+    description: string;
+    optional?: boolean;
+  }[];
+  expires_at?: number;
+  status: ConnectionStatus;
 }
 
 export interface Connection {

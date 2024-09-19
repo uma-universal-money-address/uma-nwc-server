@@ -15,6 +15,16 @@ const RENEWAL_DATE_FUNCTIONS = {
 export const Limit = ({ connection }: { connection: Connection }) => {
   let renewsIn = "";
   if (connection.limitEnabled) {
+    if (connection.limitFrequency === LimitFrequency.NONE) {
+      return (
+        <Container>
+          <Row>
+            <LimitValue>No renewal</LimitValue>
+          </Row>
+        </Container>
+      );
+    }
+
     const createdAt = dayjs(connection.createdAt);
     const renewalDate =
       RENEWAL_DATE_FUNCTIONS[connection.limitFrequency](createdAt);

@@ -1,13 +1,13 @@
-import dayjs from "dayjs";
 import {
   Connection,
   ConnectionStatus,
   LimitFrequency,
-  PERMISSION_DESCRIPTIONS,
   PermissionType,
+  RawConnection,
 } from "src/types/Connection";
 import { getBackendUrl } from "./backendUrl";
 import { fetchWithAuth } from "./fetchWithAuth";
+import { mapConnection } from "./mapConnection";
 
 export const MOCKED_CONNECTIONS: Connection[] = [
   {
@@ -174,51 +174,6 @@ export const MOCKED_CONNECTIONS: Connection[] = [
   },
 ];
 
-interface RawConnection {
-  connection_id: string;
-  client_app?: {
-    client_id: string;
-    avatar: string;
-  };
-  name: string;
-  created_at: number;
-  last_used_at: number;
-  spending_limit?: {
-    limit_amount: number;
-    limit_frequency: LimitFrequency;
-    amount_used: number;
-    amount_on_hold: number;
-    currency: {
-      code: string;
-      symbol: string;
-      name: string;
-      decimals: number;
-      type: string;
-    };
-  }
-  permissions: {
-    type: PermissionType;
-    description: string;
-    optional?: boolean;
-  }[];
-  expires_at?: number;
-  status: ConnectionStatus;
-}
-
-const mapPermissions = (permissions: RawConnection["permissions"]) => {
-  return permissions.map((permission) => ({
-    type: permission.type,
-    description: PERMISSION_DESCRIPTIONS[permission.type],
-  }));
-};
-
-const getStatus = (rawConnection: RawConnection): ConnectionStatus => {
-  if (!rawConnection.expires_at) return ConnectionStatus.ACTIVE;
-  return dayjs(rawConnection.expires_at).isAfter(dayjs())
-    ? ConnectionStatus.ACTIVE
-    : ConnectionStatus.INACTIVE;
-};
-
 export const fetchConnections = async () => {
   const rawConnections = await fetchWithAuth(
     `${getBackendUrl()}/api/connections`,
@@ -233,25 +188,5 @@ export const fetchConnections = async () => {
     }
   });
 
-  return rawConnections.map((rawConnection) => ({
-    connectionId: rawConnection.connection_id,
-    clientId: rawConnection.client_app?.client_id,
-    name: rawConnection.name,
-    createdAt: rawConnection.created_at,
-    lastUsed: rawConnection.last_used_at,
-    amountInLowestDenom: rawConnection.spending_limit?.limit_amount,
-    amountInLowestDenomUsed: rawConnection.spending_limit?.amount_used,
-    limitFrequency: rawConnection.spending_limit?.limit_frequency,
-    limitEnabled: Boolean(rawConnection.spending_limit),
-    currency: rawConnection.spending_limit ? {
-      code: rawConnection.spending_limit.currency.code,
-      symbol: rawConnection.spending_limit.currency.symbol,
-      name: rawConnection.spending_limit.currency.name,
-      decimals: rawConnection.spending_limit.currency.decimals,
-      type: rawConnection.spending_limit.currency.type,
-    } : undefined,
-    permissions: mapPermissions(rawConnection.permissions),
-    avatar: rawConnection.client_app?.avatar,
-    status: getStatus(rawConnection),
-  }));
+  return rawConnections.map(mapConnection);
 };

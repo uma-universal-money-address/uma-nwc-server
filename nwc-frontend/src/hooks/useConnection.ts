@@ -5,22 +5,23 @@ import {
   InitialConnection,
   LimitFrequency,
 } from "src/types/Connection";
-import { MOCKED_CONNECTIONS } from "src/utils/fetchConnections";
+import { getBackendUrl } from "src/utils/backendUrl";
+import { fetchWithAuth } from "src/utils/fetchWithAuth";
+import { mapConnection } from "src/utils/mapConnection";
 
 export const useConnection = ({ connectionId }: { connectionId: string }) => {
   const [connection, setConnection] = useState<Connection>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/require-await
     async function fetchConnection() {
+      setIsLoading(true);
       try {
-        // const response = await fetch(`/connection/${connectionId}`);
-        // const connection = await response.json();
-        setIsLoading(true);
-        const connection = MOCKED_CONNECTIONS.find(
-          (c) => c.connectionId === connectionId,
+        const response = await fetchWithAuth(
+          `${getBackendUrl()}/api/connection/${connectionId}`,
         );
+        const rawConnection = await response.json();
+        const connection = mapConnection(rawConnection);
         setConnection(connection);
       } catch (e) {
         console.error(e);
