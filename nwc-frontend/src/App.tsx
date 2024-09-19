@@ -59,11 +59,9 @@ function App() {
               <LoadingConnectionRow key="loader-3" shimmerWidth={20} />
             </>
           ) : (
-            <ConnectionTable connections={activeOrPendingConnections} />
+            <ConnectionTable connections={activeOrPendingConnections || []} />
           )}
-          {error ? (
-            <Container>{`Error loading connections: ${error}`}</Container>
-          ) : null}
+          {error ? <div>{`Error loading connections: ${error}`}</div> : null}
         </Content>
       </Section>
       <Button
@@ -73,7 +71,7 @@ function App() {
         onClick={() => navigate("/connection/new")}
       />
 
-      {isLoadingConnections || !archivedConnections.length ? null : (
+      {isLoadingConnections || !archivedConnections?.length ? null : (
         <Section>
           <Intro>
             <Title size="Large" content="Archived connections" />
@@ -82,7 +80,7 @@ function App() {
             </Description>
           </Intro>
           <Content>
-            <ConnectionTable connections={archivedConnections} />
+            <ConnectionTable connections={archivedConnections || []} />
           </Content>
         </Section>
       )}

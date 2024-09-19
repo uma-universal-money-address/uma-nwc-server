@@ -4,20 +4,18 @@ import { Label } from "@lightsparkdev/ui/components/typography/Label";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
-import { useLoaderData } from "react-router-dom";
 import { Avatar } from "src/components/Avatar";
-import { LoaderData } from "src/loaders/LoaderData";
 import { AppInfo } from "src/types/AppInfo";
 import {
   ExpirationPeriod,
   LimitFrequency,
   PermissionState,
 } from "src/types/Connection";
+import { useAuth } from "src/utils/auth";
 import { formatConnectionString } from "src/utils/formatConnectionString";
 import { EditExpiration } from "./EditExpiration";
 import { EditLimit } from "./EditLimit";
 import { PermissionsEditableList } from "./PermissionsEditableList";
-import { useAuth } from "src/utils/auth";
 
 export interface ConnectionSettings {
   permissionStates: PermissionState[];

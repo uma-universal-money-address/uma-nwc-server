@@ -3,8 +3,7 @@ import { Icon } from "@lightsparkdev/ui/components";
 import { Body } from "@lightsparkdev/ui/components/typography/Body";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { Link } from "react-router-dom";
-import { type Connection } from "src/hooks/useConnections";
-import { ConnectionStatus } from "src/types/Connection";
+import { Connection, ConnectionStatus } from "src/types/Connection";
 import { formatTimestamp } from "src/utils/formatTimestamp";
 import { Avatar } from "./Avatar";
 import { Shimmer } from "./Shimmer";
@@ -68,7 +67,7 @@ export const ConnectionTable = ({ connections }: ConnectionTableProps) => {
   return (
     <Container>
       {connections.map((connection) => (
-        <ConnectionRow key={connection.id} connection={connection} />
+        <ConnectionRow key={connection.connectionId} connection={connection} />
       ))}
     </Container>
   );

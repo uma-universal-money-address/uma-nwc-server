@@ -7,10 +7,9 @@ import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import dayjs from "dayjs";
 import { useState } from "react";
-import { useLoaderData, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { initializeManualConnection } from "src/hooks/useConnection";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
-import { LoaderData } from "src/loaders/LoaderData";
 import { EditExpiration } from "src/permissions/EditExpiration";
 import { EditLimit } from "src/permissions/EditLimit";
 import { PermissionsEditableList } from "src/permissions/PermissionsEditableList";
@@ -20,10 +19,10 @@ import {
   ExpirationPeriod,
   PermissionState,
 } from "src/types/Connection";
+import { useAuth } from "src/utils/auth";
 import { formatConnectionString } from "src/utils/formatConnectionString";
 import { ManualConnectionHowItWorksModal } from "./ManualConnectionHowItWorksModal";
 import { PendingConnectionPage } from "./PendingConnectionPage";
-import { useAuth } from "src/utils/auth";
 
 export default function ManualConnectionPage() {
   const navigate = useNavigate();
