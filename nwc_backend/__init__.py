@@ -155,6 +155,7 @@ def create_app() -> Quart:
         )
 
         auth_code = nwc_connection.create_oauth_auth_code()
+        await db.session.commit()
         return WerkzeugResponse(
             json.dumps(
                 {

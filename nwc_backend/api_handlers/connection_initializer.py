@@ -27,14 +27,10 @@ async def initialize_connection_data(
     limit_enabled = request_data.get("limitEnabled")
     limit_frequency = request_data.get("limitFrequency")
     expiration = request_data.get("expiration")
-    custom_name = request_data.get("customName")
 
     if expiration:
         expires_at = datetime.fromisoformat(expiration)
         nwc_connection.connection_expires_at = round(expires_at.timestamp())
-
-    if custom_name:
-        nwc_connection.custom_name = custom_name
 
     if limit_enabled:
         limit_frequency = (

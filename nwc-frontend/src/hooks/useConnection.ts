@@ -109,6 +109,9 @@ export const initializeConnection = async (
   try {
     const response = await fetch("/apps/new", {
       method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
       body: JSON.stringify({ ...initialConnection }),
     });
     console.log("Connection initialized", response);
@@ -126,10 +129,16 @@ export const initializeManualConnection = async (
   initialConnection: InitialConnection,
 ) => {
   try {
-    const response = await fetch("api/connections/manual", {
-      method: "POST",
-      body: JSON.stringify({ ...initialConnection }),
-    });
+    const response = await fetchWithAuth(
+      `${getBackendUrl()}/api/connection/manual`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ ...initialConnection }),
+      },
+    );
     if (!response.ok) {
       return { error: response.statusText };
     }

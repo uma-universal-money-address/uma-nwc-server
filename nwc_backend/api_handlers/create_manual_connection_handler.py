@@ -8,21 +8,35 @@ from werkzeug import Response as WerkzeugResponse
 from nwc_backend.api_handlers.connection_initializer import initialize_connection_data
 from nwc_backend.db import db
 from nwc_backend.models.nwc_connection import NWCConnection
+from nwc_backend.models.user import User
 from nwc_backend.models.vasp_jwt import VaspJwt
 
 
 async def create_manual_connection() -> WerkzeugResponse:
     short_lived_vasp_token = session.get("short_lived_vasp_token")
     if not short_lived_vasp_token:
+        bearer_token = request.headers.get("Authorization")
+        if not bearer_token:
+            return WerkzeugResponse("Unauthorized", status=401)
+        short_lived_vasp_token = bearer_token.split("Bearer ")[-1]
+
+    if not short_lived_vasp_token:
         return WerkzeugResponse("Unauthorized", status=401)
     vasp_jwt = VaspJwt.from_jwt(short_lived_vasp_token)
     keypair = Keys.generate()
     request_data = await request.get_json()
-    name = request_data.get("customName")
+    name = request_data.get("name")
     if not name:
-        return WerkzeugResponse(
-            "customName is required for manual connections", status=400
+        return WerkzeugResponse("name is required for manual connections", status=400)
+
+    user = await User.from_vasp_user_id(vasp_jwt.user_id)
+    if not user:
+        user = User(
+            id=vasp_jwt.user_id,
+            vasp_user_id=vasp_jwt.user_id,
+            uma_address=vasp_jwt.uma_address,
         )
+        db.session.add(user)
 
     nwc_connection = NWCConnection(
         id=uuid4(),
