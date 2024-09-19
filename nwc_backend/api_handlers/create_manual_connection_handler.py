@@ -32,7 +32,7 @@ async def create_manual_connection() -> WerkzeugResponse:
     user = await User.from_vasp_user_id(vasp_jwt.user_id)
     if not user:
         user = User(
-            id=vasp_jwt.user_id,
+            id=uuid4(),
             vasp_user_id=vasp_jwt.user_id,
             uma_address=vasp_jwt.uma_address,
         )
@@ -40,7 +40,7 @@ async def create_manual_connection() -> WerkzeugResponse:
 
     nwc_connection = NWCConnection(
         id=uuid4(),
-        user_id=vasp_jwt.user_id,
+        user_id=user.id,
         granted_permissions_groups=[],  # permissions will be added later
         nostr_pubkey=keypair.public_key().to_hex(),
         custom_name=name,
@@ -60,7 +60,7 @@ async def create_manual_connection() -> WerkzeugResponse:
         json.dumps(
             {
                 "connectionId": str(nwc_connection.id),
-                "pairingUri": await nwc_connection.get_nwc_connection_uri(secret),
+                "pairingUri": nwc_connection.get_nwc_connection_uri(secret),
             }
         ),
         content_type="application/json",

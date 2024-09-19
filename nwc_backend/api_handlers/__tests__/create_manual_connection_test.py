@@ -40,7 +40,7 @@ async def test_create_manual_connection_success(
         "limitEnabled": True,
         "limitFrequency": "monthly",
         "expiration": "2025-01-01T00:00:00Z",
-        "customName": "Test Connection",
+        "name": "Test Connection",
     }
 
     response = await test_client.post("/api/connection/manual", json=request_data)

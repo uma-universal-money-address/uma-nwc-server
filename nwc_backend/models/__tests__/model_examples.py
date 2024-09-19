@@ -48,7 +48,7 @@ def jwt_for_user(user: User) -> str:
     jwt_private_key = current_app.config["UMA_VASP_JWT_PRIVKEY"]
     return jwt.encode(
         {
-            "sub": str(user.id),
+            "sub": str(user.vasp_user_id),
             "address": user.uma_address,
             "iss": "https://example.com",
             "aud": "https://example.com",
