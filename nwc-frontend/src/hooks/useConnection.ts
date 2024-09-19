@@ -37,7 +37,6 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
     };
   }, [connectionId]);
 
-  // eslint-disable-next-line @typescript-eslint/require-await
   const updateConnection = async ({
     amountInLowestDenom,
     limitFrequency,
@@ -50,17 +49,22 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
     status: ConnectionStatus;
   }) => {
     try {
-      // const response = await fetch("/connection", {
-      //   method: "POST",
-      //   body: JSON.stringify({ connectionId: connection.connectionId, amountInLowestDenom, limitFrequency, limitEnabled, status }),
-      // });
-      setConnection({
-        ...connection,
-        amountInLowestDenom,
-        limitFrequency,
-        limitEnabled,
-        status,
-      });
+      const response = await fetchWithAuth(
+        `${getBackendUrl()}/api/connection`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            connectionId: connection.connectionId,
+            amountInLowestDenom,
+            limitFrequency,
+            limitEnabled,
+            status,
+          }),
+        },
+      );
+      const rawConnection = await response.json();
+      const updatedConnection = mapConnection(rawConnection);
+      setConnection(updatedConnection);
       return true;
     } catch (e) {
       console.error(e);
@@ -75,7 +79,6 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
 export const updateConnection = async ({
   connectionId,
   amountInLowestDenom,
@@ -92,17 +95,23 @@ export const updateConnection = async ({
   status: ConnectionStatus;
 }) => {
   try {
-    // const response = await fetch("/connection", {
-    //   method: "POST",
-    //   body: JSON.stringify({ connectionId: connectionId, amountInLowestDenom, limitFrequency, limitEnabled, expiration, status }),
-    // });
+    await fetchWithAuth(`${getBackendUrl()}/api/connection`, {
+      method: "POST",
+      body: JSON.stringify({
+        connectionId: connectionId,
+        amountInLowestDenom,
+        limitFrequency,
+        limitEnabled,
+        expiration,
+        status,
+      }),
+    });
     return true;
   } catch (e) {
     return { error: e };
   }
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
 export const initializeConnection = async (
   initialConnection: InitialConnection,
 ) => {
@@ -111,7 +120,6 @@ export const initializeConnection = async (
       method: "POST",
       body: JSON.stringify({ ...initialConnection }),
     });
-    console.log("Connection initialized", response);
     if (!response.ok) {
       return { error: response.statusText };
     }
