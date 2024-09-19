@@ -7,8 +7,8 @@ from uuid import uuid4
 
 import jwt
 from nostr_sdk import Keys
-
 from quart import current_app
+
 from nwc_backend.db import db
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request import Nip47Request
