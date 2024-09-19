@@ -85,7 +85,7 @@ async def handle_vasp_oauth_callback(app: Quart) -> WerkzeugResponse:
     user = await User.from_vasp_user_id(vasp_jwt.user_id)
     if not user:
         user = User(
-            id=uuid4(),
+            id=vasp_jwt.user_id,
             vasp_user_id=vasp_jwt.user_id,
             uma_address=vasp_jwt.uma_address,
         )
