@@ -6,9 +6,9 @@ from time import time
 from typing import Any, Optional
 from uuid import UUID
 
-from quart import current_app
 from aioauth.utils import generate_token
 from nostr_sdk import Keys
+from quart import current_app
 from sqlalchemy import JSON, CheckConstraint, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql.json import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -50,14 +50,17 @@ class NWCConnection(ModelBase):
     granted_permissions_groups: Mapped[list[str]] = mapped_column(
         JSON().with_variant(JSONB(), "postgresql"), nullable=False
     )
+    long_lived_vasp_token: Mapped[str] = mapped_column(String(1024), nullable=False)
     connection_expires_at: Mapped[Optional[int]] = mapped_column(Integer())
     spending_limit_id: Mapped[Optional[UUID]] = mapped_column(
-        DBUUID(), ForeignKey("spending_limit.id", use_alter=True)
+        DBUUID(),
+        ForeignKey(
+            "spending_limit.id", use_alter=True, deferrable=True, initially="DEFERRED"
+        ),
     )
 
     # These should be set as soon as the connection is confirmed by the user.
     nostr_pubkey: Mapped[Optional[str]] = mapped_column(String(255), unique=True)
-    long_lived_vasp_token: Mapped[Optional[str]] = mapped_column(String(1024))
 
     # The following fields are only for client app oauth
     refresh_token: Mapped[Optional[str]] = mapped_column(String(1024), unique=True)
@@ -110,14 +113,19 @@ class NWCConnection(ModelBase):
     async def refresh_oauth_tokens(self) -> dict[str, Any]:
         now = int(time())
         self.refresh_token = generate_token()
-        self.refresh_token_expires_at = min(
-            now + REFRESH_TOKEN_EXPIRES_IN, none_throws(self.connection_expires_at)
-        )
+        self.refresh_token_expires_at = now + REFRESH_TOKEN_EXPIRES_IN
         keypair = Keys.generate()
         self.nostr_pubkey = keypair.public_key().to_hex()
-        self.access_token_expires_at = min(
-            now + ACCESS_TOKEN_EXPIRES_IN, none_throws(self.connection_expires_at)
-        )
+        self.access_token_expires_at = now + ACCESS_TOKEN_EXPIRES_IN
+        if self.connection_expires_at:
+            self.refresh_token_expires_at = min(
+                self.refresh_token_expires_at,  # pyre-ignore[6]
+                self.connection_expires_at,
+            )
+            self.access_token_expires_at = min(
+                self.access_token_expires_at,  # pyre-ignore[6]
+                self.connection_expires_at,  # pyre-ignore[6]
+            )
         await db.session.commit()
 
         access_token = keypair.secret_key().to_hex()
@@ -165,13 +173,18 @@ class NWCConnection(ModelBase):
         )
         return result.scalars().one_or_none()
 
+    def is_connection_expired(self) -> bool:
+        connection_expires_at = self.connection_expires_at
+        if connection_expires_at and time() >= connection_expires_at:
+            return True
+        return False
+
     def is_oauth_access_token_expired(self) -> bool:
-        now = time()
         access_token_expires_at = self.access_token_expires_at
-        if access_token_expires_at and now >= access_token_expires_at:
+        if access_token_expires_at and time() >= access_token_expires_at:
             return True
 
-        return now >= none_throws(self.connection_expires_at)
+        return self.is_connection_expired()
 
     async def to_dict(self) -> dict[str, Any]:
         connection_name = (

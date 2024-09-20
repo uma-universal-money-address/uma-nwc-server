@@ -31,7 +31,6 @@ from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
-from nwc_backend.typing import none_throws
 
 
 async def handle_nip47_event(event: Event) -> None:
@@ -101,7 +100,7 @@ async def handle_nip47_event(event: Event) -> None:
         logging.debug("Event %s has been processed already.", event.id().to_hex())
         return
 
-    uma_access_token = none_throws(nwc_connection.long_lived_vasp_token)
+    uma_access_token = nwc_connection.long_lived_vasp_token
     try:
         match method:
             case Nip47RequestMethod.EXECUTE_QUOTE:

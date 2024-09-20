@@ -11,18 +11,13 @@ from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 
 from nostr_sdk import Filter, Kind, KindEnum
 from quart import Quart, Response, redirect, request, send_from_directory, session
-from quart_cors import route_cors
 from sqlalchemy.sql import select
 from werkzeug import Response as WerkzeugResponse
-from werkzeug.datastructures import MultiDict
 
 import nwc_backend.alembic_importer  # noqa: F401
-from nwc_backend.api_handlers.connection_initializer import initialize_connection_data
-from nwc_backend.api_handlers.create_manual_connection_handler import (
-    create_manual_connection,
-)
-from nwc_backend.api_handlers.vasp_oauth_callback_handler import (
-    handle_vasp_oauth_callback,
+from nwc_backend.api_handlers import (
+    client_app_oauth_handler,
+    nwc_connection_creation_handler,
 )
 from nwc_backend.client_app_identity_lookup import look_up_client_app_identity
 from nwc_backend.db import db, setup_rds_iam_auth
@@ -34,7 +29,6 @@ from nwc_backend.models.vasp_jwt import VaspJwt
 from nwc_backend.nostr_client import nostr_client
 from nwc_backend.nostr_config import NostrConfig
 from nwc_backend.nostr_notification_handler import NotificationHandler
-from nwc_backend.oauth import authorization_server
 
 
 def create_app() -> Quart:
@@ -118,111 +112,22 @@ def create_app() -> Quart:
 
         return redirect(frontend_redirect_url)
 
-    @app.route("/oauth/auth", methods=["GET"])
-    async def oauth_auth() -> WerkzeugResponse:
-        short_lived_vasp_token = request.args.get("token")
-        if not short_lived_vasp_token:
-            uma_vasp_login_url = app.config["UMA_VASP_LOGIN_URL"]
-            # redirect back to the same url with the short lived jwt added
-            request_params = request.query_string.decode()
-            query_params = urlencode(
-                {
-                    "redirect_uri": app.config["NWC_APP_ROOT_URL"]
-                    + "/oauth/auth"
-                    + "?"
-                    + request_params,
-                }
-            )
-            vasp_url_with_query = uma_vasp_login_url + "?" + query_params
-            logging.debug("REDIRECT to %s", vasp_url_with_query)
-            return redirect(vasp_url_with_query)
-
-        # if short_lived_jwt is present, means user has logged in and this is redirect  from VASP to frontend, and frontend is making this call
-        return await handle_vasp_oauth_callback(app)
-
-    @app.route("/apps/new", methods=["POST"])
-    async def register_new_app_connection() -> WerkzeugResponse:
-        short_lived_vasp_token = session.get("short_lived_vasp_token")
-        if not short_lived_vasp_token:
-            return WerkzeugResponse("Unauthorized", status=401)
-        nwc_connection_id = session["nwc_connection_id"]
-        nwc_connection = await db.session.get(NWCConnection, nwc_connection_id)
-        if not nwc_connection:
-            return WerkzeugResponse("Invalid Connection", status=400)
-
-        await initialize_connection_data(
-            nwc_connection, await request.get_json(), short_lived_vasp_token
-        )
-
-        auth_code = nwc_connection.create_oauth_auth_code()
-        await db.session.commit()
-        return WerkzeugResponse(
-            json.dumps(
-                {
-                    "code": auth_code,
-                    "state": session["client_state"],
-                }
-            )
-        )
-
-    @app.route("/oauth/token", methods=["POST"])
-    @route_cors(
-        allow_origin=["*"],
-        allow_methods=["POST"],
-        allow_headers=[
-            "Authorization",
-            "X-User-Agent",
-        ],
-    )
-    async def oauth_exchange() -> Response:
-        # Default to post body. Fall back to query params if post body is empty.
-        request_data = await request.form
-        if not request_data:
-            request_data = request.args
-        grant_type = request_data.get("grant_type")
-
-        if grant_type == "authorization_code":
-            try:
-                client_id = _require_string_param(request_data, "client_id")
-                code = _require_string_param(request_data, "code")
-                redirect_uri = _require_string_param(request_data, "redirect_uri")
-                code_verifier = _require_string_param(request_data, "code_verifier")
-            except ValueError as e:
-                return Response(status=400, response=str(e))
-            if not client_id or not code or not redirect_uri or not code_verifier:
-                return Response(status=400, response="Missing required parameters")
-            response = await authorization_server.get_exchange_token_response(
-                client_id=client_id,
-                code=code,
-                code_verifier=code_verifier,
-                redirect_uri=redirect_uri,
-            )
-            return response
-        elif grant_type == "refresh_token":
-            refresh_token = request_data.get("refresh_token")
-            client_id = request_data.get("client_id")
-            return await authorization_server.get_refresh_token_response(
-                refresh_token, client_id
-            )
-        else:
-            return Response(status=400, response="Invalid grant type")
-
     @app.route("/api/connection/<connectionId>", methods=["GET"])
-    async def get_connection(connectionId: str) -> WerkzeugResponse:
+    async def get_connection(connectionId: str) -> Response:
         user_id = session.get("user_id")
         if not user_id:
-            return WerkzeugResponse("User not authenticated", status=401)
+            return Response("User not authenticated", status=401)
         connection = await db.session.get(NWCConnection, connectionId)
         if not connection or connection.user_id != user_id:
-            return WerkzeugResponse("Connection not found", status=404)
+            return Response("Connection not found", status=404)
         response = await connection.to_dict()
-        return WerkzeugResponse(json.dumps(response), status=200)
+        return Response(json.dumps(response), status=200)
 
     @app.route("/api/connections", methods=["GET"])
-    async def get_all_active_connections() -> WerkzeugResponse:
+    async def get_all_active_connections() -> Response:
         user_id = session.get("user_id")
         if not user_id:
-            return WerkzeugResponse("User not authenticated", status=401)
+            return Response("User not authenticated", status=401)
 
         result = await db.session.execute(
             select(NWCConnection).filter(
@@ -233,23 +138,23 @@ def create_app() -> Quart:
         response = []
         for connection in result.scalars():
             response.append(await connection.to_dict())
-        return WerkzeugResponse(json.dumps(response), status=200)
+        return Response(json.dumps(response), status=200)
 
     @app.route("/api/app", methods=["GET"])
-    async def get_client_app() -> WerkzeugResponse:
+    async def get_client_app() -> Response:
         user_id = session.get("user_id")
         if not user_id:
-            return WerkzeugResponse("User not authenticated", status=401)
+            return Response("User not authenticated", status=401)
 
         client_id = request.args.get("clientId")
         if not client_id:
-            return WerkzeugResponse("Client ID not provided", status=400)
+            return Response("Client ID not provided", status=400)
 
         client_app_info = await look_up_client_app_identity(client_id)
         if not client_app_info:
-            return WerkzeugResponse("Client app not found", status=404)
+            return Response("Client app not found", status=404)
 
-        return WerkzeugResponse(
+        return Response(
             json.dumps(
                 {
                     "clientId": client_id,
@@ -269,20 +174,29 @@ def create_app() -> Quart:
 
     app.add_url_rule(
         "/api/connection/manual",
-        view_func=create_manual_connection,
+        view_func=nwc_connection_creation_handler.create_manual_connection,
+        methods=["POST"],
+    )
+
+    app.add_url_rule(
+        "/oauth/auth",
+        view_func=client_app_oauth_handler.handle_oauth_request,
+        methods=["GET"],
+    )
+
+    app.add_url_rule(
+        "/apps/new",
+        view_func=nwc_connection_creation_handler.create_client_app_connection,
+        methods=["POST"],
+    )
+
+    app.add_url_rule(
+        "/oauth/token",
+        view_func=client_app_oauth_handler.handle_token_exchange,
         methods=["POST"],
     )
 
     return app
-
-
-def _require_string_param(dict: MultiDict, param: str) -> str:
-    value = dict.get(param)
-    if not value:
-        raise ValueError(f"Missing required parameter: {param}")
-    if not isinstance(value, str):
-        raise ValueError(f"Invalid type for parameter {param}: {type(value)}")
-    return value
 
 
 async def init_nostr_client() -> None:

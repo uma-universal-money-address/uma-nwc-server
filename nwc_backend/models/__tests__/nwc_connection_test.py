@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from secrets import token_hex
+from time import time
 from uuid import uuid4
 
 import pytest
@@ -25,6 +26,8 @@ async def test_nwc_connection_model(test_client: QuartClient) -> None:
             id=id,
             user_id=user_id,
             client_app_id=client_app_id,
+            long_lived_vasp_token=token_hex(),
+            connection_expires_at=time(),
             granted_permissions_groups=[
                 PermissionsGroup.RECEIVE_PAYMENTS.value,
             ],
@@ -69,6 +72,8 @@ async def test_creation_with_spending_limit(
                 PermissionsGroup.SEND_PAYMENTS.value,
                 PermissionsGroup.RECEIVE_PAYMENTS.value,
             ],
+            long_lived_vasp_token=token_hex(),
+            connection_expires_at=time(),
             spending_limit_id=spending_limit_id,
             code_challenge=token_hex(),
             redirect_uri="https://example.com",
@@ -99,6 +104,8 @@ async def test_client_app_id_or_custom_name_constraint(
             ],
             code_challenge=token_hex(),
             redirect_uri="https://example.com",
+            long_lived_vasp_token=token_hex(),
+            connection_expires_at=time(),
         )
         db.session.add(nwc_connection)
         await db.session.commit()
@@ -113,6 +120,8 @@ async def test_client_app_id_or_custom_name_constraint(
             ],
             code_challenge=token_hex(),
             redirect_uri="https://example.com",
+            long_lived_vasp_token=token_hex(),
+            connection_expires_at=time(),
         )
         db.session.add(nwc_connection)
         await db.session.commit()
@@ -127,6 +136,8 @@ async def test_client_app_id_or_custom_name_constraint(
                 ],
                 code_challenge=token_hex(),
                 redirect_uri="https://example.com",
+                long_lived_vasp_token=token_hex(),
+                connection_expires_at=time(),
             )
             db.session.add(nwc_connection)
             await db.session.commit()

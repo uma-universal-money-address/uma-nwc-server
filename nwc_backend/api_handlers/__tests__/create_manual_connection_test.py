@@ -1,4 +1,5 @@
 # Copyright ©, 2024, Lightspark Group, Inc. - All Rights Reserved
+
 from secrets import token_hex
 from unittest.mock import Mock, patch
 from urllib.parse import urlparse
@@ -7,10 +8,7 @@ import pytest
 import requests
 from quart.app import QuartClient
 
-from nwc_backend.models.__tests__.model_examples import (
-    create_user,
-    jwt_for_user,
-)
+from nwc_backend.models.__tests__.model_examples import create_user, jwt_for_user
 
 
 @pytest.mark.asyncio
