@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import dayjs from "dayjs";
-import { Connection, LimitFrequency } from "src/types/Connection";
+import { type Connection, LimitFrequency } from "src/types/Connection";
 import { convertToNormalDenomination } from "src/utils/convertToNormalDenomination";
 import { FREQUENCY_TO_SINGULAR_FORM } from "src/utils/formatConnectionString";
 
@@ -104,12 +104,6 @@ const Row = styled.div`
 const RenewsIn = styled.span`
   font-size: 16px;
   font-weight: 400;
-`;
-
-const RightSide = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${Spacing["3xs"]};
 `;
 
 const LimitValue = styled.span`

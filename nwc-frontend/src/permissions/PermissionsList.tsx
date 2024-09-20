@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import { Icon } from "@lightsparkdev/ui/components";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
-import { Permission } from "src/types/Connection";
+import { type Permission } from "src/types/Connection";
 
 export const PermissionsList = ({
   permissions,

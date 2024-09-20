@@ -1,7 +1,10 @@
-import { json, LoaderFunction } from "react-router-dom";
+import { json, type LoaderFunction } from "react-router-dom";
 import { fetchAppInfo } from "src/hooks/useAppInfo";
-import { Connection, DEFAULT_CONNECTION_SETTINGS } from "src/types/Connection";
-import { PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
+import {
+  type Connection,
+  DEFAULT_CONNECTION_SETTINGS,
+} from "src/types/Connection";
+import { type PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
 import { getBackendUrl } from "src/utils/backendUrl";
 import { fetchWithAuth } from "src/utils/fetchWithAuth";
 import { mapConnection } from "src/utils/mapConnection";

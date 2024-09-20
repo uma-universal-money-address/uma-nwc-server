@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
 import { Body } from "@lightsparkdev/ui/components/typography/Body";
-import React from "react";
+import type React from "react";
 import {
   useExchangeRates,
   type ExchangeRates,

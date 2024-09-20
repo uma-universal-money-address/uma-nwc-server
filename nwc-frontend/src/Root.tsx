@@ -14,7 +14,7 @@ import { permissionsPageDataFromUrl } from "./loaders/permissionPageDataFromUrl"
 import { Nav } from "./Nav";
 import { NotificationLayout } from "./NotificationLayout";
 import { PermissionsPage } from "./permissions/PermissionsPage";
-import { useAuth } from "./utils/auth";
+import { getAuth } from "./utils/auth";
 
 const router = createBrowserRouter([
   {
@@ -48,7 +48,7 @@ const router = createBrowserRouter([
 ]);
 
 export function Root() {
-  const auth = useAuth();
+  const auth = getAuth();
   if (!auth.isLoggedIn()) {
     auth.redirectToLogin();
     return null;

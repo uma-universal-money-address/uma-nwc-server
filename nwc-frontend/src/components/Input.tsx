@@ -1,7 +1,8 @@
 import styled from "@emotion/styled";
 import { Label } from "@lightsparkdev/ui/components/typography/Label";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
-import React, {
+import type React from "react";
+import {
   useEffect,
   useState,
   type DetailedHTMLProps,

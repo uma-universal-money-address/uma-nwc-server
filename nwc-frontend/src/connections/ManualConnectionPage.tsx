@@ -7,31 +7,29 @@ import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import dayjs from "dayjs";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { initializeManualConnection } from "src/hooks/useConnection";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
 import { EditExpiration } from "src/permissions/EditExpiration";
 import { EditLimit } from "src/permissions/EditLimit";
 import { PermissionsEditableList } from "src/permissions/PermissionsEditableList";
-import { ConnectionSettings } from "src/permissions/PersonalizePage";
+import { type ConnectionSettings } from "src/permissions/PersonalizePage";
 import {
   DEFAULT_CONNECTION_SETTINGS,
   ExpirationPeriod,
-  PermissionState,
+  type PermissionState,
 } from "src/types/Connection";
-import { useAuth } from "src/utils/auth";
+import { getAuth } from "src/utils/auth";
 import { formatConnectionString } from "src/utils/formatConnectionString";
 import { ManualConnectionHowItWorksModal } from "./ManualConnectionHowItWorksModal";
 import { PendingConnectionPage } from "./PendingConnectionPage";
 
 export default function ManualConnectionPage() {
-  const navigate = useNavigate();
   const [isHowItWorksVisible, setIsHowItWorksVisible] =
     useState<boolean>(false);
   const [isEditLimitVisible, setIsEditLimitVisible] = useState<boolean>(false);
   const [isEditExpirationVisible, setIsEditExpirationVisible] =
     useState<boolean>(false);
-  const { setSuccessMessage, setError } = useGlobalNotificationContext();
+  const { setError } = useGlobalNotificationContext();
   const [connectionSettings, setConnectionSettings] =
     useState<ConnectionSettings>(DEFAULT_CONNECTION_SETTINGS);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
@@ -39,7 +37,7 @@ export default function ManualConnectionPage() {
   const [pairingUri, setPairingUri] = useState<{ pairingUri: string } | null>(
     null,
   );
-  const auth = useAuth();
+  const auth = getAuth();
   const currency = auth.getCurrency();
 
   if (pairingUri) {
@@ -187,7 +185,12 @@ export default function ManualConnectionPage() {
 
       <ButtonSection>
         <Button text="Cancel" kind="secondary" href="/" />
-        <Button text="Continue" kind="primary" onClick={handleContinue} />
+        <Button
+          text="Continue"
+          kind="primary"
+          onClick={handleContinue}
+          loading={isConnecting}
+        />
       </ButtonSection>
 
       <EditLimit
@@ -258,23 +261,6 @@ const EditSection = styled.section`
 const EditDescription = styled.div`
   color: #686a72;
   font-size: 16px;
-`;
-
-const SectionHeader = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-
-  * {
-    border: none !important;
-  }
-`;
-
-const Permissions = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${Spacing.sm};
 `;
 
 const ButtonSection = styled.section`

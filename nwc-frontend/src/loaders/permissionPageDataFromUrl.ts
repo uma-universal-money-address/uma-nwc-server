@@ -1,12 +1,12 @@
-import { json, LoaderFunction } from "react-router-dom";
+import { json, type LoaderFunction } from "react-router-dom";
 import { fetchAppInfo } from "src/hooks/useAppInfo";
 import {
   DEFAULT_CONNECTION_SETTINGS,
   PERMISSION_DESCRIPTIONS,
-  PermissionType,
+  type PermissionType,
 } from "src/types/Connection";
-import { Currency } from "src/types/Currency";
-import { PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
+import { type Currency } from "src/types/Currency";
+import { type PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
 
 export interface InitialPermissionsResponse {
   currencies: Currency[];
@@ -48,9 +48,8 @@ const getClientAppDefaultSettings = ({
   const permissionStates = requiredPermissionStates.concat(
     optionalPermissionStates,
   );
-  let [amountCurrency, limitFrequency] = budget
-    ? budget.split("/")
-    : [undefined, undefined];
+  const amountCurrency = budget?.split("/")[0];
+  let limitFrequency = budget?.split("/")[1];
   let [amountInLowestDenom, currencyCode] = amountCurrency
     ? amountCurrency.split(".")
     : [undefined, undefined];
@@ -74,8 +73,6 @@ const getClientAppDefaultSettings = ({
   if (!expirationPeriod) {
     expirationPeriod = DEFAULT_CONNECTION_SETTINGS.expirationPeriod;
   }
-
-  // TODO: perform rough currency conversion to user's home currency
 
   return {
     permissionStates,

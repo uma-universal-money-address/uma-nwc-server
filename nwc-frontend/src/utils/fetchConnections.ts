@@ -1,4 +1,4 @@
-import { RawConnection } from "src/types/Connection";
+import { type RawConnection } from "src/types/Connection";
 import { getBackendUrl } from "./backendUrl";
 import { fetchWithAuth } from "./fetchWithAuth";
 import { mapConnection } from "./mapConnection";

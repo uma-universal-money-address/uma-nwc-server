@@ -1,8 +1,9 @@
 import dayjs from "dayjs";
 import {
+  type Connection,
   ConnectionStatus,
   PERMISSION_DESCRIPTIONS,
-  RawConnection,
+  type RawConnection,
 } from "src/types/Connection";
 
 const mapPermissions = (permissions: RawConnection["permissions"]) => {

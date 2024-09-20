@@ -8,7 +8,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Avatar } from "src/components/Avatar";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
 import { PermissionsList } from "src/permissions/PermissionsList";
-import { Permission } from "src/types/Connection";
+import { type Permission } from "src/types/Connection";
 
 interface Props {
   name: string;
@@ -116,12 +116,6 @@ const AppSection = styled.div`
   display: flex;
   align-items: center;
   gap: ${Spacing.sm};
-`;
-
-const AppDetails = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 `;
 
 const AppName = styled.span`

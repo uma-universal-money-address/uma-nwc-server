@@ -5,13 +5,13 @@ import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
 import { Avatar } from "src/components/Avatar";
-import { AppInfo } from "src/types/AppInfo";
+import { type AppInfo } from "src/types/AppInfo";
 import {
   ExpirationPeriod,
-  LimitFrequency,
-  PermissionState,
+  type LimitFrequency,
+  type PermissionState,
 } from "src/types/Connection";
-import { useAuth } from "src/utils/auth";
+import { getAuth } from "src/utils/auth";
 import { formatConnectionString } from "src/utils/formatConnectionString";
 import { EditExpiration } from "./EditExpiration";
 import { EditLimit } from "./EditLimit";
@@ -45,7 +45,7 @@ export const PersonalizePage = ({
     useState<boolean>(false);
   const [internalConnectionSettings, setInternalConnectionSettings] =
     useState<ConnectionSettings>(connectionSettings);
-  const auth = useAuth();
+  const auth = getAuth();
   const currency = auth.getCurrency();
 
   const { name, domain, avatar, verified } = appInfo;

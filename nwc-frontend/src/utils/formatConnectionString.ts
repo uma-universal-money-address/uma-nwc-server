@@ -1,5 +1,5 @@
 import { LimitFrequency } from "src/types/Connection";
-import { Currency } from "src/types/Currency";
+import { type Currency } from "src/types/Currency";
 import { convertToNormalDenomination } from "./convertToNormalDenomination";
 
 export const FREQUENCY_TO_SINGULAR_FORM: Record<LimitFrequency, string> = {

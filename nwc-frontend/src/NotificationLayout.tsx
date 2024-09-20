@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import React from "react";
+import type React from "react";
 import { ErrorNotification } from "src/components/ErrorNotification";
 import { SuccessNotification } from "src/components/SuccessNotification";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";

@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Avatar } from "src/components/Avatar";
 import { useAppInfo } from "src/hooks/useAppInfo";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
-import { Connection, ConnectionStatus } from "src/types/Connection";
+import { type Connection, ConnectionStatus } from "src/types/Connection";
 import { formatTimestamp } from "src/utils/formatTimestamp";
 
 export const ConnectionHeader = ({

@@ -2,6 +2,7 @@
 
 import styled from "@emotion/styled";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
+import type React from "react";
 
 type Props = {
   children: React.ReactNode;

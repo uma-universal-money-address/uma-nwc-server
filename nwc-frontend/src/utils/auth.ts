@@ -1,6 +1,6 @@
-import { useConfig } from "src/hooks/useConfig";
-import { Currency } from "src/types/Currency";
+import { type Currency } from "src/types/Currency";
 import { getBackendUrl } from "./backendUrl";
+import { getConfig } from "./getConfig";
 
 type LoginState = {
   umaAddress: string;
@@ -104,8 +104,8 @@ export class Auth {
   }
 }
 
-export const useAuth = () => {
-  const { vaspLoginUrl } = useConfig();
+export const getAuth = () => {
+  const { vaspLoginUrl } = getConfig();
   const auth = new Auth(vaspLoginUrl);
   return auth;
 };

@@ -1,5 +1,5 @@
-import { ConnectionSettings } from "src/permissions/PersonalizePage";
-import { Currency } from "./Currency";
+import { type ConnectionSettings } from "src/permissions/PersonalizePage";
+import { type Currency } from "./Currency";
 
 export enum PermissionType {
   SEND_PAYMENTS = "send_payments",

@@ -10,10 +10,10 @@ import {
   ConnectionTable,
   LoadingConnectionRow,
 } from "src/components/ConnectionTable";
-import { LearnMoreModal } from "./LearnMoreModal";
-import { useConfig } from "./hooks/useConfig";
 import { useConnections } from "./hooks/useConnections";
+import { LearnMoreModal } from "./LearnMoreModal";
 import { ConnectionStatus } from "./types/Connection";
+import { getConfig } from "./utils/getConfig";
 
 function App() {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ function App() {
     isLoading: isLoadingConnections,
     error,
   } = useConnections();
-  const { vaspName } = useConfig();
+  const { vaspName } = getConfig();
 
   const handleLearnMore = () => {
     setIsLearnMoreVisible(true);
