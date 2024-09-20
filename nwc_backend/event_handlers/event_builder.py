@@ -10,7 +10,7 @@ from nostr_sdk import Event, Keys, Kind, KindEnum, Nip47Error, PublicKey, nip04_
 
 from nwc_backend.exceptions import EventBuilderException
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
-from nwc_backend.nostr_config import NostrConfig
+from nwc_backend.nostr.nostr_config import NostrConfig
 
 
 class EventBuilder:

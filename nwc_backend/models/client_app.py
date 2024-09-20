@@ -8,9 +8,9 @@ from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import select
 
-from nwc_backend.client_app_identity_lookup import Nip05VerificationStatus
 from nwc_backend.db import db
 from nwc_backend.models.model_base import ModelBase
+from nwc_backend.nostr.client_app_identity_lookup import Nip05VerificationStatus
 
 
 class ClientApp(ModelBase):

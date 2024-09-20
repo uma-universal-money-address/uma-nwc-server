@@ -5,9 +5,9 @@ from uuid import uuid4
 
 from quart.app import QuartClient
 
-from nwc_backend.client_app_identity_lookup import Nip05VerificationStatus
 from nwc_backend.db import db
 from nwc_backend.models.client_app import ClientApp
+from nwc_backend.nostr.client_app_identity_lookup import Nip05VerificationStatus
 
 
 async def test_client_app_model(test_client: QuartClient) -> None:

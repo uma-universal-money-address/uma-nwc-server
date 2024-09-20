@@ -1,4 +1,5 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
+# pyre-strict
 
 import json
 import logging
@@ -12,7 +13,6 @@ from quart import Response, current_app, redirect, request, session
 from quart_cors import route_cors
 from werkzeug import Response as WerkzeugResponse
 
-from nwc_backend.client_app_identity_lookup import look_up_client_app_identity
 from nwc_backend.db import db
 from nwc_backend.exceptions import InvalidApiParamsException
 from nwc_backend.models.client_app import ClientApp
@@ -24,6 +24,7 @@ from nwc_backend.models.permissions_grouping import (
 from nwc_backend.models.spending_limit import SpendingLimit
 from nwc_backend.models.user import User
 from nwc_backend.models.vasp_jwt import VaspJwt
+from nwc_backend.nostr.client_app_identity_lookup import look_up_client_app_identity
 from nwc_backend.typing import none_throws
 
 

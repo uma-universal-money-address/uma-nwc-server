@@ -1,3 +1,6 @@
+# Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
+# pyre-strict
+
 import json
 from datetime import datetime, timezone
 from typing import Any
@@ -6,6 +9,7 @@ from uuid import uuid4
 import requests
 from nostr_sdk import Keys
 from quart import Response, current_app, request, session
+from sqlalchemy.sql import select
 
 from nwc_backend.db import db
 from nwc_backend.exceptions import InvalidApiParamsException
@@ -60,6 +64,7 @@ async def create_manual_connection() -> Response:
         )
     except InvalidApiParamsException as ex:
         return Response(ex.message, status=400)
+
     db.session.add(nwc_connection)
     await db.session.commit()
 
@@ -95,6 +100,7 @@ async def create_client_app_connection() -> Response:
         )
     except InvalidApiParamsException as ex:
         return Response(ex.message, status=400)
+
     auth_code = nwc_connection.create_oauth_auth_code()
     db.session.add(nwc_connection)
     await db.session.commit()
@@ -183,3 +189,29 @@ async def _initialize_connection_data(
     long_lived_vasp_token = response.json()["token"]
 
     nwc_connection.long_lived_vasp_token = long_lived_vasp_token
+
+
+async def get_connection(connection_id: str) -> Response:
+    user_id = session.get("user_id")
+    if not user_id:
+        return Response("User not authenticated", status=401)
+
+    connection = await db.session.get(NWCConnection, connection_id)
+    if not connection or connection.user_id != user_id:
+        return Response("Connection not found", status=404)
+    response = await connection.to_dict()
+    return Response(json.dumps(response), status=200)
+
+
+async def get_all_connections() -> Response:
+    user_id = session.get("user_id")
+    if not user_id:
+        return Response("User not authenticated", status=401)
+
+    result = await db.session.execute(
+        select(NWCConnection).filter(NWCConnection.user_id == user_id)
+    )
+    response = []
+    for connection in result.scalars():
+        response.append(await connection.to_dict())
+    return Response(json.dumps(response), status=200)
