@@ -92,7 +92,7 @@ class SpendingLimit(ModelBase):
 
     @staticmethod
     def is_budget_valid(budget: str) -> bool:
-        pattern = re.compile(r"^\d+(?:\.\w{3})?(?:/\w+)?$")
+        pattern = re.compile(r"^\d+(?:\.\w{3})?(?:\/\w+)?$")
         return bool(pattern.match(budget))
 
     def get_budget_repr(self) -> str:
