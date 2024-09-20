@@ -8,12 +8,13 @@ from nostr_sdk import Keys
 from quart import Response, current_app, request, session
 
 from nwc_backend.db import db
+from nwc_backend.exceptions import InvalidApiParamsException
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.permissions_grouping import (
     PERMISSIONS_GROUP_TO_METHODS,
     PermissionsGroup,
 )
-from nwc_backend.models.spending_limit import SpendingLimit
+from nwc_backend.models.spending_limit import Currency, SpendingLimit
 from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.models.user import User
 from nwc_backend.models.vasp_jwt import VaspJwt
@@ -51,11 +52,14 @@ async def create_manual_connection() -> Response:
         nostr_pubkey=keypair.public_key().to_hex(),
         custom_name=name,
     )
-    await _initialize_connection_data(
-        nwc_connection,
-        request_data=request_data,
-        short_lived_vasp_token=short_lived_vasp_token,
-    )
+    try:
+        await _initialize_connection_data(
+            nwc_connection,
+            request_data=request_data,
+            short_lived_vasp_token=short_lived_vasp_token,
+        )
+    except InvalidApiParamsException as ex:
+        return Response(ex.message, status=400)
     db.session.add(nwc_connection)
     await db.session.commit()
 
@@ -83,9 +87,14 @@ async def create_client_app_connection() -> Response:
         redirect_uri=session["redirect_uri"],
         code_challenge=session["code_challenge"],
     )
-    await _initialize_connection_data(
-        nwc_connection, await request.get_json(), short_lived_vasp_token
-    )
+    try:
+        await _initialize_connection_data(
+            nwc_connection,
+            request_data=await request.get_json(),
+            short_lived_vasp_token=short_lived_vasp_token,
+        )
+    except InvalidApiParamsException as ex:
+        return Response(ex.message, status=400)
     auth_code = nwc_connection.create_oauth_auth_code()
     db.session.add(nwc_connection)
     await db.session.commit()
@@ -118,6 +127,13 @@ async def _initialize_connection_data(
         nwc_connection.connection_expires_at = round(expires_at.timestamp())
 
     if limit_enabled:
+        currency = await Currency.from_currency_code(
+            vasp_access_token=short_lived_vasp_token,
+            currency_code=currency_code or "SAT",
+        )
+        if not currency:
+            raise InvalidApiParamsException("The currency of budget is not allowed.")
+
         limit_frequency = (
             SpendingLimitFrequency(limit_frequency)
             if limit_frequency
@@ -126,7 +142,7 @@ async def _initialize_connection_data(
         spending_limit = SpendingLimit(
             id=uuid4(),
             nwc_connection_id=nwc_connection.id,
-            currency_code=currency_code or "SAT",
+            currency=currency,
             amount=amount_in_lowest_denom,
             frequency=limit_frequency,
             start_time=datetime.now(timezone.utc),

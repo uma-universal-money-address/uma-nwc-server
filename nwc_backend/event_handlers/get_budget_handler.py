@@ -14,7 +14,7 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
     current_cycle_remaining_amount = (
         await current_spending_limit.get_current_cycle_total_remaining()
     )
-    budget_currency = current_spending_limit.currency_code
+    budget_currency = current_spending_limit.currency.code
     current_cycle_end_time = current_spending_limit.get_current_cycle_end_time()
     current_cycle_renews_at = (
         round(current_cycle_end_time.timestamp()) if current_cycle_end_time else None

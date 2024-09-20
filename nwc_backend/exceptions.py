@@ -69,3 +69,9 @@ class InsufficientBudgetException(Nip47RequestException):
             error_code=ErrorCode.OTHER,
             error_message="The avaiable budget left this cycle is not enough to cover the payment.",
         )
+
+
+class InvalidApiParamsException(Exception):
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)

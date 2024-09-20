@@ -17,7 +17,11 @@ from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.permissions_grouping import PermissionsGroup
 from nwc_backend.models.spending_cycle import SpendingCycle
 from nwc_backend.models.spending_cycle_quote import SpendingCycleQuote
-from nwc_backend.models.spending_limit import SpendingLimit, SpendingLimitFrequency
+from nwc_backend.models.spending_limit import (
+    Currency,
+    SpendingLimit,
+    SpendingLimitFrequency,
+)
 from nwc_backend.models.user import User
 
 
@@ -108,7 +112,7 @@ async def create_spending_limit(
     spending_limit = SpendingLimit(
         id=uuid4(),
         nwc_connection_id=nwc_connection.id,
-        currency_code=currency_code,
+        currency=Currency(code=currency_code, symbol="$", name="US Dollar", decimals=2),
         amount=amount,
         frequency=frequency,
         start_time=datetime.now(timezone.utc),
@@ -169,7 +173,7 @@ async def create_spending_cycle(
     spending_cycle = SpendingCycle(
         id=uuid4(),
         spending_limit_id=spending_limit.id,
-        limit_currency=spending_limit.currency_code,
+        limit_currency=spending_limit.currency.code,
         limit_amount=spending_limit.amount,
         start_time=spending_limit.start_time,
         end_time=(spending_limit.start_time + cycle_length) if cycle_length else None,

@@ -8,7 +8,11 @@ from quart.app import QuartClient
 
 from nwc_backend.db import db
 from nwc_backend.models.__tests__.model_examples import create_nwc_connection
-from nwc_backend.models.spending_limit import SpendingLimit, SpendingLimitFrequency
+from nwc_backend.models.spending_limit import (
+    Currency,
+    SpendingLimit,
+    SpendingLimitFrequency,
+)
 
 
 async def test_spending_limit(test_client: QuartClient) -> None:
@@ -23,7 +27,9 @@ async def test_spending_limit(test_client: QuartClient) -> None:
         spending_limit = SpendingLimit(
             id=id,
             nwc_connection_id=nwc_connection_id,
-            currency_code=currency_code,
+            currency=Currency(
+                code=currency_code, symbol="$", name="US Dollar", decimals=2
+            ),
             amount=amount,
             frequency=frequency,
             start_time=start_time,
@@ -34,7 +40,7 @@ async def test_spending_limit(test_client: QuartClient) -> None:
     async with test_client.app.app_context():
         spending_limit = await db.session.get_one(SpendingLimit, id)
         assert spending_limit.nwc_connection_id == nwc_connection_id
-        assert spending_limit.currency_code == currency_code
+        assert spending_limit.currency.code == currency_code
         assert spending_limit.amount == amount
         assert spending_limit.frequency == frequency
         assert spending_limit.start_time == start_time
@@ -62,7 +68,9 @@ async def test_get_current_spending_cycle(test_client: QuartClient) -> None:
         spending_limit = SpendingLimit(
             id=id,
             nwc_connection_id=nwc_connection_id,
-            currency_code=currency_code,
+            currency=Currency(
+                code=currency_code, symbol="$", name="US Dollar", decimals=2
+            ),
             amount=amount,
             frequency=frequency,
             start_time=start_time,

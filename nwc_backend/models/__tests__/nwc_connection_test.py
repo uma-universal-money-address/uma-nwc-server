@@ -14,7 +14,11 @@ from nwc_backend.models.__tests__.model_examples import create_client_app, creat
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.permissions_grouping import PermissionsGroup
-from nwc_backend.models.spending_limit import SpendingLimit, SpendingLimitFrequency
+from nwc_backend.models.spending_limit import (
+    Currency,
+    SpendingLimit,
+    SpendingLimitFrequency,
+)
 
 
 async def test_nwc_connection_model(test_client: QuartClient) -> None:
@@ -59,7 +63,7 @@ async def test_creation_with_spending_limit(
         spending_limit = SpendingLimit(
             id=spending_limit_id,
             nwc_connection_id=nwc_connection_id,
-            currency_code="USD",
+            currency=Currency(code="USD", symbol="$", name="US Dollar", decimals=2),
             amount=100,
             frequency=SpendingLimitFrequency.MONTHLY,
             start_time=datetime.now(timezone.utc),
