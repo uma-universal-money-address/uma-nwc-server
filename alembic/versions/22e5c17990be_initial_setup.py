@@ -116,14 +116,6 @@ def upgrade() -> None:
             name="nwc_connection_client_app_id_fkey",
         ),
         sa.ForeignKeyConstraint(
-            ["spending_limit_id"],
-            ["spending_limit.id"],
-            use_alter=True,
-            initially="DEFERRED",
-            deferrable=True,
-            name="nwc_connection_spending_limit_id_fkey",
-        ),
-        sa.ForeignKeyConstraint(
             ["user_id"],
             ["user.id"],
             name="nwc_connection_user_id_fkey",
@@ -253,6 +245,15 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
+    with op.batch_alter_table("nwc_connection", schema=None) as batch_op:
+        batch_op.create_foreign_key(
+            "nwc_connection_spending_limit_id_fkey",
+            "spending_limit",
+            ["spending_limit_id"],
+            ["id"],
+            initially="DEFERRED",
+            deferrable=True,
+        )
     op.create_table(
         "spending_cycle",
         sa.Column("spending_limit_id", UUID(), nullable=False),
