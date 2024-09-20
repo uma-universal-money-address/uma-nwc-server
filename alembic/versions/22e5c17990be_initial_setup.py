@@ -13,6 +13,7 @@ from sqlalchemy.dialects.postgresql.json import JSONB
 
 from alembic import op
 from nwc_backend.db import UUID, DateTime
+from nwc_backend.models.spending_limit import DBCurrency
 
 # revision identifiers, used by Alembic.
 revision: str = "22e5c17990be"
@@ -81,7 +82,7 @@ def upgrade() -> None:
             sa.JSON().with_variant(JSONB(astext_type=sa.Text()), "postgresql"),
             nullable=False,
         ),
-        sa.Column("long_lived_vasp_token", sa.String(length=1024), nullable=True),
+        sa.Column("long_lived_vasp_token", sa.String(length=1024), nullable=False),
         sa.Column("connection_expires_at", sa.Integer(), nullable=True),
         sa.Column("spending_limit_id", UUID(), nullable=True),
         sa.Column("nostr_pubkey", sa.String(length=255), nullable=True),
@@ -118,6 +119,8 @@ def upgrade() -> None:
             ["spending_limit_id"],
             ["spending_limit.id"],
             use_alter=True,
+            initially="DEFERRED",
+            deferrable=True,
             name="nwc_connection_spending_limit_id_fkey",
         ),
         sa.ForeignKeyConstraint(
@@ -211,7 +214,7 @@ def upgrade() -> None:
     op.create_table(
         "spending_limit",
         sa.Column("nwc_connection_id", UUID(), nullable=False),
-        sa.Column("currency_code", sa.String(length=3), nullable=False),
+        sa.Column("currency", DBCurrency(), nullable=False),
         sa.Column("amount", sa.BigInteger(), nullable=False),
         sa.Column(
             "frequency",
@@ -244,6 +247,8 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["nwc_connection_id"],
             ["nwc_connection.id"],
+            initially="DEFERRED",
+            deferrable=True,
             name="spending_limit_nwc_connection_id_fkey",
         ),
         sa.PrimaryKeyConstraint("id"),
