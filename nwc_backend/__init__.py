@@ -5,7 +5,6 @@ import asyncio
 import json
 import logging
 import os
-from time import time
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 
@@ -124,16 +123,13 @@ def create_app() -> Quart:
         return Response(json.dumps(response), status=200)
 
     @app.route("/api/connections", methods=["GET"])
-    async def get_all_active_connections() -> Response:
+    async def get_all_connections() -> Response:
         user_id = session.get("user_id")
         if not user_id:
             return Response("User not authenticated", status=401)
 
         result = await db.session.execute(
-            select(NWCConnection).filter(
-                NWCConnection.user_id == user_id,
-                NWCConnection.connection_expires_at > int(time()),
-            )
+            select(NWCConnection).filter(NWCConnection.user_id == user_id)
         )
         response = []
         for connection in result.scalars():
