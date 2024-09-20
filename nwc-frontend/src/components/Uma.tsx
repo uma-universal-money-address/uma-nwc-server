@@ -19,7 +19,7 @@ const Container = styled.div`
 
 const Text = styled.span`
   color: #686a72;
-  font-size: 15px;
+  font-size: 14px;
   font-style: normal;
   font-weight: 400;
   line-height: 20px; /* 133.333% */

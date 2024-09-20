@@ -5,7 +5,7 @@ import json
 import logging
 from time import time
 from typing import Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, unquote
 from uuid import uuid4
 
 from aioauth.utils import create_s256_code_challenge
@@ -49,7 +49,7 @@ async def _handle_client_app_oauth_request() -> Response | WerkzeugResponse:
     _require_string_param(request.args, "code_challenge")
     redirect_uri = _require_string_param(request.args, "redirect_uri")
 
-    budget = request.args.get("budget")
+    budget = unquote(request.args.get("budget"))
     if budget and not SpendingLimit.is_budget_valid(budget):
         return Response(
             "Budget should be in the format <max_amount>.<currency>/<period>",

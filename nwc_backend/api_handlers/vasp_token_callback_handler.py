@@ -2,10 +2,13 @@
 # pyre-strict
 
 from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
+from uuid import uuid4
 
-from quart import current_app, redirect, request
+from quart import current_app, redirect, request, session
 from werkzeug import Response as WerkzeugResponse
 
+from nwc_backend.db import db
+from nwc_backend.models.user import User
 from nwc_backend.models.vasp_jwt import VaspJwt
 
 
@@ -38,5 +41,17 @@ async def handle_vasp_token_callback() -> WerkzeugResponse:
 
     if not short_lived_vasp_token:
         return WerkzeugResponse("No token provided", status=400)
+
+    # TODO: Add middleware to handle authed requests instead of relying on user_id in session
+    user = await User.from_vasp_user_id(vasp_jwt.user_id)
+    if not user:
+        user = User(
+            id=uuid4(),
+            vasp_user_id=vasp_jwt.user_id,
+            uma_address=vasp_jwt.uma_address,
+        )
+        db.session.add(user)
+        await db.session.commit()
+    session["user_id"] = user.id
 
     return redirect(frontend_redirect_url)

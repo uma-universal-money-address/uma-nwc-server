@@ -1,4 +1,5 @@
 import styled from "@emotion/styled";
+import { UnstyledButton } from "@lightsparkdev/ui/components";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { Uma } from "src/components/Uma";
@@ -22,9 +23,10 @@ export const Nav = () => {
         <Divider />
         <Name>UMA Connections</Name>
       </NavLeftSide>
-      <div>
+      <NavRightSide>
         <Uma uma={uma} />
-      </div>
+        <LogOutButton onClick={() => auth.logout()}>Log out</LogOutButton>
+      </NavRightSide>
     </NavContainer>
   );
 };
@@ -45,6 +47,22 @@ const NavLeftSide = styled.div`
   flex-direction: row;
   align-items: center;
   gap: ${Spacing.sm};
+`;
+
+const NavRightSide = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: ${Spacing.xl};
+`;
+
+const LogOutButton = styled(UnstyledButton)`
+  color: #777;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 24px; /* 171.429% */
+  width: 100%;
 `;
 
 const Divider = styled.div`
