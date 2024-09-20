@@ -25,7 +25,7 @@ from nwc_backend.models.permissions_grouping import (
 )
 from nwc_backend.models.spending_limit import SpendingLimit
 from nwc_backend.models.user import User
-from nwc_backend.nostr_config import NostrConfig
+from nwc_backend.nostr.nostr_config import NostrConfig
 from nwc_backend.typing import none_throws
 
 ACCESS_TOKEN_EXPIRES_IN: int = 30 * 24 * 60 * 60

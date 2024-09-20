@@ -1,0 +1,42 @@
+# Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
+# pyre-strict
+
+from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
+
+from quart import current_app, redirect, request
+from werkzeug import Response as WerkzeugResponse
+
+from nwc_backend.models.vasp_jwt import VaspJwt
+
+
+async def handle_vasp_token_callback() -> WerkzeugResponse:
+    short_lived_vasp_token = request.args.get("token")
+    if not short_lived_vasp_token:
+        return WerkzeugResponse("No token provided", status=400)
+    vasp_jwt = VaspJwt.from_jwt(short_lived_vasp_token)
+
+    fe_redirect_path = request.args.get("fe_redirect")
+    if fe_redirect_path:
+        fe_redirect_path = unquote(fe_redirect_path)
+    frontend_redirect_url = current_app.config["NWC_APP_ROOT_URL"] + (
+        fe_redirect_path or "/"
+    )
+    try:
+        parsed_url = urlparse(frontend_redirect_url)
+    except ValueError as e:
+        return WerkzeugResponse(
+            f"Invalid redirect url: {frontend_redirect_url}. {e}", status=400
+        )
+
+    query_params = parse_qs(parsed_url.query)
+    query_params["token"] = short_lived_vasp_token
+    query_params["uma_address"] = [vasp_jwt.uma_address]
+    query_params["expiry"] = [vasp_jwt.expiry]
+    query_params["currency"] = request.args.get("currency")
+    parsed_url = parsed_url._replace(query=urlencode(query_params, doseq=True))
+    frontend_redirect_url = str(urlunparse(parsed_url))
+
+    if not short_lived_vasp_token:
+        return WerkzeugResponse("No token provided", status=400)
+
+    return redirect(frontend_redirect_url)

@@ -29,8 +29,8 @@ from nwc_backend.exceptions import Nip47RequestException
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
-from nwc_backend.nostr_client import nostr_client
-from nwc_backend.nostr_config import NostrConfig
+from nwc_backend.nostr.nostr_client import nostr_client
+from nwc_backend.nostr.nostr_config import NostrConfig
 
 
 async def handle_nip47_event(event: Event) -> None:

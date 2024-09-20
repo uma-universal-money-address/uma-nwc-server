@@ -34,7 +34,7 @@ from nwc_backend.models.__tests__.model_examples import (
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.permissions_grouping import PermissionsGroup
-from nwc_backend.nostr_config import NostrConfig
+from nwc_backend.nostr.nostr_config import NostrConfig
 
 
 @dataclass
@@ -97,7 +97,7 @@ class Harness:
         return self._load_encrypted_content(response_event.content())
 
 
-@patch("nwc_backend.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
+@patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
 async def test_failed__no_nwc_connection(
     mock_nostr_send: AsyncMock,
     test_client: QuartClient,
@@ -113,7 +113,7 @@ async def test_failed__no_nwc_connection(
         assert content["error"]["code"] == ErrorCode.UNAUTHORIZED.name
 
 
-@patch("nwc_backend.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
+@patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
 async def test_failed__access_token_expired(
     mock_nostr_send: AsyncMock,
     test_client: QuartClient,
@@ -138,7 +138,7 @@ async def test_failed__access_token_expired(
         assert content["error"]["code"] == ErrorCode.UNAUTHORIZED.name
 
 
-@patch("nwc_backend.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
+@patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
 async def test_failed__no_permission(
     mock_nostr_send: AsyncMock,
     test_client: QuartClient,
@@ -159,7 +159,7 @@ async def test_failed__no_permission(
         assert content["error"]["code"] == ErrorCode.RESTRICTED.name
 
 
-@patch("nwc_backend.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
+@patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
 async def test_failed__invalid_input_params(
     mock_nostr_send: AsyncMock,
     test_client: QuartClient,
@@ -184,7 +184,7 @@ async def test_failed__invalid_input_params(
         assert content["error"]["code"] == ErrorCode.OTHER.name
 
 
-@patch("nwc_backend.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
+@patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
 @patch.object(aiohttp.ClientSession, "post")
 async def test_succeeded(
     mock_vasp_pay_invoice: Mock,
@@ -235,7 +235,7 @@ async def test_succeeded(
         assert request.response_error_code is None
 
 
-@patch("nwc_backend.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
+@patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
 @patch.object(aiohttp.ClientSession, "post")
 async def test_failed__vasp_error_response(
     mock_vasp_pay_invoice: Mock,
@@ -274,7 +274,7 @@ async def test_failed__vasp_error_response(
         assert content["error"]["message"] == vasp_response.message
 
 
-@patch("nwc_backend.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
+@patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
 @patch.object(aiohttp.ClientSession, "post")
 async def test_duplicate_event(
     mock_vasp_pay_invoice: Mock,

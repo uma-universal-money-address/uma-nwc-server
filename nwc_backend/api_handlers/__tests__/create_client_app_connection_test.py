@@ -17,13 +17,13 @@ from quart import Response, current_app
 from quart.app import QuartClient
 from sqlalchemy.sql import select
 
-from nwc_backend.client_app_identity_lookup import ClientAppInfo
 from nwc_backend.db import db
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.spending_limit import SpendingLimitFrequency
 from nwc_backend.models.user import User
+from nwc_backend.nostr.client_app_identity_lookup import ClientAppInfo
 
 
 @pytest.mark.asyncio
