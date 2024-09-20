@@ -57,9 +57,3 @@ const Section = styled.section`
   gap: ${Spacing.xs};
   margin-top: ${Spacing["xl"]};
 `;
-
-const IntroSection = styled.section`
-  display: flex;
-  flex-direction: column;
-  gap: ${Spacing.xs};
-`;

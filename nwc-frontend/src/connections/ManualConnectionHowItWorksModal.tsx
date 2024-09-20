@@ -83,5 +83,3 @@ const TextContainer = styled.div`
   display: flex;
   flex-direction: column;
 `;
-
-const StepTitle = styled.span``;

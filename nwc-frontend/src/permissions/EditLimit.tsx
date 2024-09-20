@@ -2,7 +2,7 @@ import styled from "@emotion/styled";
 import { Modal } from "@lightsparkdev/ui/components";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
-import { Currency } from "src/types/Currency";
+import { type Currency } from "src/types/Currency";
 import { EnableToggle } from "./EnableToggle";
 import { LimitAmountInput } from "./LimitAmountInput";
 import { LimitFrequencyPicker } from "./LimitFrequencyPicker";

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AppInfo } from "src/types/AppInfo";
+import { type AppInfo } from "src/types/AppInfo";
 import { fetchWithAuth } from "src/utils/fetchWithAuth";
 
 export const fetchAppInfo = async (clientId: string) => {
@@ -12,7 +12,6 @@ export const useAppInfo = ({ clientId }: { clientId: string }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/require-await
     async function fetchAppInfoInternal() {
       setIsLoading(true);
       try {
@@ -23,12 +22,10 @@ export const useAppInfo = ({ clientId }: { clientId: string }) => {
       } catch (e) {
         console.error(e);
       }
-
       setIsLoading(false);
     }
 
     let ignore = false;
-
     fetchAppInfoInternal();
     return () => {
       ignore = true;

@@ -36,19 +36,13 @@ export function useTransactions({ connectionId }: { connectionId: string }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/require-await
     async function fetchTransactions(connectionId: string) {
       setIsLoading(true);
       try {
-        // const response = await fetch(`${getBackendUrl()}/transactions/${connectionId}`, {
-        //   method: "GET",
-        // }).then((res) => {
-        //   if (res.ok) {
-        //     return res.json() as Promise<RawTransaction[]>;
-        //   } else {
-        //     throw new Error("Failed to fetch transactions.", { connectionId });
-        //   }
-        // });
+        // const response = await
+        // fetchWithAuth(`${getBackendUrl()}/api/transactions/${connectionId}`, { method: "GET",
+        // }).then((res) => { if (res.ok) { return res.json() as Promise<RawTransaction[]>; } else {
+        // throw new Error("Failed to fetch transactions.", { connectionId }); } });
         const response = [
           {
             id: "1",

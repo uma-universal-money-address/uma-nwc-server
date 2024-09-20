@@ -1,6 +1,6 @@
-import { ConnectionSettings } from "src/permissions/PersonalizePage";
-import { AppInfo } from "./AppInfo";
-import { Connection } from "./Connection";
+import { type ConnectionSettings } from "src/permissions/PersonalizePage";
+import { type AppInfo } from "./AppInfo";
+import { type Connection } from "./Connection";
 
 interface LoaderDataBase {
   appInfo: AppInfo;

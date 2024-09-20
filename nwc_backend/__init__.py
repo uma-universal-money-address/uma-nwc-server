@@ -237,9 +237,9 @@ def create_app() -> Quart:
 
     @app.route("/api/app", methods=["GET"])
     async def get_client_app() -> WerkzeugResponse:
-        # user_id = session.get("user_id")
-        # if not user_id:
-        #     return WerkzeugResponse("User not authenticated", status=401)
+        user_id = session.get("user_id")
+        if not user_id:
+            return WerkzeugResponse("User not authenticated", status=401)
 
         client_id = request.args.get("clientId")
         if not client_id:

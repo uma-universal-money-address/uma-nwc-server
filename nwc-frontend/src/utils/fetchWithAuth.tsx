@@ -1,7 +1,7 @@
-import { useAuth } from "./auth";
+import { getAuth } from "./auth";
 
 export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
-  const auth = useAuth();
+  const auth = getAuth();
   const token = auth.getAuthToken();
 
   if (!token) {

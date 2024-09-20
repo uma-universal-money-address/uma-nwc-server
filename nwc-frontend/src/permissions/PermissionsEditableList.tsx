@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import { Checkbox } from "@lightsparkdev/ui/components";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
-import { PermissionState } from "src/types/Connection";
+import { type PermissionState } from "src/types/Connection";
 
 interface Props {
   permissionStates: PermissionState[];

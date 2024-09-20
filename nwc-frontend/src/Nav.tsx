@@ -2,13 +2,13 @@ import styled from "@emotion/styled";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { Uma } from "src/components/Uma";
-import { useConfig } from "./hooks/useConfig";
-import { useAuth } from "./utils/auth";
+import { getAuth } from "./utils/auth";
+import { getConfig } from "./utils/getConfig";
 
 export const Nav = () => {
-  const auth = useAuth();
+  const auth = getAuth();
   const uma = auth.getUmaAddress();
-  const { vaspName, vaspLogoUrl } = useConfig();
+  const { vaspName, vaspLogoUrl } = getConfig();
 
   return (
     <NavContainer>

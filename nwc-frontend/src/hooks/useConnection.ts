@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import {
-  Connection,
-  ConnectionStatus,
-  InitialConnection,
-  LimitFrequency,
+  type Connection,
+  type ConnectionStatus,
+  type InitialConnection,
+  type LimitFrequency,
 } from "src/types/Connection";
 import { getBackendUrl } from "src/utils/backendUrl";
 import { fetchWithAuth } from "src/utils/fetchWithAuth";
@@ -30,11 +30,7 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
       setIsLoading(false);
     }
 
-    let ignore = false;
     fetchConnection();
-    return () => {
-      ignore = true;
-    };
   }, [connectionId]);
 
   const updateConnection = async ({
@@ -132,7 +128,6 @@ export const initializeConnection = async (
   }
 };
 
-// eslint-disable-next-line @typescript-eslint/require-await
 export const initializeManualConnection = async (
   initialConnection: InitialConnection,
 ) => {

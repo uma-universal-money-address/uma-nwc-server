@@ -6,7 +6,6 @@ import { useParams } from "react-router-dom";
 import { Shimmer } from "src/components/Shimmer";
 import { TransactionTable } from "src/components/TransactionTable";
 import { useConnection } from "src/hooks/useConnection";
-import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
 import { PermissionsList } from "src/permissions/PermissionsList";
 import { ConnectionStatus } from "src/types/Connection";
 import { ConnectionHeader } from "./ConnectionHeader";
@@ -20,7 +19,6 @@ export default function ConnectionPage() {
     updateConnection,
     isLoading: isLoadingConnection,
   } = useConnection({ connectionId });
-  const { setSuccessMessage, setError } = useGlobalNotificationContext();
 
   if (connection?.status === ConnectionStatus.PENDING) {
     return (

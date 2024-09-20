@@ -1,5 +1,15 @@
-export function useConfig() {
-  const config = (window as any).NWC_CONFIG;
+declare global {
+  interface Window {
+    NWC_CONFIG: {
+      UMA_VASP_LOGIN_URL: string;
+      VASP_NAME: string;
+      VASP_LOGO_URL: string;
+    };
+  }
+}
+
+export function getConfig() {
+  const config = (window as Window).NWC_CONFIG;
   if (!config) {
     throw new Error("NWC_CONFIG is not defined.");
   }
