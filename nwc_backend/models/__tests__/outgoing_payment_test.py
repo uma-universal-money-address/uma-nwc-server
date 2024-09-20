@@ -9,35 +9,38 @@ from nwc_backend.models.__tests__.model_examples import (
     create_nip47_request,
     create_spending_cycle,
 )
-from nwc_backend.models.spending_cycle_payment import (
-    PaymentStatus,
-    SpendingCyclePayment,
-)
+from nwc_backend.models.outgoing_payment import OutgoingPayment, PaymentStatus
 
 
-async def test_spending_cycle_payment(test_client: QuartClient) -> None:
+async def test_outgoing_payment(test_client: QuartClient) -> None:
     async with test_client.app.app_context():
         nip47_request = await create_nip47_request()
         spending_cycle = await create_spending_cycle()
-        estimated_amount = 100
+        sending_currency_amount = 1100
+        sending_currency = "USD"
+        estimated_budget_amount = 100
         budget_on_hold = 110
         status = PaymentStatus.PENDING
-        payment = SpendingCyclePayment(
+        payment = OutgoingPayment(
             id=uuid4(),
             nip47_request_id=nip47_request.id,
             spending_cycle_id=spending_cycle.id,
-            estimated_amount=estimated_amount,
+            sending_currency_amount=sending_currency_amount,
+            sending_currency_code=sending_currency,
+            estimated_budget_currency_amount=estimated_budget_amount,
             budget_on_hold=budget_on_hold,
             status=status,
         )
         db.session.add(payment)
         await db.session.commit()
 
-        payment = await db.session.get_one(SpendingCyclePayment, payment.id)
+        payment = await db.session.get_one(OutgoingPayment, payment.id)
         assert payment.nip47_request_id == nip47_request.id
         assert payment.spending_cycle_id == spending_cycle.id
-        assert payment.estimated_amount == estimated_amount
+        assert payment.sending_currency_amount == sending_currency_amount
+        assert payment.sending_currency_code == sending_currency
+        assert payment.estimated_budget_currency_amount == estimated_budget_amount
         assert payment.budget_on_hold == budget_on_hold
         assert payment.status == status
-        assert not payment.settled_amount
+        assert not payment.settled_budget_currency_amount
         assert payment.spending_cycle.id == spending_cycle.id

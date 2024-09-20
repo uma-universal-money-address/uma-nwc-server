@@ -9,7 +9,7 @@ from uma_auth.models.pay_to_address_response import PayToAddressResponse
 
 from nwc_backend.event_handlers.input_validator import get_required_field
 from nwc_backend.event_handlers.payment_utils import (
-    create_spending_cycle_payment,
+    create_outgoing_payment,
     update_on_payment_failed,
     update_on_payment_succeeded,
 )
@@ -28,23 +28,22 @@ async def pay_to_address(
 
     pay_to_address_request = PayToAddressRequest.from_dict(params)
 
-    payment = None
     current_spending_limit = request.get_spending_limit()
-    if current_spending_limit:
-        payment = await create_spending_cycle_payment(
-            access_token=access_token,
-            request=request,
-            sending_currency_code=pay_to_address_request.sending_currency_code,
-            sending_currency_amount=pay_to_address_request.sending_currency_amount,
-            spending_limit=current_spending_limit,
-        )
-        if (
+    payment = await create_outgoing_payment(
+        access_token=access_token,
+        request=request,
+        sending_currency_code=pay_to_address_request.sending_currency_code,
+        sending_currency_amount=pay_to_address_request.sending_currency_amount,
+        spending_limit=current_spending_limit,
+    )
+    if (
+        current_spending_limit
+        and current_spending_limit.currency.code
+        != pay_to_address_request.sending_currency_code
+    ):
+        pay_to_address_request.budget_currency_code = (
             current_spending_limit.currency.code
-            != pay_to_address_request.sending_currency_code
-        ):
-            pay_to_address_request.budget_currency_code = (
-                current_spending_limit.currency.code
-            )
+        )
 
     try:
         response = await VaspUmaClient.instance().pay_to_address(
@@ -52,11 +51,12 @@ async def pay_to_address(
             request=pay_to_address_request,
             address_type=receiving_address.type,
         )
-        if payment:
+        settled_budget_currency_amount = None
+        if current_spending_limit:
             settled_budget_currency_amount = response.total_budget_currency_amount
             if not settled_budget_currency_amount:
                 if (
-                    payment.spending_cycle.limit_currency
+                    current_spending_limit.currency
                     == response.quote.sending_currency_code
                 ):
                     settled_budget_currency_amount = response.quote.total_sending_amount
@@ -65,10 +65,11 @@ async def pay_to_address(
                         "Expected vasp to return total_budget_currency_amount on pay_to_address request %s.",
                         request.id,
                     )
-                    settled_budget_currency_amount = payment.estimated_amount
-            await update_on_payment_succeeded(payment, settled_budget_currency_amount)
+                    settled_budget_currency_amount = (
+                        payment.estimated_budget_currency_amount
+                    )
+        await update_on_payment_succeeded(payment, settled_budget_currency_amount)
         return response
     except Exception:
-        if payment:
-            await update_on_payment_failed(payment)
+        await update_on_payment_failed(payment)
         raise

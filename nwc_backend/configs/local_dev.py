@@ -4,6 +4,7 @@
 import os
 import secrets
 
+# DATABASE_URI: str = "postgresql+asyncpg://:@127.0.0.1:5432/nwc"
 DATABASE_URI: str = "sqlite+aiosqlite:///" + os.path.join(
     os.getcwd(), "instance", "nwc.sqlite"
 )
