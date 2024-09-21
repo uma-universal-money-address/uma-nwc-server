@@ -15,7 +15,7 @@ from nwc_backend.event_handlers.fetch_quote_handler import fetch_quote
 from nwc_backend.exceptions import InvalidInputException, NotImplementedException
 from nwc_backend.models.__tests__.model_examples import create_nip47_request
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.models.spending_cycle_quote import SpendingCycleQuote
+from nwc_backend.models.payment_quote import PaymentQuote
 
 
 @patch.object(aiohttp.ClientSession, "get")
@@ -58,9 +58,7 @@ async def test_fetch_quote_success(mock_get: Mock, test_client: QuartClient) -> 
         mock_get.assert_called_once_with(url="/quote/lud16", params=params, headers=ANY)
         assert exclude_none_values(quote.to_dict()) == vasp_response
 
-        stored_quote = await SpendingCycleQuote.from_payment_hash(
-            payment_hash=payment_hash
-        )
+        stored_quote = await PaymentQuote.from_payment_hash(payment_hash=payment_hash)
         assert stored_quote
         assert stored_quote.sending_currency_code == quote.sending_currency_code
         assert stored_quote.sending_currency_amount == quote.total_sending_amount

@@ -24,17 +24,15 @@ from nwc_backend.models.__tests__.model_examples import (
     create_nip47_request_with_spending_limit,
 )
 from nwc_backend.models.nip47_request import ErrorCode
+from nwc_backend.models.outgoing_payment import OutgoingPayment, PaymentStatus
 from nwc_backend.models.spending_cycle import SpendingCycle
-from nwc_backend.models.spending_cycle_payment import (
-    PaymentStatus,
-    SpendingCyclePayment,
-)
 from nwc_backend.typing import none_throws
 
 
 @patch.object(aiohttp.ClientSession, "post")
+@patch.object(aiohttp.ClientSession, "get")
 async def test_pay_keysend_success__spending_limit_disabled(
-    mock_post: Mock, test_client: QuartClient
+    mock_get_budget_estimate: Mock, mock_pay_keysend: Mock, test_client: QuartClient
 ) -> None:
     vasp_response = {
         "preimage": "b6f1086f61561bacf2f05fa02ab30a06c3432c1aea62817c019ea33c1730eeb3",
@@ -42,23 +40,37 @@ async def test_pay_keysend_success__spending_limit_disabled(
     mock_response = AsyncMock()
     mock_response.text = AsyncMock(return_value=json.dumps(vasp_response))
     mock_response.ok = True
-    mock_post.return_value.__aenter__.return_value = mock_response
+    mock_pay_keysend.return_value.__aenter__.return_value = mock_response
 
+    payment_amount_msats = 5000
+    payment_amount_sats = 5
     params = {
         "pubkey": token_hex(),
-        "amount": 10000,
+        "amount": payment_amount_msats,
         "tlv_records": [{"type": 5482373484, "value": "0123456789abcdef"}],
     }
     async with test_client.app.app_context():
         request = await create_nip47_request(params=params)
         response = await pay_keysend(access_token=token_hex(), request=request)
 
-        mock_post.assert_called_once_with(
+        mock_pay_keysend.assert_called_once_with(
             url="/payments/keysend",
             data=PayKeysendRequest.from_dict(params).to_json(),
             headers=ANY,
         )
         assert exclude_none_values(response.to_dict()) == vasp_response
+        mock_get_budget_estimate.assert_not_called()
+
+        spending_payment = (
+            await db.session.execute(select(OutgoingPayment))
+        ).scalar_one()
+        assert spending_payment.sending_currency_code == "SAT"
+        assert spending_payment.sending_currency_amount == payment_amount_sats
+        assert spending_payment.spending_cycle_id is None
+        assert spending_payment.estimated_budget_currency_amount is None
+        assert spending_payment.budget_on_hold is None
+        assert spending_payment.settled_budget_currency_amount is None
+        assert spending_payment.status == PaymentStatus.SUCCEEDED
 
 
 async def test_pay_keysend_failure__invalid_input(test_client: QuartClient) -> None:
@@ -71,8 +83,9 @@ async def test_pay_keysend_failure__invalid_input(test_client: QuartClient) -> N
 
 
 @patch.object(aiohttp.ClientSession, "post")
-async def test_pay_keysend_failure__http_raises(
-    mock_post: Mock, test_client: QuartClient
+@patch.object(aiohttp.ClientSession, "get")
+async def test_pay_keysend_payment_failed__spending_limit_disabled(
+    mock_get_budget_estimate: Mock, mock_pay_keysend: Mock, test_client: QuartClient
 ) -> None:
     vasp_response = VaspErrorResponse.from_dict(
         {"code": VaspErrorCode.PAYMENT_FAILED.name, "message": "No route."}
@@ -80,16 +93,31 @@ async def test_pay_keysend_failure__http_raises(
     mock_response = AsyncMock()
     mock_response.text = AsyncMock(return_value=vasp_response.model_dump_json())
     mock_response.ok = False
-    mock_post.return_value.__aenter__.return_value = mock_response
+    mock_pay_keysend.return_value.__aenter__.return_value = mock_response
 
+    payment_amount_msats = 5000
+    payment_amount_sats = 5
     async with test_client.app.app_context():
         with pytest.raises(Nip47RequestException) as exc_info:
             request = await create_nip47_request(
-                params={"pubkey": token_hex(), "amount": 10000}
+                params={"pubkey": token_hex(), "amount": payment_amount_msats}
             )
             await pay_keysend(access_token=token_hex(), request=request)
-        assert exc_info.value.error_code == ErrorCode.PAYMENT_FAILED
-        assert exc_info.value.error_message == vasp_response.message
+            assert exc_info.value.error_code == ErrorCode.PAYMENT_FAILED
+            assert exc_info.value.error_message == vasp_response.message
+
+            mock_get_budget_estimate.assert_not_called()
+
+        spending_payment = (
+            await db.session.execute(select(OutgoingPayment))
+        ).scalar_one()
+        assert spending_payment.sending_currency_code == "SAT"
+        assert spending_payment.sending_currency_amount == payment_amount_sats
+        assert spending_payment.spending_cycle_id is None
+        assert spending_payment.estimated_budget_currency_amount is None
+        assert spending_payment.budget_on_hold is None
+        assert spending_payment.settled_budget_currency_amount is None
+        assert spending_payment.status == PaymentStatus.FAILED
 
 
 @patch.object(aiohttp.ClientSession, "post")
@@ -129,14 +157,16 @@ async def test_pay_keysend_success__spending_limit_SAT_enabled(
         assert spending_cycle.total_spent_on_hold == 0
 
         spending_payment = (
-            await db.session.execute(select(SpendingCyclePayment))
+            await db.session.execute(select(OutgoingPayment))
         ).scalar_one()
+        assert spending_payment.sending_currency_code == "SAT"
+        assert spending_payment.sending_currency_amount == payment_amount_sats
         assert spending_payment.spending_cycle_id == spending_cycle.id
-        assert spending_payment.estimated_amount == payment_amount_sats
+        assert spending_payment.estimated_budget_currency_amount == payment_amount_sats
         assert spending_payment.budget_on_hold == math.ceil(
             test_client.app.config["BUDGET_BUFFER_MULTIPLIER"] * payment_amount_sats
         )
-        assert spending_payment.settled_amount == payment_amount_sats
+        assert spending_payment.settled_budget_currency_amount == payment_amount_sats
         assert spending_payment.status == PaymentStatus.SUCCEEDED
 
 
@@ -180,14 +210,16 @@ async def test_pay_keysend_payment_failed__spending_limit_SAT_enabled(
         assert spending_cycle.total_spent_on_hold == 0
 
         spending_payment = (
-            await db.session.execute(select(SpendingCyclePayment))
+            await db.session.execute(select(OutgoingPayment))
         ).scalar_one()
+        assert spending_payment.sending_currency_code == "SAT"
+        assert spending_payment.sending_currency_amount == payment_amount_sats
         assert spending_payment.spending_cycle_id == spending_cycle.id
-        assert spending_payment.estimated_amount == payment_amount_sats
+        assert spending_payment.estimated_budget_currency_amount == payment_amount_sats
         assert spending_payment.budget_on_hold == math.ceil(
             test_client.app.config["BUDGET_BUFFER_MULTIPLIER"] * payment_amount_sats
         )
-        assert spending_payment.settled_amount is None
+        assert spending_payment.settled_budget_currency_amount is None
         assert spending_payment.status == PaymentStatus.FAILED
 
 
@@ -275,15 +307,23 @@ async def test_pay_keysend_success__spending_limit_USD_enabled(
         assert spending_cycle.total_spent_on_hold == 0
 
         spending_payment = (
-            await db.session.execute(select(SpendingCyclePayment))
+            await db.session.execute(select(OutgoingPayment))
         ).scalar_one()
+        assert spending_payment.sending_currency_code == "SAT"
+        assert spending_payment.sending_currency_amount == payment_amount_sats
         assert spending_payment.spending_cycle_id == spending_cycle.id
-        assert spending_payment.estimated_amount == estimated_budget_currency_amount
+        assert (
+            spending_payment.estimated_budget_currency_amount
+            == estimated_budget_currency_amount
+        )
         assert spending_payment.budget_on_hold == math.ceil(
             test_client.app.config["BUDGET_BUFFER_MULTIPLIER"]
             * estimated_budget_currency_amount
         )
-        assert spending_payment.settled_amount == final_budget_currency_amount
+        assert (
+            spending_payment.settled_budget_currency_amount
+            == final_budget_currency_amount
+        )
         assert spending_payment.status == PaymentStatus.SUCCEEDED
 
 
@@ -348,15 +388,20 @@ async def test_pay_keysend_payment_failed__spending_limit_USD_enabled(
         assert spending_cycle.total_spent_on_hold == 0
 
         spending_payment = (
-            await db.session.execute(select(SpendingCyclePayment))
+            await db.session.execute(select(OutgoingPayment))
         ).scalar_one()
+        assert spending_payment.sending_currency_code == "SAT"
+        assert spending_payment.sending_currency_amount == payment_amount_sats
         assert spending_payment.spending_cycle_id == spending_cycle.id
-        assert spending_payment.estimated_amount == estimated_budget_currency_amount
+        assert (
+            spending_payment.estimated_budget_currency_amount
+            == estimated_budget_currency_amount
+        )
         assert spending_payment.budget_on_hold == math.ceil(
             test_client.app.config["BUDGET_BUFFER_MULTIPLIER"]
             * estimated_budget_currency_amount
         )
-        assert spending_payment.settled_amount is None
+        assert spending_payment.settled_budget_currency_amount is None
         assert spending_payment.status == PaymentStatus.FAILED
 
 

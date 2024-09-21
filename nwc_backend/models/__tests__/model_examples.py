@@ -14,9 +14,9 @@ from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
+from nwc_backend.models.payment_quote import PaymentQuote
 from nwc_backend.models.permissions_grouping import PermissionsGroup
 from nwc_backend.models.spending_cycle import SpendingCycle
-from nwc_backend.models.spending_cycle_quote import SpendingCycleQuote
 from nwc_backend.models.spending_limit import (
     Currency,
     SpendingLimit,
@@ -185,11 +185,11 @@ async def create_spending_cycle(
     return spending_cycle
 
 
-async def create_spending_cycle_quote(
+async def create_payment_quote(
     sending_currency_code: str = "USD", sending_currency_amount: int = 10_00
-) -> SpendingCycleQuote:
+) -> PaymentQuote:
     nip47_request = await create_nip47_request()
-    quote = SpendingCycleQuote(
+    quote = PaymentQuote(
         id=uuid4(),
         nip47_request_id=nip47_request.id,
         payment_hash=token_hex(),

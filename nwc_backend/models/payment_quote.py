@@ -13,8 +13,8 @@ from nwc_backend.db import db
 from nwc_backend.models.model_base import ModelBase
 
 
-class SpendingCycleQuote(ModelBase):
-    __tablename__ = "spending_cycle_quote"
+class PaymentQuote(ModelBase):
+    __tablename__ = "payment_quote"
 
     nip47_request_id: Mapped[UUID] = mapped_column(
         DBUUID(), ForeignKey("nip47_request.id"), nullable=False
@@ -24,8 +24,8 @@ class SpendingCycleQuote(ModelBase):
     sending_currency_amount: Mapped[int] = mapped_column(BigInteger(), nullable=False)
 
     @staticmethod
-    async def from_payment_hash(payment_hash: str) -> Optional["SpendingCycleQuote"]:
+    async def from_payment_hash(payment_hash: str) -> Optional["PaymentQuote"]:
         result = await db.session.execute(
-            select(SpendingCycleQuote).filter_by(payment_hash=payment_hash).limit(1)
+            select(PaymentQuote).filter_by(payment_hash=payment_hash).limit(1)
         )
         return result.scalars().first()
