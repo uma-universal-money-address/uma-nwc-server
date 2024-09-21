@@ -15,6 +15,7 @@ from nwc_backend.event_handlers.payment_utils import (
 )
 from nwc_backend.exceptions import InvalidInputException
 from nwc_backend.models.nip47_request import Nip47Request
+from nwc_backend.models.receiving_address import ReceivingAddressType
 from nwc_backend.vasp_client import VaspUmaClient
 
 
@@ -37,6 +38,8 @@ async def pay_invoice(access_token: str, request: Nip47Request) -> PayInvoiceRes
         sending_currency_code="SAT",
         sending_currency_amount=payment_amount_sats,
         spending_limit=current_spending_limit,
+        receiver=pay_invoice_request.invoice,
+        receiver_type=ReceivingAddressType.BOLT11,
     )
     if current_spending_limit and current_spending_limit.currency.code != "SAT":
         pay_invoice_request.budget_currency_code = current_spending_limit.currency.code

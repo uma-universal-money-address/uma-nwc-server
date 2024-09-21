@@ -19,6 +19,7 @@ class PaymentQuote(ModelBase):
     nip47_request_id: Mapped[UUID] = mapped_column(
         DBUUID(), ForeignKey("nip47_request.id"), nullable=False
     )
+    receiver_address: Mapped[str] = mapped_column(String(200), nullable=False)
     payment_hash: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     sending_currency_code: Mapped[str] = mapped_column(String(3), nullable=False)
     sending_currency_amount: Mapped[int] = mapped_column(BigInteger(), nullable=False)

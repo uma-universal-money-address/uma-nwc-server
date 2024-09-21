@@ -12,6 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from nwc_backend.db import UUID as DBUUID
 from nwc_backend.models.model_base import ModelBase
+from nwc_backend.models.receiving_address import ReceivingAddressType
 from nwc_backend.models.spending_cycle import SpendingCycle
 
 
@@ -38,6 +39,10 @@ class OutgoingPayment(ModelBase):
     )
     sending_currency_code: Mapped[str] = mapped_column(String(3), nullable=False)
     sending_currency_amount: Mapped[int] = mapped_column(BigInteger(), nullable=False)
+    receiver: Mapped[str] = mapped_column(String(10240), nullable=False)
+    receiver_type: Mapped[ReceivingAddressType] = mapped_column(
+        DBEnum(ReceivingAddressType, native_enum=False, nullable=False)
+    )
 
     # The following fields are only set when spending limit is enabled
     spending_cycle_id: Mapped[Optional[UUID]] = mapped_column(
@@ -70,7 +75,8 @@ class OutgoingPayment(ModelBase):
             "sending_currency_code": self.sending_currency_code,
             "sending_currency_amount": self.sending_currency_amount,
             "status": self.status.value,
-            "receiver": "$alice@uma.me",  # TODO: update
+            "receiver": self.receiver,
+            "receiver_type": self.receiver_type.name,
             "budget_currency_code": (
                 spending_cycle.limit_currency if spending_cycle else None
             ),

@@ -68,6 +68,8 @@ async def test_get_outgoing_payments(
     assert result_tx_3["budget_currency_code"] == spending_cycle.limit_currency
     assert result_tx_3["budget_currency_amount"] is None
     assert result_tx_3["budget_on_hold"] == payment3.budget_on_hold
+    assert result_tx_3["receiver"] == payment3.receiver
+    assert result_tx_3["receiver_type"] == payment3.receiver_type.name
 
     # second fetch
     request_params = {"limit": 3, "offset": 1}
@@ -89,6 +91,8 @@ async def test_get_outgoing_payments(
         result_tx_2["budget_currency_amount"] == payment2.settled_budget_currency_amount
     )
     assert result_tx_2["budget_on_hold"] is None
+    assert result_tx_2["receiver"] == payment2.receiver
+    assert result_tx_2["receiver_type"] == payment2.receiver_type.name
     assert result_tx_1["id"] == str(payment1.id)
     assert result_tx_1["sending_currency_code"] == payment1.sending_currency_code
     assert result_tx_1["sending_currency_amount"] == payment1.sending_currency_amount
@@ -96,6 +100,8 @@ async def test_get_outgoing_payments(
     assert result_tx_1["budget_currency_code"] is None
     assert result_tx_1["budget_currency_amount"] is None
     assert result_tx_1["budget_on_hold"] is None
+    assert result_tx_1["receiver"] == payment1.receiver
+    assert result_tx_1["receiver_type"] == payment1.receiver_type.name
 
 
 async def test_get_outgoing_payments__empty(

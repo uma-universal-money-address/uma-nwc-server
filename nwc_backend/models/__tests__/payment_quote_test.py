@@ -16,12 +16,14 @@ async def test_payment_quote(test_client: QuartClient) -> None:
         payment_hash = token_hex()
         amount = 100
         currency_code = "USD"
+        receiver_address = "$alice@uma.me"
         quote = PaymentQuote(
             id=uuid4(),
             nip47_request_id=nip47_request.id,
             payment_hash=payment_hash,
             sending_currency_code=currency_code,
             sending_currency_amount=amount,
+            receiver_address=receiver_address,
         )
         db.session.add(quote)
         await db.session.commit()
@@ -31,5 +33,6 @@ async def test_payment_quote(test_client: QuartClient) -> None:
         assert quote.nip47_request_id == nip47_request.id
         assert quote.sending_currency_amount == amount
         assert quote.sending_currency_code == currency_code
+        assert quote.receiver_address == receiver_address
 
         assert not await PaymentQuote.from_payment_hash("abcde")

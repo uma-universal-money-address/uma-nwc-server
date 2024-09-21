@@ -10,7 +10,11 @@ from quart import current_app
 from nwc_backend.db import db
 from nwc_backend.exceptions import InsufficientBudgetException
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.models.outgoing_payment import OutgoingPayment, PaymentStatus
+from nwc_backend.models.outgoing_payment import (
+    OutgoingPayment,
+    PaymentStatus,
+    ReceivingAddressType,
+)
 from nwc_backend.models.payment_quote import PaymentQuote
 from nwc_backend.models.spending_cycle import SpendingCycle
 from nwc_backend.models.spending_limit import SpendingLimit
@@ -52,6 +56,8 @@ def get_budget_buffer_multiplier() -> float:
 async def create_outgoing_payment(
     access_token: str,
     request: Nip47Request,
+    receiver: str,
+    receiver_type: ReceivingAddressType,
     sending_currency_code: str,
     sending_currency_amount: int,
     spending_limit: Optional[SpendingLimit],
@@ -65,6 +71,8 @@ async def create_outgoing_payment(
         sending_currency_amount=sending_currency_amount,
         status=PaymentStatus.PENDING,
         quote_id=quote.id if quote else None,
+        receiver=receiver,
+        receiver_type=receiver_type,
     )
     if spending_limit:
         spending_cycle = await spending_limit.get_or_create_current_spending_cycle()

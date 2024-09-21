@@ -13,6 +13,7 @@ from nwc_backend.event_handlers.payment_utils import (
     update_on_payment_succeeded,
 )
 from nwc_backend.models.nip47_request import Nip47Request
+from nwc_backend.models.receiving_address import ReceivingAddressType
 from nwc_backend.vasp_client import VaspUmaClient
 
 
@@ -27,6 +28,8 @@ async def pay_keysend(access_token: str, request: Nip47Request) -> PayKeysendRes
         sending_currency_code="SAT",
         sending_currency_amount=payment_amount_sats,
         spending_limit=current_spending_limit,
+        receiver=pay_keysend_request.pubkey,
+        receiver_type=ReceivingAddressType.NODE_PUBKEY,
     )
     if current_spending_limit and current_spending_limit.currency.code != "SAT":
         pay_keysend_request.budget_currency_code = current_spending_limit.currency.code

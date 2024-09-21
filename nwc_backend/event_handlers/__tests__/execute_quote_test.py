@@ -28,7 +28,11 @@ from nwc_backend.models.__tests__.model_examples import (
     create_payment_quote,
 )
 from nwc_backend.models.nip47_request import Nip47Request
-from nwc_backend.models.outgoing_payment import OutgoingPayment, PaymentStatus
+from nwc_backend.models.outgoing_payment import (
+    OutgoingPayment,
+    PaymentStatus,
+    ReceivingAddressType,
+)
 from nwc_backend.models.spending_cycle import SpendingCycle
 from nwc_backend.typing import none_throws
 
@@ -59,17 +63,17 @@ async def test_execute_quote_success__spending_limit_disabled(
         )
         mock_get_budget_estimate.assert_not_called()
 
-        spending_payment = (
-            await db.session.execute(select(OutgoingPayment))
-        ).scalar_one()
-        assert spending_payment.sending_currency_code == quote.sending_currency_code
-        assert spending_payment.sending_currency_amount == quote.sending_currency_amount
-        assert spending_payment.spending_cycle_id is None
-        assert spending_payment.estimated_budget_currency_amount is None
-        assert spending_payment.budget_on_hold is None
-        assert spending_payment.settled_budget_currency_amount is None
-        assert spending_payment.status == PaymentStatus.SUCCEEDED
-        assert spending_payment.quote_id == quote.id
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.LUD16
+        assert payment.receiver == quote.receiver_address
+        assert payment.sending_currency_code == quote.sending_currency_code
+        assert payment.sending_currency_amount == quote.sending_currency_amount
+        assert payment.spending_cycle_id is None
+        assert payment.estimated_budget_currency_amount is None
+        assert payment.budget_on_hold is None
+        assert payment.settled_budget_currency_amount is None
+        assert payment.status == PaymentStatus.SUCCEEDED
+        assert payment.quote_id == quote.id
 
 
 @patch.object(aiohttp.ClientSession, "post")
@@ -103,17 +107,17 @@ async def test_execute_quote_payment_failed__spending_limit_disabled(
             )
             mock_get_budget_estimate.assert_not_called()
 
-        spending_payment = (
-            await db.session.execute(select(OutgoingPayment))
-        ).scalar_one()
-        assert spending_payment.sending_currency_code == quote.sending_currency_code
-        assert spending_payment.sending_currency_amount == quote.sending_currency_amount
-        assert spending_payment.spending_cycle_id is None
-        assert spending_payment.estimated_budget_currency_amount is None
-        assert spending_payment.budget_on_hold is None
-        assert spending_payment.settled_budget_currency_amount is None
-        assert spending_payment.status == PaymentStatus.FAILED
-        assert spending_payment.quote_id == quote.id
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.LUD16
+        assert payment.receiver == quote.receiver_address
+        assert payment.sending_currency_code == quote.sending_currency_code
+        assert payment.sending_currency_amount == quote.sending_currency_amount
+        assert payment.spending_cycle_id is None
+        assert payment.estimated_budget_currency_amount is None
+        assert payment.budget_on_hold is None
+        assert payment.settled_budget_currency_amount is None
+        assert payment.status == PaymentStatus.FAILED
+        assert payment.quote_id == quote.id
 
 
 async def test_execute_quote_failure__invalid_input(test_client: QuartClient) -> None:
@@ -163,26 +167,20 @@ async def test_execute_quote_success__sending_SAT_budget_SAT(
         assert spending_cycle.total_spent == quote.sending_currency_amount
         assert spending_cycle.total_spent_on_hold == 0
 
-        spending_payment = (
-            await db.session.execute(select(OutgoingPayment))
-        ).scalar_one()
-        assert spending_payment.sending_currency_code == quote.sending_currency_code
-        assert spending_payment.sending_currency_amount == quote.sending_currency_amount
-        assert spending_payment.spending_cycle_id == spending_cycle.id
-        assert (
-            spending_payment.estimated_budget_currency_amount
-            == quote.sending_currency_amount
-        )
-        assert spending_payment.budget_on_hold == math.ceil(
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.LUD16
+        assert payment.receiver == quote.receiver_address
+        assert payment.sending_currency_code == quote.sending_currency_code
+        assert payment.sending_currency_amount == quote.sending_currency_amount
+        assert payment.spending_cycle_id == spending_cycle.id
+        assert payment.estimated_budget_currency_amount == quote.sending_currency_amount
+        assert payment.budget_on_hold == math.ceil(
             test_client.app.config["BUDGET_BUFFER_MULTIPLIER"]
             * quote.sending_currency_amount
         )
-        assert (
-            spending_payment.settled_budget_currency_amount
-            == quote.sending_currency_amount
-        )
-        assert spending_payment.status == PaymentStatus.SUCCEEDED
-        assert spending_payment.quote_id == quote.id
+        assert payment.settled_budget_currency_amount == quote.sending_currency_amount
+        assert payment.status == PaymentStatus.SUCCEEDED
+        assert payment.quote_id == quote.id
 
 
 @patch.object(aiohttp.ClientSession, "post")
@@ -229,23 +227,20 @@ async def test_execute_quote_payment_failed__sending_SAT_budget_SAT(
         assert spending_cycle.total_spent == 0
         assert spending_cycle.total_spent_on_hold == 0
 
-        spending_payment = (
-            await db.session.execute(select(OutgoingPayment))
-        ).scalar_one()
-        assert spending_payment.sending_currency_code == quote.sending_currency_code
-        assert spending_payment.sending_currency_amount == quote.sending_currency_amount
-        assert spending_payment.spending_cycle_id == spending_cycle.id
-        assert (
-            spending_payment.estimated_budget_currency_amount
-            == quote.sending_currency_amount
-        )
-        assert spending_payment.budget_on_hold == math.ceil(
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.LUD16
+        assert payment.receiver == quote.receiver_address
+        assert payment.sending_currency_code == quote.sending_currency_code
+        assert payment.sending_currency_amount == quote.sending_currency_amount
+        assert payment.spending_cycle_id == spending_cycle.id
+        assert payment.estimated_budget_currency_amount == quote.sending_currency_amount
+        assert payment.budget_on_hold == math.ceil(
             test_client.app.config["BUDGET_BUFFER_MULTIPLIER"]
             * quote.sending_currency_amount
         )
-        assert spending_payment.settled_budget_currency_amount is None
-        assert spending_payment.status == PaymentStatus.FAILED
-        assert spending_payment.quote_id == quote.id
+        assert payment.settled_budget_currency_amount is None
+        assert payment.status == PaymentStatus.FAILED
+        assert payment.quote_id == quote.id
 
 
 @patch.object(aiohttp.ClientSession, "post")
@@ -339,26 +334,22 @@ async def test_execute_quote_success__sending_SAT_budget_USD(
         assert spending_cycle.total_spent == final_budget_currency_amount
         assert spending_cycle.total_spent_on_hold == 0
 
-        spending_payment = (
-            await db.session.execute(select(OutgoingPayment))
-        ).scalar_one()
-        assert spending_payment.sending_currency_code == quote.sending_currency_code
-        assert spending_payment.sending_currency_amount == quote.sending_currency_amount
-        assert spending_payment.spending_cycle_id == spending_cycle.id
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.LUD16
+        assert payment.receiver == quote.receiver_address
+        assert payment.sending_currency_code == quote.sending_currency_code
+        assert payment.sending_currency_amount == quote.sending_currency_amount
+        assert payment.spending_cycle_id == spending_cycle.id
         assert (
-            spending_payment.estimated_budget_currency_amount
-            == estimated_budget_currency_amount
+            payment.estimated_budget_currency_amount == estimated_budget_currency_amount
         )
-        assert spending_payment.budget_on_hold == math.ceil(
+        assert payment.budget_on_hold == math.ceil(
             test_client.app.config["BUDGET_BUFFER_MULTIPLIER"]
             * estimated_budget_currency_amount
         )
-        assert (
-            spending_payment.settled_budget_currency_amount
-            == final_budget_currency_amount
-        )
-        assert spending_payment.status == PaymentStatus.SUCCEEDED
-        assert spending_payment.quote_id == quote.id
+        assert payment.settled_budget_currency_amount == final_budget_currency_amount
+        assert payment.status == PaymentStatus.SUCCEEDED
+        assert payment.quote_id == quote.id
 
 
 @patch.object(aiohttp.ClientSession, "post")
@@ -425,23 +416,22 @@ async def test_execute_quote_payment_failed__sending_SAT_budget_USD(
         assert spending_cycle.total_spent == 0
         assert spending_cycle.total_spent_on_hold == 0
 
-        spending_payment = (
-            await db.session.execute(select(OutgoingPayment))
-        ).scalar_one()
-        assert spending_payment.sending_currency_code == quote.sending_currency_code
-        assert spending_payment.sending_currency_amount == quote.sending_currency_amount
-        assert spending_payment.spending_cycle_id == spending_cycle.id
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.LUD16
+        assert payment.receiver == quote.receiver_address
+        assert payment.sending_currency_code == quote.sending_currency_code
+        assert payment.sending_currency_amount == quote.sending_currency_amount
+        assert payment.spending_cycle_id == spending_cycle.id
         assert (
-            spending_payment.estimated_budget_currency_amount
-            == estimated_budget_currency_amount
+            payment.estimated_budget_currency_amount == estimated_budget_currency_amount
         )
-        assert spending_payment.budget_on_hold == math.ceil(
+        assert payment.budget_on_hold == math.ceil(
             test_client.app.config["BUDGET_BUFFER_MULTIPLIER"]
             * estimated_budget_currency_amount
         )
-        assert spending_payment.settled_budget_currency_amount is None
-        assert spending_payment.status == PaymentStatus.FAILED
-        assert spending_payment.quote_id == quote.id
+        assert payment.settled_budget_currency_amount is None
+        assert payment.status == PaymentStatus.FAILED
+        assert payment.quote_id == quote.id
 
 
 @patch.object(aiohttp.ClientSession, "post")

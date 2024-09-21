@@ -14,6 +14,7 @@ from nwc_backend.event_handlers.payment_utils import (
     update_on_payment_succeeded,
 )
 from nwc_backend.models.nip47_request import Nip47Request
+from nwc_backend.models.receiving_address import ReceivingAddressType
 from nwc_backend.vasp_client import ReceivingAddress, VaspUmaClient
 
 
@@ -22,7 +23,7 @@ async def pay_to_address(
 ) -> PayToAddressResponse:
     params = deepcopy(request.params)
     receiver = get_required_field(params, "receiver", dict)
-    receiving_address = ReceivingAddress.from_dict(receiver)
+    receiving_address = ReceivingAddress.from_dict(receiver, ReceivingAddressType.LUD16)
     params.pop("receiver")
     params["receiver_address"] = receiving_address.address
 
@@ -35,6 +36,8 @@ async def pay_to_address(
         sending_currency_code=pay_to_address_request.sending_currency_code,
         sending_currency_amount=pay_to_address_request.sending_currency_amount,
         spending_limit=current_spending_limit,
+        receiver=receiving_address.address,
+        receiver_type=ReceivingAddressType.LUD16,
     )
     if (
         current_spending_limit

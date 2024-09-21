@@ -1,8 +1,6 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-from dataclasses import dataclass
-from enum import Enum
 from typing import Any, Optional
 from urllib.parse import urlparse
 
@@ -26,42 +24,8 @@ from uma_auth.models.pay_to_address_response import PayToAddressResponse
 from uma_auth.models.quote import Quote
 from uma_auth.models.transaction import Transaction, TransactionType
 
-from nwc_backend.exceptions import (
-    InvalidInputException,
-    NotImplementedException,
-    VaspErrorResponseException,
-)
-
-
-class AddressType(Enum):
-    LUD16 = "lud16"
-    BOLT12 = "bolt12"
-
-
-@dataclass
-class ReceivingAddress:
-    address: str
-    type: AddressType
-
-    @staticmethod
-    def from_dict(receiving_address: dict[str, str]) -> "ReceivingAddress":
-        if len(receiving_address) != 1:
-            raise InvalidInputException(
-                "Expect `receiver` to contain exactly one address.",
-            )
-
-        address_type, address = next(iter(receiving_address.items()))
-        try:
-            address_type = AddressType(address_type)
-        except ValueError as ex:
-            raise InvalidInputException(
-                "Expect `receiver` to contain address type `bolt12` or `lud16`.",
-            ) from ex
-
-        if address_type == AddressType.BOLT12:
-            raise NotImplementedException("Bolt12 is not yet supported.")
-
-        return ReceivingAddress(address=address, type=AddressType(address_type))
+from nwc_backend.exceptions import VaspErrorResponseException
+from nwc_backend.models.receiving_address import ReceivingAddress, ReceivingAddressType
 
 
 class VaspUmaClient:
@@ -261,7 +225,10 @@ class VaspUmaClient:
         return PayKeysendResponse.from_json(result)
 
     async def pay_to_address(
-        self, access_token: str, request: PayToAddressRequest, address_type: AddressType
+        self,
+        access_token: str,
+        request: PayToAddressRequest,
+        address_type: ReceivingAddressType,
     ) -> PayToAddressResponse:
         result = await self._make_http_post(
             path=f"/payments/{address_type.value}",

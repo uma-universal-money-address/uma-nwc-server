@@ -62,6 +62,7 @@ async def test_fetch_quote_success(mock_get: Mock, test_client: QuartClient) -> 
         assert stored_quote
         assert stored_quote.sending_currency_code == quote.sending_currency_code
         assert stored_quote.sending_currency_amount == quote.total_sending_amount
+        assert stored_quote.receiver_address == receiver_address
 
 
 async def test_fetch_quote_failure__no_receivers(test_client: QuartClient) -> None:
