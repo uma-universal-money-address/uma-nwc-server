@@ -24,6 +24,7 @@ async def test_outgoing_payment(test_client: QuartClient) -> None:
         payment = OutgoingPayment(
             id=uuid4(),
             nip47_request_id=nip47_request.id,
+            nwc_connection_id=nip47_request.nwc_connection_id,
             spending_cycle_id=spending_cycle.id,
             sending_currency_amount=sending_currency_amount,
             sending_currency_code=sending_currency,

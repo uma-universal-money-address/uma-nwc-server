@@ -60,6 +60,7 @@ async def create_outgoing_payment(
     payment = OutgoingPayment(
         id=uuid4(),
         nip47_request_id=request.id,
+        nwc_connection_id=request.nwc_connection_id,
         sending_currency_code=sending_currency_code,
         sending_currency_amount=sending_currency_amount,
         status=PaymentStatus.PENDING,
