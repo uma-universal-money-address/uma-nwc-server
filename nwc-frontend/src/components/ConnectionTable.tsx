@@ -33,7 +33,7 @@ export const LoadingConnectionRow = ({
 const ConnectionRow = ({ connection }: { connection: Connection }) => {
   return (
     <Row to={`/connection/${connection.connectionId}`}>
-      <Avatar size={48} src={connection.avatar} />
+      <Avatar size={48} src={connection.avatar ?? ""} />
       <InfoRowContainer>
         <InfoRow>
           <span>{connection.name}</span>
@@ -42,7 +42,9 @@ const ConnectionRow = ({ connection }: { connection: Connection }) => {
           <span>
             {connection.status === ConnectionStatus.PENDING
               ? "Pending connection"
-              : formatTimestamp(connection.lastUsed)}
+              : connection.lastUsed
+                ? formatTimestamp(connection.lastUsed)
+                : ""}
           </span>
         </InfoRowDetails>
       </InfoRowContainer>

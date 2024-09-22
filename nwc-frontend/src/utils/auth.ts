@@ -91,14 +91,14 @@ export class Auth {
 
   getUmaAddress() {
     if (!this.isLoggedIn()) {
-      return null;
+      return undefined;
     }
     return globalLoginState?.umaAddress;
   }
 
   getCurrency() {
     if (!this.isLoggedIn()) {
-      return null;
+      return undefined;
     }
     return globalLoginState?.currency;
   }

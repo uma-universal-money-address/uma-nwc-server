@@ -36,8 +36,8 @@ export const Limit = ({ connection }: { connection: Connection }) => {
       }
     } else {
       const createdAt = dayjs(connection.createdAt);
-      const renewalDate =
-        RENEWAL_DATE_FUNCTIONS[connection.limitFrequency](createdAt);
+      const limitFrequency = connection.limitFrequency ?? LimitFrequency.NONE;
+      const renewalDate = RENEWAL_DATE_FUNCTIONS[limitFrequency](createdAt);
       const daysUntilRenewal = renewalDate.diff(dayjs(), "days");
       if (daysUntilRenewal < 0) {
         // Shouldn't happen
@@ -62,11 +62,16 @@ export const Limit = ({ connection }: { connection: Connection }) => {
 
   const amountUsed = `${formatAmountString({ currency: connection.currency, amountInLowestDenom: connection.amountInLowestDenomUsed })} used`;
   const amountRemaining = `${formatAmountString({ currency: connection.currency, amountInLowestDenom: connection.amountInLowestDenom - connection.amountInLowestDenomUsed })} remaining`;
+  const limitFrequencyString =
+    connection.limitFrequency &&
+    connection.limitFrequency !== LimitFrequency.NONE
+      ? ` per ${FREQUENCY_TO_SINGULAR_FORM[connection.limitFrequency]}`
+      : "";
 
   return (
     <Container>
       <Row>
-        <LimitValue>{`${formatAmountString({ currency: connection.currency, amountInLowestDenom: connection.amountInLowestDenom })}${connection.limitFrequency !== LimitFrequency.NONE ? ` per ${FREQUENCY_TO_SINGULAR_FORM[connection.limitFrequency]}` : ""}`}</LimitValue>
+        <LimitValue>{`${formatAmountString({ currency: connection.currency, amountInLowestDenom: connection.amountInLowestDenom })}${limitFrequencyString}`}</LimitValue>
         <LimitBar>
           <LimitBarFill
             style={{

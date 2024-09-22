@@ -16,6 +16,7 @@ import { type ConnectionSettings } from "src/permissions/PersonalizePage";
 import {
   DEFAULT_CONNECTION_SETTINGS,
   ExpirationPeriod,
+  type LimitFrequency,
   type PermissionState,
 } from "src/types/Connection";
 import { getAuth } from "src/utils/auth";
@@ -34,9 +35,7 @@ export default function ManualConnectionPage() {
     useState<ConnectionSettings>(DEFAULT_CONNECTION_SETTINGS);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [connectionName, setConnectionName] = useState<string>("");
-  const [pairingUri, setPairingUri] = useState<{ pairingUri: string } | null>(
-    null,
-  );
+  const [pairingUri, setPairingUri] = useState<string | null>(null);
   const auth = getAuth();
   const currency = auth.getCurrency();
 

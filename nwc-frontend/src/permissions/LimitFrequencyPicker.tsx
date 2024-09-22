@@ -9,10 +9,11 @@ interface Props {
 }
 
 export const LimitFrequencyPicker = ({ frequency, setFrequency }: Props) => {
-  const handleChooseFrequency = (frequency) => (e) => {
-    setFrequency(frequency);
-    e.preventDefault();
-  };
+  const handleChooseFrequency =
+    (frequency: LimitFrequency) => (e: React.MouseEvent<HTMLButtonElement>) => {
+      setFrequency(frequency);
+      e.preventDefault();
+    };
 
   return (
     <Container>

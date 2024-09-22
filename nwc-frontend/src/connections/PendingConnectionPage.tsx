@@ -26,6 +26,9 @@ export const PendingConnectionPage = ({
 
   const handleCopyConnectionString = () => {
     (async () => {
+      if (!pairingUri) {
+        return;
+      }
       await navigator.clipboard.writeText(pairingUri);
       setSuccessMessage("Connection string copied to clipboard");
     })();

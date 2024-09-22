@@ -4,16 +4,17 @@ import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 
 interface Props {
+  id: string;
   isEnabled: boolean;
   setIsEnabled: (enabled: boolean) => void;
   title: string;
 }
 
-export const EnableToggle = ({ isEnabled, setIsEnabled, title }: Props) => {
+export const EnableToggle = ({ isEnabled, setIsEnabled, title, id }: Props) => {
   return (
     <Container>
       <Text>{title}</Text>
-      <Toggle on={isEnabled} onChange={setIsEnabled} />
+      <Toggle on={isEnabled} onChange={setIsEnabled} id={id} />
     </Container>
   );
 };

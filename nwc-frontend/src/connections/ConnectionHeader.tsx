@@ -58,7 +58,7 @@ export const ConnectionHeader = ({
         <AppSection>
           <Avatar
             size={72}
-            src={appInfo?.avatar}
+            src={appInfo?.avatar ?? ""}
             isLoading={isLoadingAppInfo}
           />
           <AppDetails>

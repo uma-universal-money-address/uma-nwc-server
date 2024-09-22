@@ -1,6 +1,9 @@
 import styled from "@emotion/styled";
 
-export const Uma = ({ uma }: { uma?: string }) => {
+export const Uma = ({ uma }: { uma: string | undefined }) => {
+  if (!uma) {
+    return null;
+  }
   return (
     <Container>
       <Text>{uma}</Text>

@@ -18,7 +18,7 @@ export const PERMISSION_DESCRIPTIONS = {
 export interface Permission {
   type: PermissionType;
   description: string;
-  optional?: boolean;
+  optional: boolean;
 }
 
 export interface PermissionState {
@@ -111,6 +111,7 @@ export const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
       permission: {
         type: PermissionType.SEND_PAYMENTS,
         description: "Send payments from your UMA",
+        optional: false,
       },
       enabled: true,
     },

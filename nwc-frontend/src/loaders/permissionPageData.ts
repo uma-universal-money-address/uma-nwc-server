@@ -4,6 +4,7 @@ import {
   type Connection,
   DEFAULT_CONNECTION_SETTINGS,
 } from "src/types/Connection";
+import { type Currency } from "src/types/Currency";
 import { type PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
 import { getBackendUrl } from "src/utils/backendUrl";
 import { fetchWithAuth } from "src/utils/fetchWithAuth";

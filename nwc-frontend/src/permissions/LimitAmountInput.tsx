@@ -17,8 +17,11 @@ export const LimitAmountInput = ({ amount, setAmount, currency }: Props) => {
   const handleInputChange = (newValue: string) => {
     // Replace any non-decimal characters
     const amountInLowestDenom = newValue.replace(/[^0-9]/g, "");
-    setInputValue(formatAmountString({ currency, amountInLowestDenom }));
-    setAmount(amountInLowestDenom);
+    const amountAsNumber = parseInt(amountInLowestDenom, 10);
+    setInputValue(
+      formatAmountString({ currency, amountInLowestDenom: amountAsNumber }),
+    );
+    setAmount(amountAsNumber);
   };
 
   return (

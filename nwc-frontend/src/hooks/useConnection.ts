@@ -40,7 +40,7 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
     status,
   }: {
     amountInLowestDenom: number;
-    limitFrequency: LimitFrequency;
+    limitFrequency?: LimitFrequency;
     limitEnabled: boolean;
     status: ConnectionStatus;
   }) => {
@@ -50,7 +50,7 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
         {
           method: "POST",
           body: JSON.stringify({
-            connectionId: connection.connectionId,
+            connectionId: connectionId,
             amountInLowestDenom,
             limitFrequency,
             limitEnabled,
@@ -85,7 +85,7 @@ export const updateConnection = async ({
 }: {
   connectionId: string;
   amountInLowestDenom: number;
-  limitFrequency: LimitFrequency;
+  limitFrequency?: LimitFrequency;
   limitEnabled: boolean;
   expiration: string;
   status: ConnectionStatus;

@@ -6,6 +6,7 @@ export const FREQUENCY_TO_SINGULAR_FORM: Record<LimitFrequency, string> = {
   [LimitFrequency.DAILY]: "day",
   [LimitFrequency.WEEKLY]: "week",
   [LimitFrequency.MONTHLY]: "month",
+  [LimitFrequency.NONE]: "",
 };
 
 export const formatConnectionString = ({

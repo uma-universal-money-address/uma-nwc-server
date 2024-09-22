@@ -14,13 +14,14 @@ export function getConfig() {
     throw new Error("NWC_CONFIG is not defined.");
   }
   const assertDefinedAndNotEmpty = (key: string): string => {
-    if (config[key] === undefined || config[key] === "") {
+    const configAsMap = config as Record<string, string>;
+    if (configAsMap[key] === undefined || configAsMap[key] === "") {
       throw new Error(`${key} is not defined.`);
     }
-    if (typeof config[key] !== "string") {
+    if (typeof configAsMap[key] !== "string") {
       throw new Error(`${key} is not a string.`);
     }
-    return config[key];
+    return configAsMap[key];
   };
 
   const loginUrlString = assertDefinedAndNotEmpty("UMA_VASP_LOGIN_URL");

@@ -13,6 +13,7 @@ import {
   initializeConnection,
   updateConnection,
 } from "src/hooks/useConnection";
+import { type AppInfo } from "src/types/AppInfo";
 import { ExpirationPeriod, type Permission } from "src/types/Connection";
 import { type PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
 import { getAuth } from "src/utils/auth";
@@ -101,7 +102,7 @@ export const PermissionsPage = () => {
       initConnection({
         appInfo,
         connectionSettings,
-        currencyCode: currency.code,
+        currencyCode: currency?.code ?? "SAT",
         redirectUri: oauthParams.redirectUri,
         expiration,
       });
@@ -158,7 +159,7 @@ export const PermissionsPage = () => {
       {header}
       <Intro>
         <Title content="Connect your UMA" />
-        <Uma uma={uma} />
+        <Uma uma={uma ?? undefined} />
       </Intro>
 
       <PermissionsContainer>

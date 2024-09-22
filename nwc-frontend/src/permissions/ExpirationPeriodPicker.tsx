@@ -12,10 +12,12 @@ export const ExpirationPeriodPicker = ({
   expirationPeriod,
   setExpirationPeriod,
 }: Props) => {
-  const handleChooseExpiration = (expirationPeriod) => (e) => {
-    setExpirationPeriod(expirationPeriod);
-    e.preventDefault();
-  };
+  const handleChooseExpiration =
+    (expirationPeriod: ExpirationPeriod) =>
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      setExpirationPeriod(expirationPeriod);
+      e.preventDefault();
+    };
 
   return (
     <Container>

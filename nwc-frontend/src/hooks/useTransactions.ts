@@ -7,7 +7,6 @@ export interface Transaction {
   id: string;
   amountInLowestDenom: number;
   currencyCode: string;
-  name: string;
   createdAt: string;
 }
 
