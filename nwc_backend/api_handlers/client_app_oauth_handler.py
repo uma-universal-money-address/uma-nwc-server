@@ -163,12 +163,14 @@ async def _handle_vasp_oauth_callback(
         "optional_commands": ",".join([c.value for c in optional_permissions_groups]),
         "required_commands": ",".join([c.value for c in required_permissions_groups]),
         "token": short_lived_vasp_token,
-        "budget": request.args.get("budget"),
         "uma_address": vasp_jwt.uma_address,
         "redirect_uri": request.args["redirect_uri"],
         "expiry": vasp_jwt.expiry,
-        "currency": request.args.get("currency"),
     }
+    if "budget" in request.args:
+        query_params["budget"] = request.args["budget"]
+    if "currency" in request.args:
+        query_params["currency"] = request.args["currency"]
     nwc_frontend_new_app = nwc_frontend_new_app + "?" + urlencode(query_params)
     return redirect(nwc_frontend_new_app)
 
@@ -212,7 +214,13 @@ async def _exchange_token(request_data: dict[str, Any]) -> Response:
     ):
         return Response("Invalid authorization code", status=401)
 
-    if nwc_connection.redirect_uri != redirect_uri:
+    redirect_without_params = redirect_uri.split("?")[0]
+    connection_redirect_without_params = (
+        nwc_connection.redirect_uri.split("?")[0]
+        if nwc_connection.redirect_uri
+        else None
+    )
+    if redirect_without_params != connection_redirect_without_params:
         return Response("Redirect URI mismatch", status=401)
 
     computed_code_challenge = create_s256_code_challenge(code_verifier)
