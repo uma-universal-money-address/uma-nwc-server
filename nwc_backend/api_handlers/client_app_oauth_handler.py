@@ -215,7 +215,11 @@ async def _exchange_token(request_data: dict[str, Any]) -> Response:
         return Response("Invalid authorization code", status=401)
 
     redirect_without_params = redirect_uri.split("?")[0]
-    connection_redirect_without_params = nwc_connection.redirect_uri.split("?")[0]
+    connection_redirect_without_params = (
+        nwc_connection.redirect_uri.split("?")[0]
+        if nwc_connection.redirect_uri
+        else None
+    )
     if redirect_without_params != connection_redirect_without_params:
         return Response("Redirect URI mismatch", status=401)
 
