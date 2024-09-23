@@ -14,7 +14,11 @@ from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
-from nwc_backend.models.outgoing_payment import OutgoingPayment, PaymentStatus
+from nwc_backend.models.outgoing_payment import (
+    OutgoingPayment,
+    PaymentStatus,
+    ReceivingAddressType,
+)
 from nwc_backend.models.payment_quote import PaymentQuote
 from nwc_backend.models.permissions_grouping import PermissionsGroup
 from nwc_backend.models.spending_cycle import SpendingCycle
@@ -193,6 +197,7 @@ async def create_payment_quote(
     quote = PaymentQuote(
         id=uuid4(),
         nip47_request_id=nip47_request.id,
+        receiver_address="$alice@uma.me",
         payment_hash=token_hex(),
         sending_currency_code=sending_currency_code,
         sending_currency_amount=sending_currency_amount,
@@ -221,6 +226,8 @@ async def create_outgoing_payment(
         sending_currency_code=sending_currency_code,
         budget_on_hold=budget_on_hold,
         status=status or PaymentStatus.SUCCEEDED,
+        receiver="$alice@uma.com",
+        receiver_type=ReceivingAddressType.LUD16,
     )
     db.session.add(payment)
     await db.session.commit()

@@ -15,6 +15,7 @@ from nwc_backend.event_handlers.payment_utils import (
 from nwc_backend.exceptions import InvalidInputException
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.payment_quote import PaymentQuote
+from nwc_backend.models.receiving_address import ReceivingAddressType
 from nwc_backend.vasp_client import VaspUmaClient
 
 
@@ -34,6 +35,8 @@ async def execute_quote(
         sending_currency_amount=quote.sending_currency_amount,
         spending_limit=current_spending_limit,
         quote=quote,
+        receiver=quote.receiver_address,
+        receiver_type=ReceivingAddressType.LUD16,
     )
     budget_currency_code = None
     if (

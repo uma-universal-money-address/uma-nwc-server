@@ -24,7 +24,11 @@ from nwc_backend.models.__tests__.model_examples import (
     create_nip47_request_with_spending_limit,
 )
 from nwc_backend.models.nip47_request import ErrorCode
-from nwc_backend.models.outgoing_payment import OutgoingPayment, PaymentStatus
+from nwc_backend.models.outgoing_payment import (
+    OutgoingPayment,
+    PaymentStatus,
+    ReceivingAddressType,
+)
 from nwc_backend.models.spending_cycle import SpendingCycle
 from nwc_backend.typing import none_throws
 
@@ -44,8 +48,9 @@ async def test_pay_keysend_success__spending_limit_disabled(
 
     payment_amount_msats = 5000
     payment_amount_sats = 5
+    node_pubkey = token_hex()
     params = {
-        "pubkey": token_hex(),
+        "pubkey": node_pubkey,
         "amount": payment_amount_msats,
         "tlv_records": [{"type": 5482373484, "value": "0123456789abcdef"}],
     }
@@ -61,16 +66,16 @@ async def test_pay_keysend_success__spending_limit_disabled(
         assert exclude_none_values(response.to_dict()) == vasp_response
         mock_get_budget_estimate.assert_not_called()
 
-        spending_payment = (
-            await db.session.execute(select(OutgoingPayment))
-        ).scalar_one()
-        assert spending_payment.sending_currency_code == "SAT"
-        assert spending_payment.sending_currency_amount == payment_amount_sats
-        assert spending_payment.spending_cycle_id is None
-        assert spending_payment.estimated_budget_currency_amount is None
-        assert spending_payment.budget_on_hold is None
-        assert spending_payment.settled_budget_currency_amount is None
-        assert spending_payment.status == PaymentStatus.SUCCEEDED
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.NODE_PUBKEY
+        assert payment.receiver == node_pubkey
+        assert payment.sending_currency_code == "SAT"
+        assert payment.sending_currency_amount == payment_amount_sats
+        assert payment.spending_cycle_id is None
+        assert payment.estimated_budget_currency_amount is None
+        assert payment.budget_on_hold is None
+        assert payment.settled_budget_currency_amount is None
+        assert payment.status == PaymentStatus.SUCCEEDED
 
 
 async def test_pay_keysend_failure__invalid_input(test_client: QuartClient) -> None:
@@ -97,10 +102,11 @@ async def test_pay_keysend_payment_failed__spending_limit_disabled(
 
     payment_amount_msats = 5000
     payment_amount_sats = 5
+    node_pubkey = token_hex()
     async with test_client.app.app_context():
         with pytest.raises(Nip47RequestException) as exc_info:
             request = await create_nip47_request(
-                params={"pubkey": token_hex(), "amount": payment_amount_msats}
+                params={"pubkey": node_pubkey, "amount": payment_amount_msats}
             )
             await pay_keysend(access_token=token_hex(), request=request)
             assert exc_info.value.error_code == ErrorCode.PAYMENT_FAILED
@@ -108,16 +114,16 @@ async def test_pay_keysend_payment_failed__spending_limit_disabled(
 
             mock_get_budget_estimate.assert_not_called()
 
-        spending_payment = (
-            await db.session.execute(select(OutgoingPayment))
-        ).scalar_one()
-        assert spending_payment.sending_currency_code == "SAT"
-        assert spending_payment.sending_currency_amount == payment_amount_sats
-        assert spending_payment.spending_cycle_id is None
-        assert spending_payment.estimated_budget_currency_amount is None
-        assert spending_payment.budget_on_hold is None
-        assert spending_payment.settled_budget_currency_amount is None
-        assert spending_payment.status == PaymentStatus.FAILED
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.NODE_PUBKEY
+        assert payment.receiver == node_pubkey
+        assert payment.sending_currency_code == "SAT"
+        assert payment.sending_currency_amount == payment_amount_sats
+        assert payment.spending_cycle_id is None
+        assert payment.estimated_budget_currency_amount is None
+        assert payment.budget_on_hold is None
+        assert payment.settled_budget_currency_amount is None
+        assert payment.status == PaymentStatus.FAILED
 
 
 @patch.object(aiohttp.ClientSession, "post")
@@ -136,7 +142,8 @@ async def test_pay_keysend_success__spending_limit_SAT_enabled(
     async with test_client.app.app_context():
         payment_amount_msats = 1023
         payment_amount_sats = 2
-        params = {"pubkey": token_hex(), "amount": payment_amount_msats}
+        node_pubkey = token_hex()
+        params = {"pubkey": node_pubkey, "amount": payment_amount_msats}
         request = await create_nip47_request_with_spending_limit("SAT", 1000, params)
         response = await pay_keysend(access_token=token_hex(), request=request)
 
@@ -156,18 +163,18 @@ async def test_pay_keysend_success__spending_limit_SAT_enabled(
         assert spending_cycle.total_spent == payment_amount_sats
         assert spending_cycle.total_spent_on_hold == 0
 
-        spending_payment = (
-            await db.session.execute(select(OutgoingPayment))
-        ).scalar_one()
-        assert spending_payment.sending_currency_code == "SAT"
-        assert spending_payment.sending_currency_amount == payment_amount_sats
-        assert spending_payment.spending_cycle_id == spending_cycle.id
-        assert spending_payment.estimated_budget_currency_amount == payment_amount_sats
-        assert spending_payment.budget_on_hold == math.ceil(
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.NODE_PUBKEY
+        assert payment.receiver == node_pubkey
+        assert payment.sending_currency_code == "SAT"
+        assert payment.sending_currency_amount == payment_amount_sats
+        assert payment.spending_cycle_id == spending_cycle.id
+        assert payment.estimated_budget_currency_amount == payment_amount_sats
+        assert payment.budget_on_hold == math.ceil(
             test_client.app.config["BUDGET_BUFFER_MULTIPLIER"] * payment_amount_sats
         )
-        assert spending_payment.settled_budget_currency_amount == payment_amount_sats
-        assert spending_payment.status == PaymentStatus.SUCCEEDED
+        assert payment.settled_budget_currency_amount == payment_amount_sats
+        assert payment.status == PaymentStatus.SUCCEEDED
 
 
 @patch.object(aiohttp.ClientSession, "post")
@@ -189,9 +196,9 @@ async def test_pay_keysend_payment_failed__spending_limit_SAT_enabled(
     async with test_client.app.app_context():
         payment_amount_msats = 5000
         payment_amount_sats = 5
-        params = {"pubkey": token_hex(), "amount": payment_amount_msats}
+        node_pubkey = token_hex()
+        params = {"pubkey": node_pubkey, "amount": payment_amount_msats}
         request = await create_nip47_request_with_spending_limit("SAT", 1000, params)
-
         with pytest.raises(Nip47RequestException):
             await pay_keysend(access_token=token_hex(), request=request)
             mock_pay_keysend.assert_called_once_with(
@@ -209,18 +216,18 @@ async def test_pay_keysend_payment_failed__spending_limit_SAT_enabled(
         assert spending_cycle.total_spent == 0
         assert spending_cycle.total_spent_on_hold == 0
 
-        spending_payment = (
-            await db.session.execute(select(OutgoingPayment))
-        ).scalar_one()
-        assert spending_payment.sending_currency_code == "SAT"
-        assert spending_payment.sending_currency_amount == payment_amount_sats
-        assert spending_payment.spending_cycle_id == spending_cycle.id
-        assert spending_payment.estimated_budget_currency_amount == payment_amount_sats
-        assert spending_payment.budget_on_hold == math.ceil(
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.NODE_PUBKEY
+        assert payment.receiver == node_pubkey
+        assert payment.sending_currency_code == "SAT"
+        assert payment.sending_currency_amount == payment_amount_sats
+        assert payment.spending_cycle_id == spending_cycle.id
+        assert payment.estimated_budget_currency_amount == payment_amount_sats
+        assert payment.budget_on_hold == math.ceil(
             test_client.app.config["BUDGET_BUFFER_MULTIPLIER"] * payment_amount_sats
         )
-        assert spending_payment.settled_budget_currency_amount is None
-        assert spending_payment.status == PaymentStatus.FAILED
+        assert payment.settled_budget_currency_amount is None
+        assert payment.status == PaymentStatus.FAILED
 
 
 @patch.object(aiohttp.ClientSession, "post")
@@ -277,7 +284,8 @@ async def test_pay_keysend_success__spending_limit_USD_enabled(
     async with test_client.app.app_context():
         payment_amount_msats = 1000_000
         payment_amount_sats = 1000
-        params = {"pubkey": token_hex(), "amount": payment_amount_msats}
+        node_pubkey = token_hex()
+        params = {"pubkey": node_pubkey, "amount": payment_amount_msats}
         request = await create_nip47_request_with_spending_limit("USD", 10000, params)
         response = await pay_keysend(access_token=token_hex(), request=request)
 
@@ -306,25 +314,21 @@ async def test_pay_keysend_success__spending_limit_USD_enabled(
         assert spending_cycle.total_spent == final_budget_currency_amount
         assert spending_cycle.total_spent_on_hold == 0
 
-        spending_payment = (
-            await db.session.execute(select(OutgoingPayment))
-        ).scalar_one()
-        assert spending_payment.sending_currency_code == "SAT"
-        assert spending_payment.sending_currency_amount == payment_amount_sats
-        assert spending_payment.spending_cycle_id == spending_cycle.id
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.NODE_PUBKEY
+        assert payment.receiver == node_pubkey
+        assert payment.sending_currency_code == "SAT"
+        assert payment.sending_currency_amount == payment_amount_sats
+        assert payment.spending_cycle_id == spending_cycle.id
         assert (
-            spending_payment.estimated_budget_currency_amount
-            == estimated_budget_currency_amount
+            payment.estimated_budget_currency_amount == estimated_budget_currency_amount
         )
-        assert spending_payment.budget_on_hold == math.ceil(
+        assert payment.budget_on_hold == math.ceil(
             test_client.app.config["BUDGET_BUFFER_MULTIPLIER"]
             * estimated_budget_currency_amount
         )
-        assert (
-            spending_payment.settled_budget_currency_amount
-            == final_budget_currency_amount
-        )
-        assert spending_payment.status == PaymentStatus.SUCCEEDED
+        assert payment.settled_budget_currency_amount == final_budget_currency_amount
+        assert payment.status == PaymentStatus.SUCCEEDED
 
 
 @patch.object(aiohttp.ClientSession, "post")
@@ -358,7 +362,8 @@ async def test_pay_keysend_payment_failed__spending_limit_USD_enabled(
     async with test_client.app.app_context():
         payment_amount_msats = 1000_000
         payment_amount_sats = 1000
-        params = {"pubkey": token_hex(), "amount": payment_amount_msats}
+        node_pubkey = token_hex()
+        params = {"pubkey": node_pubkey, "amount": payment_amount_msats}
         request = await create_nip47_request_with_spending_limit("USD", 10000, params)
 
         with pytest.raises(Nip47RequestException):
@@ -387,22 +392,21 @@ async def test_pay_keysend_payment_failed__spending_limit_USD_enabled(
         assert spending_cycle.total_spent == 0
         assert spending_cycle.total_spent_on_hold == 0
 
-        spending_payment = (
-            await db.session.execute(select(OutgoingPayment))
-        ).scalar_one()
-        assert spending_payment.sending_currency_code == "SAT"
-        assert spending_payment.sending_currency_amount == payment_amount_sats
-        assert spending_payment.spending_cycle_id == spending_cycle.id
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.NODE_PUBKEY
+        assert payment.receiver == node_pubkey
+        assert payment.sending_currency_code == "SAT"
+        assert payment.sending_currency_amount == payment_amount_sats
+        assert payment.spending_cycle_id == spending_cycle.id
         assert (
-            spending_payment.estimated_budget_currency_amount
-            == estimated_budget_currency_amount
+            payment.estimated_budget_currency_amount == estimated_budget_currency_amount
         )
-        assert spending_payment.budget_on_hold == math.ceil(
+        assert payment.budget_on_hold == math.ceil(
             test_client.app.config["BUDGET_BUFFER_MULTIPLIER"]
             * estimated_budget_currency_amount
         )
-        assert spending_payment.settled_budget_currency_amount is None
-        assert spending_payment.status == PaymentStatus.FAILED
+        assert payment.settled_budget_currency_amount is None
+        assert payment.status == PaymentStatus.FAILED
 
 
 @patch.object(aiohttp.ClientSession, "post")

@@ -9,7 +9,11 @@ from nwc_backend.models.__tests__.model_examples import (
     create_nip47_request,
     create_spending_cycle,
 )
-from nwc_backend.models.outgoing_payment import OutgoingPayment, PaymentStatus
+from nwc_backend.models.outgoing_payment import (
+    OutgoingPayment,
+    PaymentStatus,
+    ReceivingAddressType,
+)
 
 
 async def test_outgoing_payment(test_client: QuartClient) -> None:
@@ -31,6 +35,8 @@ async def test_outgoing_payment(test_client: QuartClient) -> None:
             estimated_budget_currency_amount=estimated_budget_amount,
             budget_on_hold=budget_on_hold,
             status=status,
+            receiver="$alice@uma.com",
+            receiver_type=ReceivingAddressType.LUD16,
         )
         db.session.add(payment)
         await db.session.commit()
