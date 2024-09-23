@@ -14,12 +14,12 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
     current_cycle_remaining_amount = (
         await current_spending_limit.get_current_cycle_total_remaining()
     )
-    budget_currency = current_spending_limit.currency.code
+    budget_currency = current_spending_limit.currency
     current_cycle_end_time = current_spending_limit.get_current_cycle_end_time()
     current_cycle_renews_at = (
         round(current_cycle_end_time.timestamp()) if current_cycle_end_time else None
     )
-    if budget_currency == "SAT":
+    if budget_currency.code == "SAT":
         return Nip47BudgetResponse(
             total_budget_msats=current_spending_limit.amount * 1000,
             remaining_budget_msats=current_cycle_remaining_amount * 1000,
@@ -28,7 +28,7 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
 
     budget_estimate_response = await VaspUmaClient.instance().get_budget_estimate(
         access_token=access_token,
-        sending_currency_code=budget_currency,
+        sending_currency_code=budget_currency.code,
         sending_currency_amount=current_spending_limit.amount,
         budget_currency_code="SAT",
     )
@@ -42,13 +42,12 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
 
     return Nip47BudgetResponse(
         currency=Nip47BudgetCurrency(
-            code=budget_currency,
+            code=budget_currency.code,
             total_budget=current_spending_limit.amount,
             remaining_budget=current_cycle_remaining_amount,
-            # TODO(Jeremy): Get these from the VASP somehow.
-            symbol="",
-            name="",
-            decimals=2,
+            symbol=budget_currency.symbol,
+            name=budget_currency.name,
+            decimals=budget_currency.decimals,
         ),
         total_budget_msats=total_budget_sats * 1000,
         remaining_budget_msats=remaining_budget_sats * 1000,

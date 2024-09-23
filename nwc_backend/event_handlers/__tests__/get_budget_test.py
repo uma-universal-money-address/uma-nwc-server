@@ -111,9 +111,8 @@ async def test_pay_invoice_success__spending_limit_USD_enabled(
                 "code": "USD",
                 "total_budget": total_budget_currency_amount,
                 "remaining_budget": total_budget_currency_amount,
-                # TODO(Jeremy): Update these when properly retrieved from the VASP.
-                "symbol": "",
-                "name": "",
+                "symbol": "$",
+                "name": "US Dollar",
                 "decimals": 2,
             },
         }
