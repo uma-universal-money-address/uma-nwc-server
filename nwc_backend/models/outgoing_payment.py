@@ -2,12 +2,12 @@
 # pyre-strict
 
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from sqlalchemy import BigInteger
 from sqlalchemy import Enum as DBEnum
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from nwc_backend.db import UUID as DBUUID
@@ -26,6 +26,9 @@ class OutgoingPayment(ModelBase):
 
     nip47_request_id: Mapped[UUID] = mapped_column(
         DBUUID(), ForeignKey("nip47_request.id"), nullable=False
+    )
+    nwc_connection_id: Mapped[UUID] = mapped_column(
+        DBUUID(), ForeignKey("nwc_connection.id"), nullable=False
     )
     quote_id: Mapped[Optional[UUID]] = mapped_column(
         DBUUID(), ForeignKey("payment_quote.id"), nullable=True
@@ -49,3 +52,32 @@ class OutgoingPayment(ModelBase):
     spending_cycle: Mapped[Optional[SpendingCycle]] = relationship(
         "SpendingCycle", lazy="joined"
     )
+
+    __table_args__ = (
+        Index(
+            "outgoing_payment_connection_id_status_created_at_idx",
+            "nwc_connection_id",
+            "status",
+            "created_at",
+        ),
+    )
+
+    def to_dict(self) -> dict[str, Any]:
+        spending_cycle = self.spending_cycle
+        return {
+            "id": str(self.id),
+            "created_at": str(self.created_at),
+            "sending_currency_code": self.sending_currency_code,
+            "sending_currency_amount": self.sending_currency_amount,
+            "status": self.status.value,
+            "receiver": "$alice@uma.me",  # TODO: update
+            "budget_currency_code": (
+                spending_cycle.limit_currency if spending_cycle else None
+            ),
+            "budget_currency_amount": self.settled_budget_currency_amount,
+            "budget_on_hold": (
+                self.budget_on_hold
+                if self.budget_on_hold and self.status == PaymentStatus.PENDING
+                else None
+            ),
+        }

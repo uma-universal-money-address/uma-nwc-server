@@ -14,6 +14,7 @@ from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
+from nwc_backend.models.outgoing_payment import OutgoingPayment, PaymentStatus
 from nwc_backend.models.payment_quote import PaymentQuote
 from nwc_backend.models.permissions_grouping import PermissionsGroup
 from nwc_backend.models.spending_cycle import SpendingCycle
@@ -199,3 +200,28 @@ async def create_payment_quote(
     db.session.add(quote)
     await db.session.commit()
     return quote
+
+
+async def create_outgoing_payment(
+    nwc_connection: Optional[NWCConnection] = None,
+    spending_cycle: Optional[SpendingCycle] = None,
+    status: Optional[PaymentStatus] = None,
+    sending_currency_amount: int = 100,
+    sending_currency_code: str = "USD",
+    budget_on_hold: Optional[int] = None,
+) -> OutgoingPayment:
+    nwc_connection = nwc_connection or await create_nwc_connection()
+    nip47_request = await create_nip47_request(nwc_connection)
+    payment = OutgoingPayment(
+        id=uuid4(),
+        nip47_request_id=nip47_request.id,
+        nwc_connection_id=nip47_request.nwc_connection_id,
+        spending_cycle_id=spending_cycle.id if spending_cycle else None,
+        sending_currency_amount=sending_currency_amount,
+        sending_currency_code=sending_currency_code,
+        budget_on_hold=budget_on_hold,
+        status=status or PaymentStatus.SUCCEEDED,
+    )
+    db.session.add(payment)
+    await db.session.commit()
+    return payment

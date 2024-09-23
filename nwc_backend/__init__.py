@@ -99,5 +99,10 @@ def create_app() -> Quart:
         view_func=client_app_lookup_handler.get_client_app,
         methods=["GET"],
     )
+    app.add_url_rule(
+        "/api/connection/<connection_id>/transactions",
+        view_func=nwc_connection_handler.get_all_outgoing_payments,
+        methods=["GET"],
+    )
 
     return app

@@ -9,11 +9,12 @@ from uuid import uuid4
 import requests
 from nostr_sdk import Keys
 from quart import Response, current_app, request, session
-from sqlalchemy.sql import select
+from sqlalchemy.sql import func, select
 
 from nwc_backend.db import db
 from nwc_backend.exceptions import InvalidApiParamsException
 from nwc_backend.models.nwc_connection import NWCConnection
+from nwc_backend.models.outgoing_payment import OutgoingPayment, PaymentStatus
 from nwc_backend.models.permissions_grouping import (
     PERMISSIONS_GROUP_TO_METHODS,
     PermissionsGroup,
@@ -214,4 +215,37 @@ async def get_all_connections() -> Response:
     response = []
     for connection in result.scalars():
         response.append(await connection.to_dict())
+    return Response(json.dumps(response), status=200)
+
+
+async def get_all_outgoing_payments(connection_id: str) -> Response:
+    user_id = session.get("user_id")
+    if not user_id:
+        return Response("User not authenticated", status=401)
+
+    connection = await db.session.get(NWCConnection, connection_id)
+    if not connection or connection.user_id != user_id:
+        return Response("Connection not found", status=404)
+
+    if "limit" not in request.args:
+        return Response("Limit needs to be set", status=400)
+
+    limit = int(request.args["limit"])
+    offset = int(request.args["offset"]) if "offset" in request.args else 0
+    results = await db.session.execute(
+        select(OutgoingPayment)
+        .where(OutgoingPayment.nwc_connection_id == connection_id)
+        .where(OutgoingPayment.status != PaymentStatus.FAILED)
+        .order_by(OutgoingPayment.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    payments = results.scalars().all()
+    response = {"transactions": [payment.to_dict() for payment in payments]}
+    count = await db.session.scalar(
+        select(func.count(OutgoingPayment.id))
+        .where(OutgoingPayment.nwc_connection_id == connection_id)
+        .where(OutgoingPayment.status != PaymentStatus.FAILED)
+    )
+    response["count"] = count - offset
     return Response(json.dumps(response), status=200)
