@@ -9,7 +9,7 @@
     "build:dev": "NODE_ENV=development vite build --watch",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint --fix .",
-    "preview": "vite preview",
+    "preview": "yarn tsc && yarn vite preview",
     "format:fix": "prettier src --write",
     "format": "prettier src --check"
   },
