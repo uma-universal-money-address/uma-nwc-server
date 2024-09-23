@@ -64,8 +64,8 @@ async def test_get_budget_success__spending_limit_SAT_enabled(
         mock_get_budget_estimate.assert_not_called()
         spending_cycle = (await db.session.execute(select(SpendingCycle))).scalar_one()
         assert exclude_none_values(response.to_dict()) == {
-            "total_budget_msats": 1000000,
-            "used_budget_msats": 0,
+            "total_budget": 1000000,
+            "used_budget": 0,
             "renews_at": round(spending_cycle.end_time.timestamp()),
         }
 
@@ -104,8 +104,8 @@ async def test_pay_invoice_success__spending_limit_USD_enabled(
             headers=ANY,
         )
         assert exclude_none_values(response.to_dict()) == {
-            "total_budget_msats": estimated_budget_currency_amount * 1000,
-            "used_budget_msats": 0,
+            "total_budget": estimated_budget_currency_amount * 1000,
+            "used_budget": 0,
             "renews_at": ANY,
             "currency": {
                 "code": "USD",

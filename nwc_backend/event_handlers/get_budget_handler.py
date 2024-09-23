@@ -24,8 +24,8 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
             current_spending_limit.amount - current_cycle_remaining_amount
         )
         return Nip47BudgetResponse(
-            total_budget_msats=current_spending_limit.amount * 1000,
-            used_budget_msats=used_budget_sats * 1000,
+            total_budget=current_spending_limit.amount * 1000,
+            used_budget=used_budget_sats * 1000,
             renews_at=current_cycle_renews_at,
         )
 
@@ -53,7 +53,7 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
             name=budget_currency.name,
             decimals=budget_currency.decimals,
         ),
-        total_budget_msats=total_budget_sats * 1000,
-        used_budget_msats=used_budget_sats * 1000,
+        total_budget=total_budget_sats * 1000,
+        used_budget=used_budget_sats * 1000,
         renews_at=current_cycle_renews_at,
     )

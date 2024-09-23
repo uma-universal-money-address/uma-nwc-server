@@ -14,12 +14,12 @@ class Nip47BudgetCurrency:
 
 @dataclass
 class Nip47BudgetResponse:
-    used_budget_msats: Optional[int] = None
-    total_budget_msats: Optional[int] = None
+    used_budget: Optional[int] = None
+    total_budget: Optional[int] = None
     renews_at: Optional[int] = None
     currency: Optional[Nip47BudgetCurrency] = None
 
     def to_dict(self):
-        if self.used_budget_msats is None:
+        if self.used_budget is None:
             return {}
         return {k: v for k, v in asdict(self).items() if v is not None}
