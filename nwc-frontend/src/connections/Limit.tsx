@@ -2,8 +2,10 @@ import styled from "@emotion/styled";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import dayjs from "dayjs";
 import { type Connection, LimitFrequency } from "src/types/Connection";
-import { convertToNormalDenomination } from "src/utils/convertToNormalDenomination";
-import { FREQUENCY_TO_SINGULAR_FORM } from "src/utils/formatConnectionString";
+import {
+  formatAmountString,
+  FREQUENCY_TO_SINGULAR_FORM,
+} from "src/utils/formatConnectionString";
 
 const RENEWAL_DATE_FUNCTIONS = {
   [LimitFrequency.DAILY]: (createdAt: dayjs.Dayjs) => createdAt.add(1, "day"),
@@ -58,13 +60,13 @@ export const Limit = ({ connection }: { connection: Connection }) => {
     );
   }
 
-  const amountUsed = `${connection.currency.symbol}${convertToNormalDenomination(connection.amountInLowestDenomUsed, connection.currency)} used`;
-  const amountRemaining = `${connection.currency.symbol}${convertToNormalDenomination(connection.amountInLowestDenom - connection.amountInLowestDenomUsed, connection.currency)} remaining`;
+  const amountUsed = `${formatAmountString({ currency: connection.currency, amountInLowestDenom: connection.amountInLowestDenomUsed })} used`;
+  const amountRemaining = `${formatAmountString({ currency: connection.currency, amountInLowestDenom: connection.amountInLowestDenom - connection.amountInLowestDenomUsed })} remaining`;
 
   return (
     <Container>
       <Row>
-        <LimitValue>{`${connection.currency.symbol}${convertToNormalDenomination(connection.amountInLowestDenom, connection.currency)}${connection.limitFrequency !== LimitFrequency.NONE ? `per ${FREQUENCY_TO_SINGULAR_FORM[connection.limitFrequency]}` : ""}`}</LimitValue>
+        <LimitValue>{`${formatAmountString({ currency: connection.currency, amountInLowestDenom: connection.amountInLowestDenom })}${connection.limitFrequency !== LimitFrequency.NONE ? ` per ${FREQUENCY_TO_SINGULAR_FORM[connection.limitFrequency]}` : ""}`}</LimitValue>
         <LimitBar>
           <LimitBarFill
             style={{
