@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { getBackendUrl } from "src/utils/backendUrl";
+import { fetchWithAuth } from "src/utils/fetchWithAuth";
+import { formatTimestamp } from "src/utils/formatTimestamp";
 
 export interface Transaction {
   id: string;
@@ -10,9 +13,14 @@ export interface Transaction {
 
 interface RawTransaction {
   id: string;
-  amountInLowestDenom: number;
-  currencyCode: string;
-  createdAt: string;
+  budget_currency_amount: number;
+  budget_currency_code: string;
+  sending_currency_amount: number;
+  sending_currency_code: string;
+  receiver: string;
+  receiver_type: string;
+  status: string;
+  created_at: string;
 }
 
 const hydrateTransactions = (
@@ -21,11 +29,9 @@ const hydrateTransactions = (
   return rawTransactions.map((rawTransaction) => {
     return {
       id: rawTransaction.id,
-      amountInLowestDenom: rawTransaction.amountInLowestDenom,
-      currencyCode: rawTransaction.currencyCode,
-      createdAt: new Date(
-        Date.parse(rawTransaction.createdAt),
-      ).toLocaleString(),
+      amountInLowestDenom: rawTransaction.sending_currency_amount,
+      currencyCode: rawTransaction.sending_currency_code,
+      createdAt: formatTimestamp(rawTransaction.created_at),
     };
   });
 };
@@ -39,33 +45,22 @@ export function useTransactions({ connectionId }: { connectionId: string }) {
     async function fetchTransactions(connectionId: string) {
       setIsLoading(true);
       try {
-        // const response = await
-        // fetchWithAuth(`${getBackendUrl()}/api/transactions/${connectionId}`, { method: "GET",
-        // }).then((res) => { if (res.ok) { return res.json() as Promise<RawTransaction[]>; } else {
-        // throw new Error("Failed to fetch transactions.", { connectionId }); } });
-        const response = [
-          {
-            id: "1",
-            amountInLowestDenom: 1000,
-            currencyCode: "USD",
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: "2",
-            amountInLowestDenom: 2000,
-            currencyCode: "USD",
-            createdAt: new Date().toISOString(),
-          },
-          {
-            id: "3",
-            amountInLowestDenom: 3000,
-            currencyCode: "USD",
-            createdAt: new Date().toISOString(),
-          },
-        ];
+        const response = await fetchWithAuth(
+          `${getBackendUrl()}/api/connection/${connectionId}/transactions?limit=20`,
+          { method: "GET" },
+        ).then((res) => {
+          if (res.ok) {
+            return res.json() as Promise<{
+              count: number;
+              transactions: RawTransaction[];
+            }>;
+          } else {
+            throw new Error("Failed to fetch transactions.", { connectionId });
+          }
+        });
 
         if (!ignore) {
-          setTransactions(hydrateTransactions(response));
+          setTransactions(hydrateTransactions(response.transactions));
           setIsLoading(false);
         }
       } catch (e: unknown) {

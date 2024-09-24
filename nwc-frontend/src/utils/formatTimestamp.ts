@@ -8,5 +8,5 @@ dayjs.extend(timezone);
 dayjs.extend(advancedFormat);
 
 export const formatTimestamp = (date: string) => {
-  return dayjs(date).format("MMM DD YYYY HH:MM z");
+  return dayjs(date).format("MMM D YYYY h:mm A");
 };
