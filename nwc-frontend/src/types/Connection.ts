@@ -53,8 +53,8 @@ export interface InitialConnection {
   amountInLowestDenom: number;
   limitEnabled: boolean;
   limitFrequency?: LimitFrequency;
-  expiration?: string|undefined;
-  clientId?: string|undefined;
+  expiration?: string | undefined;
+  clientId?: string | undefined;
 }
 
 export interface RawConnection {
@@ -94,15 +94,15 @@ export interface Connection {
   name: string;
   createdAt: string;
   permissions: Permission[];
-  amountInLowestDenom?: number|undefined;
-  amountInLowestDenomUsed?: number|undefined;
+  amountInLowestDenom?: number | undefined;
+  amountInLowestDenomUsed?: number | undefined;
   limitEnabled: boolean;
-  currency?: Currency|undefined;
+  currency?: Currency | undefined;
   status: ConnectionStatus;
-  limitFrequency?: LimitFrequency|undefined;
-  expiresAt?: string|undefined;
-  lastUsed?: string|undefined;
-  avatar?: string|undefined;
+  limitFrequency?: LimitFrequency | undefined;
+  expiresAt?: string | undefined;
+  lastUsed?: string | undefined;
+  avatar?: string | undefined;
 }
 
 export const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
