@@ -1,74 +1,46 @@
 import styled from "@emotion/styled";
 import { Body } from "@lightsparkdev/ui/components/typography/Body";
 import type React from "react";
-import {
-  useExchangeRates,
-  type ExchangeRates,
-} from "src/hooks/useExchangeRates";
 import { useTransactions, type Transaction } from "src/hooks/useTransactions";
-import { convertCurrency } from "src/utils/convertCurrency";
+import { formatAmountString } from "src/utils/formatConnectionString";
 import { formatTimestamp } from "src/utils/formatTimestamp";
 import { Shimmer } from "./Shimmer";
 
 const LoadingTransactionRow = ({ shimmerWidth }: { shimmerWidth: number }) => {
   return (
     <Row>
-      <InfoRowContainer>
-        <InfoRow>
+      <TransactionRowContainer>
+        <TransactionDetailsRow>
           <Shimmer height={20} width={shimmerWidth + 100} />
           <Shimmer height={20} width={shimmerWidth + 40} />
-        </InfoRow>
-        <InfoRowDetails>
+        </TransactionDetailsRow>
+        <TransactionAmountRow>
           <Shimmer height={20} width={shimmerWidth + 30} />
           <Shimmer height={20} width={shimmerWidth + 20} />
-        </InfoRowDetails>
-      </InfoRowContainer>
+        </TransactionAmountRow>
+      </TransactionRowContainer>
     </Row>
   );
 };
 
-const TransactionRow = ({
-  transaction,
-  exchangeRates,
-}: {
-  transaction: Transaction;
-  exchangeRates: ExchangeRates;
-}) => {
-  const isReceiving = transaction.amountInLowestDenom > 0;
-  const estimateLocaleString = convertCurrency(
-    exchangeRates,
-    {
-      amount: isReceiving
-        ? transaction.amountInLowestDenom
-        : -transaction.amountInLowestDenom,
-      currencyCode: transaction.currencyCode,
-    },
-    "USD",
-  ).toLocaleString("en", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 8,
-  });
-
-  const amount = isReceiving ? (
-    <PositiveAmount>{`+${transaction.amountInLowestDenom.toLocaleString("en", {
-      maximumFractionDigits: 8,
-    })} sats`}</PositiveAmount>
-  ) : (
-    <Amount>{`${(-transaction.amountInLowestDenom).toLocaleString("en", {
-      maximumFractionDigits: 8,
-    })} sats`}</Amount>
+const TransactionRow = ({ transaction }: { transaction: Transaction }) => {
+  const amount = (
+    <Amount>
+      {formatAmountString({
+        currency: transaction.budgetCurrency,
+        amountInLowestDenom: transaction.budgetAmountInLowestDenom,
+      })}
+    </Amount>
   );
 
   return (
     <Row>
-      <InfoRowContainer>
-        <InfoRow>{amount}</InfoRow>
-        <InfoRowDetails>
+      <TransactionRowContainer>
+        <TransactionDetailsRow>
           <span>{formatTimestamp(transaction.createdAt)}</span>
-          <span>{estimateLocaleString}</span>
-        </InfoRowDetails>
-      </InfoRowContainer>
+          {amount}
+        </TransactionDetailsRow>
+      </TransactionRowContainer>
     </Row>
   );
 };
@@ -79,20 +51,15 @@ export const TransactionTable = ({
   connectionId: string;
 }) => {
   const { transactions, isLoading, error } = useTransactions({ connectionId });
-  const {
-    exchangeRates,
-    error: exchangeRatesError,
-    isLoading: isLoadingExchangeRates,
-  } = useExchangeRates();
 
   let transactionRows: React.ReactNode;
-  if (isLoading || isLoadingExchangeRates) {
+  if (isLoading) {
     transactionRows = [
       <LoadingTransactionRow key="loader-1" shimmerWidth={30} />,
       <LoadingTransactionRow key="loader-2" shimmerWidth={10} />,
       <LoadingTransactionRow key="loader-3" shimmerWidth={20} />,
     ];
-  } else if (error || exchangeRatesError) {
+  } else if (error) {
     return <Container>{`Error loading transactions: ${error}`}</Container>;
   } else if (!transactions || !transactions.length) {
     return (
@@ -102,11 +69,7 @@ export const TransactionTable = ({
     );
   } else {
     transactionRows = transactions.map((transaction) => (
-      <TransactionRow
-        key={transaction.id}
-        transaction={transaction}
-        exchangeRates={exchangeRates!}
-      />
+      <TransactionRow key={transaction.id} transaction={transaction} />
     ));
   }
 
@@ -152,7 +115,7 @@ const Row = styled.div`
   }
 `;
 
-const InfoRowContainer = styled.div`
+const TransactionRowContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -160,7 +123,7 @@ const InfoRowContainer = styled.div`
   flex-grow: 1;
 `;
 
-const InfoRow = styled.div`
+const TransactionDetailsRow = styled.div`
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -174,7 +137,7 @@ const InfoRow = styled.div`
   letter-spacing: -0.187px;
 `;
 
-const InfoRowDetails = styled.div`
+const TransactionAmountRow = styled.div`
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -189,10 +152,5 @@ const InfoRowDetails = styled.div`
 `;
 
 const Amount = styled.span`
-  text-wrap: nowrap;
-`;
-
-const PositiveAmount = styled.span`
-  color: #19981e;
   text-wrap: nowrap;
 `;

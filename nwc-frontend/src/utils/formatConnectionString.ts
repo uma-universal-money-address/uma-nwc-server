@@ -29,9 +29,11 @@ export const formatConnectionString = ({
 export const formatAmountString = ({
   currency,
   amountInLowestDenom,
+  decimals,
 }: {
   currency: Currency;
   amountInLowestDenom: number;
+  decimals?: number;
 }) => {
   if (currency.symbol === "") {
     return `${convertToNormalDenomination(amountInLowestDenom, currency)} ${currency.code}`;

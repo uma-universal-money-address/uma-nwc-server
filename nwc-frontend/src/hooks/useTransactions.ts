@@ -1,21 +1,28 @@
 import { useEffect, useState } from "react";
+import { type Currency } from "src/types/Currency";
 import { getBackendUrl } from "src/utils/backendUrl";
 import { fetchWithAuth } from "src/utils/fetchWithAuth";
 import { formatTimestamp } from "src/utils/formatTimestamp";
 
 export interface Transaction {
   id: string;
-  amountInLowestDenom: number;
-  currencyCode: string;
+  budgetAmountInLowestDenom: number;
+  sendingAmountInLowestDenom: number;
+  receivingAmountInLowestDenom: number;
+  sendingCurrency: Currency;
+  receivingCurrency: Currency;
+  budgetCurrency: Currency;
   createdAt: string;
 }
 
 interface RawTransaction {
   id: string;
+  budget_currency: Currency;
+  sending_currency: Currency;
+  receiving_currency: Currency;
   budget_currency_amount: number;
-  budget_currency_code: string;
   sending_currency_amount: number;
-  sending_currency_code: string;
+  receiving_currency_amount: number;
   receiver: string;
   receiver_type: string;
   status: string;
@@ -28,8 +35,12 @@ const hydrateTransactions = (
   return rawTransactions.map((rawTransaction) => {
     return {
       id: rawTransaction.id,
-      amountInLowestDenom: rawTransaction.sending_currency_amount,
-      currencyCode: rawTransaction.sending_currency_code,
+      budgetAmountInLowestDenom: rawTransaction.budget_currency_amount,
+      sendingAmountInLowestDenom: rawTransaction.sending_currency_amount,
+      receivingAmountInLowestDenom: rawTransaction.receiving_currency_amount,
+      budgetCurrency: rawTransaction.budget_currency,
+      sendingCurrency: rawTransaction.sending_currency,
+      receivingCurrency: rawTransaction.receiving_currency,
       createdAt: formatTimestamp(rawTransaction.created_at),
     };
   });
@@ -61,6 +72,7 @@ export function useTransactions({ connectionId }: { connectionId: string }) {
         });
 
         if (!ignore) {
+          console.log(response.transactions);
           setTransactions(hydrateTransactions(response.transactions));
           setIsLoading(false);
         }
