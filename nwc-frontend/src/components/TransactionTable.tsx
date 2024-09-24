@@ -1,7 +1,9 @@
 import styled from "@emotion/styled";
 import { Body } from "@lightsparkdev/ui/components/typography/Body";
 import type React from "react";
+import { useConnection } from "src/hooks/useConnection";
 import { useTransactions, type Transaction } from "src/hooks/useTransactions";
+import { type Connection } from "src/types/Connection";
 import { formatAmountString } from "src/utils/formatConnectionString";
 import { formatTimestamp } from "src/utils/formatTimestamp";
 import { Shimmer } from "./Shimmer";
@@ -23,11 +25,17 @@ const LoadingTransactionRow = ({ shimmerWidth }: { shimmerWidth: number }) => {
   );
 };
 
-const TransactionRow = ({ transaction }: { transaction: Transaction }) => {
+const TransactionRow = ({
+  connection,
+  transaction,
+}: {
+  connection: Connection;
+  transaction: Transaction;
+}) => {
   const amount = (
     <Amount>
       {formatAmountString({
-        currency: transaction.budgetCurrency,
+        currency: connection.budgetCurrency,
         amountInLowestDenom: transaction.budgetAmountInLowestDenom,
       })}
     </Amount>
@@ -50,17 +58,32 @@ export const TransactionTable = ({
 }: {
   connectionId: string;
 }) => {
-  const { transactions, isLoading, error } = useTransactions({ connectionId });
+  const {
+    connection,
+    isLoading: isLoadingConnection,
+    error: connectionError,
+  } = useConnection({ connectionId });
+  const {
+    transactions,
+    isLoading: isLoadingTransactions,
+    error: transactionsError,
+  } = useTransactions({ connectionId });
 
   let transactionRows: React.ReactNode;
-  if (isLoading) {
+  if (isLoadingTransactions || isLoadingConnection) {
     transactionRows = [
       <LoadingTransactionRow key="loader-1" shimmerWidth={30} />,
       <LoadingTransactionRow key="loader-2" shimmerWidth={10} />,
       <LoadingTransactionRow key="loader-3" shimmerWidth={20} />,
     ];
-  } else if (error) {
-    return <Container>{`Error loading transactions: ${error}`}</Container>;
+  } else if (connectionError || !connection) {
+    return (
+      <Container>{`Error loading connection: ${connectionError}`}</Container>
+    );
+  } else if (transactionsError) {
+    return (
+      <Container>{`Error loading transactions: ${transactionsError}`}</Container>
+    );
   } else if (!transactions || !transactions.length) {
     return (
       <EmptyResults>
@@ -69,7 +92,11 @@ export const TransactionTable = ({
     );
   } else {
     transactionRows = transactions.map((transaction) => (
-      <TransactionRow key={transaction.id} transaction={transaction} />
+      <TransactionRow
+        key={transaction.id}
+        transaction={transaction}
+        connection={connection}
+      />
     ));
   }
 

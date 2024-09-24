@@ -12,6 +12,7 @@ import { mapConnection } from "src/utils/mapConnection";
 export const useConnection = ({ connectionId }: { connectionId: string }) => {
   const [connection, setConnection] = useState<Connection>();
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>();
 
   useEffect(() => {
     async function fetchConnection() {
@@ -28,7 +29,9 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
         const connection = mapConnection(rawConnection);
         setConnection(connection);
       } catch (e) {
-        console.error(e);
+        const error = e as Error;
+        console.error(error);
+        setError(error.message);
       }
 
       setIsLoading(false);
@@ -67,7 +70,9 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
       setConnection(updatedConnection);
       return true;
     } catch (e) {
-      console.error(e);
+      const error = e as Error;
+      console.error(error);
+      setError(error.message);
       return false;
     }
   };
@@ -76,6 +81,7 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
     connection,
     isLoading,
     updateConnection,
+    error,
   };
 };
 

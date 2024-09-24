@@ -28,20 +28,6 @@ export const Limit = ({ connection }: { connection: Connection }) => {
   }
 
   if (
-    connection.amountInLowestDenom === undefined ||
-    connection.amountInLowestDenomUsed === undefined ||
-    connection.currency === undefined
-  ) {
-    return (
-      <Container>
-        <Row>
-          <LimitValue>Error: Invalid spending limit</LimitValue>
-        </Row>
-      </Container>
-    );
-  }
-
-  if (
     connection.limitFrequency === LimitFrequency.NONE ||
     !connection.limitFrequency
   ) {
@@ -78,8 +64,10 @@ export const Limit = ({ connection }: { connection: Connection }) => {
     }
   }
 
-  const amountUsed = `${formatAmountString({ currency: connection.currency, amountInLowestDenom: connection.amountInLowestDenomUsed })} used`;
-  const amountRemaining = `${formatAmountString({ currency: connection.currency, amountInLowestDenom: connection.amountInLowestDenom - connection.amountInLowestDenomUsed })} remaining`;
+  const amountUsed = connection.amountInLowestDenomUsed || 0;
+  const amount = connection.amountInLowestDenom || 0;
+  const amountUsedString = `${formatAmountString({ currency: connection.budgetCurrency, amountInLowestDenom: amountUsed })} used`;
+  const amountRemainingString = `${formatAmountString({ currency: connection.budgetCurrency, amountInLowestDenom: amount - amountUsed })} remaining`;
   const limitFrequencyString =
     connection.limitFrequency &&
     connection.limitFrequency !== LimitFrequency.NONE
@@ -89,11 +77,11 @@ export const Limit = ({ connection }: { connection: Connection }) => {
   return (
     <Container>
       <Row>
-        <LimitValue>{`${formatAmountString({ currency: connection.currency, amountInLowestDenom: connection.amountInLowestDenom })}${limitFrequencyString}`}</LimitValue>
+        <LimitValue>{`${formatAmountString({ currency: connection.budgetCurrency, amountInLowestDenom: amount })}${limitFrequencyString}`}</LimitValue>
         <LimitBar>
           <LimitBarFill
             style={{
-              width: `${(connection.amountInLowestDenomUsed / connection.amountInLowestDenom) * 100}%`,
+              width: `${(amountUsed / amount) * 100}%`,
             }}
           />
         </LimitBar>
@@ -101,8 +89,8 @@ export const Limit = ({ connection }: { connection: Connection }) => {
       <Row>
         <RenewsIn>{renewsIn}</RenewsIn>
         <Amounts>
-          <div>{amountUsed}</div>
-          <div>{amountRemaining}</div>
+          <div>{amountUsedString}</div>
+          <div>{amountRemainingString}</div>
         </Amounts>
       </Row>
     </Container>
