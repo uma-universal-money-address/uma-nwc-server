@@ -18,7 +18,14 @@ export default function ConnectionPage() {
     connection,
     updateConnection,
     isLoading: isLoadingConnection,
-  } = useConnection({ connectionId });
+  } = useConnection({ connectionId: connectionId ?? "" });
+  if (!connectionId) {
+    return (
+      <Content>
+        <Title content="Connection ID must be provided." />
+      </Content>
+    );
+  }
 
   if (connection?.status === ConnectionStatus.PENDING) {
     return (

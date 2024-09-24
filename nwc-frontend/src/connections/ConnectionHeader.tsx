@@ -33,7 +33,6 @@ export const ConnectionHeader = ({
     updateConnection({
       ...connection,
       status: ConnectionStatus.INACTIVE,
-      disconnectedAt: new Date().toISOString(),
     })
       .then((succeeded) => {
         if (succeeded) {

@@ -32,7 +32,7 @@ export const LoadingConnectionRow = ({
 
 const ConnectionRow = ({ connection }: { connection: Connection }) => {
   return (
-    <Row to={`/connection/${connection.connectionId}`}>
+    <LinkRow to={`/connection/${connection.connectionId}`}>
       <Avatar size={48} src={connection.avatar ?? ""} />
       <InfoRowContainer>
         <InfoRow>
@@ -48,8 +48,8 @@ const ConnectionRow = ({ connection }: { connection: Connection }) => {
           </span>
         </InfoRowDetails>
       </InfoRowContainer>
-      <Icon name="CaretRight" width={12} color="#686a72" />
-    </Row>
+      <Icon name="CaretRight" width={12} color="grayBlue43" />
+    </LinkRow>
   );
 };
 
@@ -90,7 +90,7 @@ const EmptyResults = styled.div`
   flex: 1;
 `;
 
-const Row = styled(Link)`
+const LinkRow = styled(Link)`
   display: flex;
   flex-direction: row;
   gap: ${Spacing.md};
@@ -115,6 +115,14 @@ const Row = styled(Link)`
     -ms-user-select: none; /* IE 10 and IE 11 */
     user-select: none; /* Standard syntax */
   }
+`;
+
+const Row = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: ${Spacing.md};
+  cursor: pointer;
+  padding: ${Spacing.md} 0;
 `;
 
 const InfoRowContainer = styled.div`

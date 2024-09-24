@@ -16,41 +16,8 @@ const RENEWAL_DATE_FUNCTIONS = {
 
 export const Limit = ({ connection }: { connection: Connection }) => {
   let renewsIn = "";
-  if (connection.limitEnabled) {
-    if (connection.limitFrequency === LimitFrequency.NONE) {
-      if (connection.expiresAt) {
-        const expirationDate = dayjs(connection.expiresAt);
-        const daysUntilExpiration = expirationDate.diff(dayjs(), "days");
-        if (daysUntilExpiration < 0) {
-          // Shouldn't happen
-          renewsIn = "Error";
-        } else if (daysUntilExpiration === 0) {
-          renewsIn = `Expires today at ${expirationDate.format("HH:mm")}`;
-        } else if (daysUntilExpiration === 1) {
-          renewsIn = `Expires tomorrow at ${expirationDate.format("HH:mm")}`;
-        } else {
-          renewsIn = `Expires in ${daysUntilExpiration} days`;
-        }
-      } else {
-        renewsIn = "Does not expire";
-      }
-    } else {
-      const createdAt = dayjs(connection.createdAt);
-      const limitFrequency = connection.limitFrequency ?? LimitFrequency.NONE;
-      const renewalDate = RENEWAL_DATE_FUNCTIONS[limitFrequency](createdAt);
-      const daysUntilRenewal = renewalDate.diff(dayjs(), "days");
-      if (daysUntilRenewal < 0) {
-        // Shouldn't happen
-        renewsIn = "Error";
-      } else if (daysUntilRenewal === 0) {
-        renewsIn = `Renews today at ${renewalDate.format("HH:mm")}`;
-      } else if (daysUntilRenewal === 1) {
-        renewsIn = `Renews tomorrow at ${renewalDate.format("HH:mm")}`;
-      } else {
-        renewsIn = `Renews in ${daysUntilRenewal} days`;
-      }
-    }
-  } else {
+
+  if (!connection.limitEnabled) {
     return (
       <Container>
         <Row>
@@ -58,6 +25,57 @@ export const Limit = ({ connection }: { connection: Connection }) => {
         </Row>
       </Container>
     );
+  }
+
+  if (
+    connection.amountInLowestDenom === undefined ||
+    connection.amountInLowestDenomUsed === undefined ||
+    connection.currency === undefined
+  ) {
+    return (
+      <Container>
+        <Row>
+          <LimitValue>Error: Invalid spending limit</LimitValue>
+        </Row>
+      </Container>
+    );
+  }
+
+  if (
+    connection.limitFrequency === LimitFrequency.NONE ||
+    !connection.limitFrequency
+  ) {
+    if (connection.expiresAt) {
+      const expirationDate = dayjs(connection.expiresAt);
+      const daysUntilExpiration = expirationDate.diff(dayjs(), "days");
+      if (daysUntilExpiration < 0) {
+        // Shouldn't happen
+        renewsIn = "Error";
+      } else if (daysUntilExpiration === 0) {
+        renewsIn = `Expires today at ${expirationDate.format("HH:mm")}`;
+      } else if (daysUntilExpiration === 1) {
+        renewsIn = `Expires tomorrow at ${expirationDate.format("HH:mm")}`;
+      } else {
+        renewsIn = `Expires in ${daysUntilExpiration} days`;
+      }
+    } else {
+      renewsIn = "Does not expire";
+    }
+  } else {
+    const createdAt = dayjs(connection.createdAt);
+    const renewalDate =
+      RENEWAL_DATE_FUNCTIONS[connection.limitFrequency](createdAt);
+    const daysUntilRenewal = renewalDate.diff(dayjs(), "days");
+    if (daysUntilRenewal < 0) {
+      // Shouldn't happen
+      renewsIn = "Error";
+    } else if (daysUntilRenewal === 0) {
+      renewsIn = `Renews today at ${renewalDate.format("HH:mm")}`;
+    } else if (daysUntilRenewal === 1) {
+      renewsIn = `Renews tomorrow at ${renewalDate.format("HH:mm")}`;
+    } else {
+      renewsIn = `Renews in ${daysUntilRenewal} days`;
+    }
   }
 
   const amountUsed = `${formatAmountString({ currency: connection.currency, amountInLowestDenom: connection.amountInLowestDenomUsed })} used`;

@@ -64,7 +64,6 @@ const TransactionRow = ({
     <Row>
       <InfoRowContainer>
         <InfoRow>
-          <span>{transaction.name}</span>
           {amount}
         </InfoRow>
         <InfoRowDetails>

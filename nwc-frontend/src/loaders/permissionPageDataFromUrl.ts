@@ -28,7 +28,8 @@ const getClientAppDefaultSettings = ({
       ? requiredCommands.split(",").map((command) => ({
           permission: {
             type: command.toLowerCase() as PermissionType,
-            description: PERMISSION_DESCRIPTIONS[command.toLowerCase()],
+            description:
+              PERMISSION_DESCRIPTIONS[command.toLowerCase() as PermissionType],
             optional: false,
           },
           enabled: true,
@@ -39,7 +40,8 @@ const getClientAppDefaultSettings = ({
       ? optionalCommands.split(",").map((command) => ({
           permission: {
             type: command.toLowerCase() as PermissionType,
-            description: PERMISSION_DESCRIPTIONS[command.toLowerCase()],
+            description:
+              PERMISSION_DESCRIPTIONS[command.toLowerCase() as PermissionType],
             optional: true,
           },
           enabled: false,

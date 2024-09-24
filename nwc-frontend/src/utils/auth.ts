@@ -98,9 +98,14 @@ export class Auth {
 
   getCurrency() {
     if (!this.isLoggedIn()) {
-      return undefined;
+      return {
+        code: "SAT",
+        symbol: "",
+        name: "Satoshi",
+        decimals: 0,
+      };
     }
-    return globalLoginState?.currency;
+    return globalLoginState!.currency;
   }
 }
 

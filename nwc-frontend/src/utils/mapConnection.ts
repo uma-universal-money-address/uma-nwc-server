@@ -37,7 +37,6 @@ export const mapConnection = (rawConnection: RawConnection): Connection => ({
         symbol: rawConnection.spending_limit.currency.symbol,
         name: rawConnection.spending_limit.currency.name,
         decimals: rawConnection.spending_limit.currency.decimals,
-        type: rawConnection.spending_limit.currency.type,
       }
     : undefined,
   permissions: mapPermissions(rawConnection.permissions),

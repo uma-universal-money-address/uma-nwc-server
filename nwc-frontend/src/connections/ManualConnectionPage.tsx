@@ -5,7 +5,7 @@ import { Label } from "@lightsparkdev/ui/components/typography/Label";
 import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
-import dayjs from "dayjs";
+import dayjs, { type ManipulateType } from "dayjs";
 import { useState } from "react";
 import { initializeManualConnection } from "src/hooks/useConnection";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
@@ -104,9 +104,15 @@ export default function ManualConnectionPage() {
 
   const handleContinue = () => {
     const today = dayjs();
-    const expiration = today
-      .add(1, connectionSettings.expirationPeriod.toLowerCase())
-      .toISOString();
+    const expiration =
+      connectionSettings.expirationPeriod === ExpirationPeriod.NONE
+        ? undefined
+        : today
+            .add(
+              1,
+              connectionSettings.expirationPeriod.toLowerCase() as ManipulateType,
+            )
+            .toISOString();
 
     async function submitConnection() {
       setIsConnecting(true);
