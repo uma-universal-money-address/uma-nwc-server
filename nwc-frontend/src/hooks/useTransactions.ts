@@ -54,7 +54,9 @@ export function useTransactions({ connectionId }: { connectionId: string }) {
               transactions: RawTransaction[];
             }>;
           } else {
-            throw new Error("Failed to fetch transactions.", { connectionId });
+            throw new Error(
+              `Failed to fetch transactions. connectionId: ${connectionId}`,
+            );
           }
         });
 
