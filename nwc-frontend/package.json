@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "yarn tsc && yarn vite build",
     "build:dev": "NODE_ENV=development vite build --watch",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint --fix .",
-    "preview": "vite preview",
+    "preview": "yarn tsc && yarn vite preview",
     "format:fix": "prettier src --write",
     "format": "prettier src --check"
   },
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "@emotion/babel-plugin": "^11.11.0",
+    "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^8.6.0",

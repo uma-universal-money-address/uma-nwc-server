@@ -18,7 +18,7 @@ export const PERMISSION_DESCRIPTIONS = {
 export interface Permission {
   type: PermissionType;
   description: string;
-  optional?: boolean;
+  optional: boolean;
 }
 
 export interface PermissionState {
@@ -53,8 +53,8 @@ export interface InitialConnection {
   amountInLowestDenom: number;
   limitEnabled: boolean;
   limitFrequency?: LimitFrequency;
-  expiration?: string;
-  clientId?: string;
+  expiration?: string | undefined;
+  clientId?: string | undefined;
 }
 
 export interface RawConnection {
@@ -64,8 +64,8 @@ export interface RawConnection {
     avatar: string;
   };
   name: string;
-  created_at: number;
-  last_used_at: number;
+  created_at: string;
+  last_used_at: string;
   spending_limit?: {
     limit_amount: number;
     limit_frequency: LimitFrequency;
@@ -84,7 +84,7 @@ export interface RawConnection {
     description: string;
     optional?: boolean;
   }[];
-  expires_at?: number;
+  expires_at?: string;
   status: ConnectionStatus;
 }
 
@@ -94,15 +94,15 @@ export interface Connection {
   name: string;
   createdAt: string;
   permissions: Permission[];
-  amountInLowestDenom: number;
-  amountInLowestDenomUsed: number;
+  amountInLowestDenom?: number | undefined;
+  amountInLowestDenomUsed?: number | undefined;
   limitEnabled: boolean;
-  currency: Currency;
+  currency?: Currency | undefined;
   status: ConnectionStatus;
-  limitFrequency?: LimitFrequency;
-  expiresAt?: string;
-  lastUsed?: string;
-  avatar?: string;
+  limitFrequency?: LimitFrequency | undefined;
+  expiresAt?: string | undefined;
+  lastUsed?: string | undefined;
+  avatar?: string | undefined;
 }
 
 export const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
@@ -111,6 +111,7 @@ export const DEFAULT_CONNECTION_SETTINGS: ConnectionSettings = {
       permission: {
         type: PermissionType.SEND_PAYMENTS,
         description: "Send payments from your UMA",
+        optional: false,
       },
       enabled: true,
     },

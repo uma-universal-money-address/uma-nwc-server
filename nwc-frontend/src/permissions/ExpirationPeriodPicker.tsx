@@ -12,10 +12,12 @@ export const ExpirationPeriodPicker = ({
   expirationPeriod,
   setExpirationPeriod,
 }: Props) => {
-  const handleChooseExpiration = (expirationPeriod) => (e) => {
-    setExpirationPeriod(expirationPeriod);
-    e.preventDefault();
-  };
+  const handleChooseExpiration =
+    (expirationPeriod: ExpirationPeriod) =>
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      setExpirationPeriod(expirationPeriod);
+      e.preventDefault();
+    };
 
   return (
     <Container>
@@ -49,7 +51,7 @@ const ExpirationPeriodButton = styled(UnstyledButton)<{ selected: boolean }>`
   justify-content: center;
   padding: ${Spacing.sm} ${Spacing.md};
   border-radius: 8px;
-  border: 1px solid ${({ theme }) => theme.border};
+  border: 1px solid ${({ theme }) => theme.lcNeutral};
   opacity: ${({ selected }) => (selected ? 1 : 0.4)};
   transition: opacity 0.2s;
 

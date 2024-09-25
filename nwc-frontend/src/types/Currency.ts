@@ -3,5 +3,4 @@ export interface Currency {
   symbol: string;
   name: string;
   decimals: number;
-  type: string;
 }

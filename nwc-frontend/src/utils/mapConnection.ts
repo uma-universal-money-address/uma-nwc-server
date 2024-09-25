@@ -8,8 +8,9 @@ import {
 
 const mapPermissions = (permissions: RawConnection["permissions"]) => {
   return permissions.map((permission) => ({
-    type: permission,
-    description: PERMISSION_DESCRIPTIONS[permission],
+    type: permission.type,
+    description: PERMISSION_DESCRIPTIONS[permission.type],
+    optional: !!permission.optional,
   }));
 };
 
@@ -22,7 +23,7 @@ const getStatus = (rawConnection: RawConnection): ConnectionStatus => {
 
 export const mapConnection = (rawConnection: RawConnection): Connection => ({
   connectionId: rawConnection.connection_id,
-  clientId: rawConnection.client_app?.client_id,
+  clientId: rawConnection.client_app?.client_id ?? "",
   name: rawConnection.name,
   createdAt: rawConnection.created_at,
   lastUsed: rawConnection.last_used_at,
@@ -36,7 +37,6 @@ export const mapConnection = (rawConnection: RawConnection): Connection => ({
         symbol: rawConnection.spending_limit.currency.symbol,
         name: rawConnection.spending_limit.currency.name,
         decimals: rawConnection.spending_limit.currency.decimals,
-        type: rawConnection.spending_limit.currency.type,
       }
     : undefined,
   permissions: mapPermissions(rawConnection.permissions),

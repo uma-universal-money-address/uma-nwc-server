@@ -4,7 +4,7 @@ import { Label } from "@lightsparkdev/ui/components/typography/Label";
 import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
-import dayjs from "dayjs";
+import dayjs, { type ManipulateType } from "dayjs";
 import { useState } from "react";
 import { useLoaderData, useNavigate } from "react-router-dom";
 import { Avatar } from "src/components/Avatar";
@@ -13,6 +13,7 @@ import {
   initializeConnection,
   updateConnection,
 } from "src/hooks/useConnection";
+import { type AppInfo } from "src/types/AppInfo";
 import { ExpirationPeriod, type Permission } from "src/types/Connection";
 import { type PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
 import { getAuth } from "src/utils/auth";
@@ -31,7 +32,7 @@ async function initConnection({
   connectionSettings: ConnectionSettings;
   currencyCode: string;
   redirectUri: string;
-  expiration: string;
+  expiration: string | undefined;
 }) {
   const { code, state, error } = await initializeConnection({
     clientId: appInfo.clientId,
@@ -55,12 +56,8 @@ async function initConnection({
 }
 
 export const PermissionsPage = () => {
-  const {
-    appInfo,
-    oauthParams,
-    connection,
-    connectionSettings: initialConnectionSettings,
-  } = useLoaderData() as PermissionPageLoaderData;
+  const loaderData = useLoaderData() as PermissionPageLoaderData;
+  const { appInfo, connectionSettings: initialConnectionSettings } = loaderData;
   const auth = getAuth();
   const uma = auth.getUmaAddress();
   const currency = auth.getCurrency();
@@ -92,29 +89,35 @@ export const PermissionsPage = () => {
 
   const handleSubmit = () => {
     const today = dayjs();
-    const expiration = today
-      .add(1, connectionSettings.expirationPeriod.toLowerCase())
-      .toISOString();
+    const expiration =
+      connectionSettings.expirationPeriod === ExpirationPeriod.NONE
+        ? undefined
+        : today
+            .add(
+              1,
+              connectionSettings.expirationPeriod.toLowerCase() as ManipulateType,
+            )
+            .toISOString();
 
     setIsSubmitting(true);
-    if (oauthParams) {
+    if ("oauthParams" in loaderData) {
       initConnection({
         appInfo,
         connectionSettings,
-        currencyCode: currency.code,
-        redirectUri: oauthParams.redirectUri,
+        currencyCode: currency?.code ?? "SAT",
+        redirectUri: loaderData.oauthParams.redirectUri,
         expiration,
       });
     } else {
       updateConnection({
-        connectionId: connection.connectionId,
+        connectionId: loaderData.connection.connectionId,
         amountInLowestDenom: connectionSettings.amountInLowestDenom,
         limitFrequency: connectionSettings.limitFrequency,
         limitEnabled: connectionSettings.limitEnabled,
-        status: connection.status,
+        status: loaderData.connection.status,
         expiration,
       });
-      navigate(`/connection/${connection.connectionId}`);
+      navigate(`/connection/${loaderData.connection.connectionId}`);
     }
   };
 
@@ -158,7 +161,7 @@ export const PermissionsPage = () => {
       {header}
       <Intro>
         <Title content="Connect your UMA" />
-        <Uma uma={uma} />
+        <Uma uma={uma ?? undefined} />
       </Intro>
 
       <PermissionsContainer>

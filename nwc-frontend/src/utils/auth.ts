@@ -91,16 +91,21 @@ export class Auth {
 
   getUmaAddress() {
     if (!this.isLoggedIn()) {
-      return null;
+      return undefined;
     }
     return globalLoginState?.umaAddress;
   }
 
   getCurrency() {
     if (!this.isLoggedIn()) {
-      return null;
+      return {
+        code: "SAT",
+        symbol: "",
+        name: "Satoshi",
+        decimals: 0,
+      };
     }
-    return globalLoginState?.currency;
+    return globalLoginState!.currency;
   }
 }
 

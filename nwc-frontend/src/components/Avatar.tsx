@@ -16,7 +16,7 @@ export const Avatar = (props: Props) => {
 
   if (props.uma && props.uma.length > 1) {
     return (
-      <UmaAvatarContainer width={size} height={size} shadow={props.shadow}>
+      <UmaAvatarContainer width={size} height={size} shadow={!!props.shadow}>
         {props.uma[1].toUpperCase()}
       </UmaAvatarContainer>
     );
@@ -24,7 +24,7 @@ export const Avatar = (props: Props) => {
 
   return (
     <AvatarContainer
-      shadow={props.shadow}
+      shadow={!!props.shadow}
       background={props.src ? "" : colors.gray90}
       padding={props.src ? "0px" : "9px"}
       width={size}

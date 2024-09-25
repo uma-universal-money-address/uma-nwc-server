@@ -63,10 +63,7 @@ const TransactionRow = ({
   return (
     <Row>
       <InfoRowContainer>
-        <InfoRow>
-          <span>{transaction.name}</span>
-          {amount}
-        </InfoRow>
+        <InfoRow>{amount}</InfoRow>
         <InfoRowDetails>
           <span>{formatTimestamp(transaction.createdAt)}</span>
           <span>{estimateLocaleString}</span>

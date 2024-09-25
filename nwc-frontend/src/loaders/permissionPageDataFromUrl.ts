@@ -19,27 +19,29 @@ const getClientAppDefaultSettings = ({
   expirationPeriod,
 }: {
   requiredCommands: string;
-  optionalCommands: string;
-  budget: string;
-  expirationPeriod: string;
+  optionalCommands: string | undefined;
+  budget: string | undefined;
+  expirationPeriod: string | undefined;
 }) => {
   const requiredPermissionStates =
     requiredCommands.length > 0
       ? requiredCommands.split(",").map((command) => ({
           permission: {
             type: command.toLowerCase() as PermissionType,
-            description: PERMISSION_DESCRIPTIONS[command.toLowerCase()],
+            description:
+              PERMISSION_DESCRIPTIONS[command.toLowerCase() as PermissionType],
             optional: false,
           },
           enabled: true,
         }))
       : [];
   const optionalPermissionStates =
-    optionalCommands.length > 0
+    optionalCommands && optionalCommands.length > 0
       ? optionalCommands.split(",").map((command) => ({
           permission: {
             type: command.toLowerCase() as PermissionType,
-            description: PERMISSION_DESCRIPTIONS[command.toLowerCase()],
+            description:
+              PERMISSION_DESCRIPTIONS[command.toLowerCase() as PermissionType],
             optional: true,
           },
           enabled: false,
@@ -50,9 +52,11 @@ const getClientAppDefaultSettings = ({
   );
   const amountCurrency = budget?.split("/")[0];
   let limitFrequency = budget?.split("/")[1];
-  let [amountInLowestDenom, currencyCode] = amountCurrency
-    ? amountCurrency.split(".")
-    : [undefined, undefined];
+  const amountParts = amountCurrency?.split(".") ?? [undefined, undefined];
+  const currencyCode = amountParts[1] ?? "SAT";
+  let amountInLowestDenom = !!amountParts[0]
+    ? parseInt(amountParts[0], 10)
+    : undefined;
 
   if (permissionStates.length === 0) {
     permissionStates.concat(DEFAULT_CONNECTION_SETTINGS.permissionStates);
@@ -60,10 +64,6 @@ const getClientAppDefaultSettings = ({
 
   if (!amountInLowestDenom) {
     amountInLowestDenom = DEFAULT_CONNECTION_SETTINGS.amountInLowestDenom;
-  }
-
-  if (!currencyCode) {
-    currencyCode = "SAT";
   }
 
   if (!limitFrequency) {
@@ -80,6 +80,7 @@ const getClientAppDefaultSettings = ({
     limitFrequency,
     limitEnabled: DEFAULT_CONNECTION_SETTINGS.limitEnabled,
     expirationPeriod,
+    currencyCode,
   };
 };
 
@@ -95,10 +96,20 @@ export const permissionsPageDataFromUrl = (async ({ request }) => {
   };
   const nwcParams = {
     requiredCommands: params.get("required_commands") || "",
-    optionalCommands: params.get("optional_commands") || "",
-    budget: params.get("budget"),
-    expirationPeriod: params.get("expiration_period"),
+    optionalCommands: params.get("optional_commands") || undefined,
+    budget: params.get("budget") || undefined,
+    expirationPeriod: params.get("expiration_period") || undefined,
   };
+
+  if (
+    !oauthParams.clientId ||
+    !oauthParams.redirectUri ||
+    !oauthParams.responseType ||
+    !oauthParams.codeChallenge ||
+    !oauthParams.codeChallengeMethod
+  ) {
+    throw new Response("Invalid OAuth parameters", { status: 400 });
+  }
 
   const appInfo = await fetchAppInfo(oauthParams.clientId);
 

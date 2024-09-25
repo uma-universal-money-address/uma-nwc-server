@@ -33,7 +33,6 @@ export const ConnectionHeader = ({
     updateConnection({
       ...connection,
       status: ConnectionStatus.INACTIVE,
-      disconnectedAt: new Date().toISOString(),
     })
       .then((succeeded) => {
         if (succeeded) {
@@ -58,7 +57,7 @@ export const ConnectionHeader = ({
         <AppSection>
           <Avatar
             size={72}
-            src={appInfo?.avatar}
+            src={appInfo?.avatar ?? ""}
             isLoading={isLoadingAppInfo}
           />
           <AppDetails>

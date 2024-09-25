@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { Icon, Modal } from "@lightsparkdev/ui/components";
+import { Icon, type IconName, Modal } from "@lightsparkdev/ui/components";
 import { Body } from "@lightsparkdev/ui/components/typography/Body";
 import { Label } from "@lightsparkdev/ui/components/typography/Label";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
@@ -18,7 +18,7 @@ const Step = ({
   number: number;
   title: string;
   description: string;
-  icon: string;
+  icon: IconName;
 }) => {
   return (
     <StepContainer>

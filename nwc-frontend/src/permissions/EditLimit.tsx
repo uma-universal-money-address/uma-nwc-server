@@ -2,6 +2,7 @@ import styled from "@emotion/styled";
 import { Modal } from "@lightsparkdev/ui/components";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
+import { type LimitFrequency } from "src/types/Connection";
 import { type Currency } from "src/types/Currency";
 import { EnableToggle } from "./EnableToggle";
 import { LimitAmountInput } from "./LimitAmountInput";
@@ -67,6 +68,7 @@ export const EditLimit = ({
           isEnabled={isEnabled}
           setIsEnabled={setIsEnabled}
           title="Enable spending limit"
+          id="enable-limit"
         />
         <LimitFrequencyPicker
           frequency={newFrequency}

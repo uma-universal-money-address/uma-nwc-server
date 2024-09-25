@@ -69,6 +69,7 @@ export const EditExpiration = ({
           isEnabled={isEnabled}
           setIsEnabled={handleEnableToggle}
           title="Enable expiration date"
+          id="expiration-toggle"
         />
         {isEnabled ? (
           <ExpirationPeriodPicker

@@ -15,6 +15,10 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
 
   useEffect(() => {
     async function fetchConnection() {
+      if (!connectionId) {
+        setConnection(undefined);
+        return;
+      }
       setIsLoading(true);
       try {
         const response = await fetchWithAuth(
@@ -39,8 +43,8 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
     limitEnabled,
     status,
   }: {
-    amountInLowestDenom: number;
-    limitFrequency: LimitFrequency;
+    amountInLowestDenom?: number | undefined;
+    limitFrequency?: LimitFrequency | undefined;
     limitEnabled: boolean;
     status: ConnectionStatus;
   }) => {
@@ -50,7 +54,7 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
         {
           method: "POST",
           body: JSON.stringify({
-            connectionId: connection.connectionId,
+            connectionId: connectionId,
             amountInLowestDenom,
             limitFrequency,
             limitEnabled,
@@ -84,10 +88,10 @@ export const updateConnection = async ({
   status,
 }: {
   connectionId: string;
-  amountInLowestDenom: number;
-  limitFrequency: LimitFrequency;
+  amountInLowestDenom?: number | undefined;
+  limitFrequency?: LimitFrequency | undefined;
   limitEnabled: boolean;
-  expiration: string;
+  expiration?: string | undefined;
   status: ConnectionStatus;
 }) => {
   try {

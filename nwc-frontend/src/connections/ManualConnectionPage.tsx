@@ -5,7 +5,7 @@ import { Label } from "@lightsparkdev/ui/components/typography/Label";
 import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
-import dayjs from "dayjs";
+import dayjs, { type ManipulateType } from "dayjs";
 import { useState } from "react";
 import { initializeManualConnection } from "src/hooks/useConnection";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
@@ -16,6 +16,7 @@ import { type ConnectionSettings } from "src/permissions/PersonalizePage";
 import {
   DEFAULT_CONNECTION_SETTINGS,
   ExpirationPeriod,
+  type LimitFrequency,
   type PermissionState,
 } from "src/types/Connection";
 import { getAuth } from "src/utils/auth";
@@ -34,9 +35,7 @@ export default function ManualConnectionPage() {
     useState<ConnectionSettings>(DEFAULT_CONNECTION_SETTINGS);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [connectionName, setConnectionName] = useState<string>("");
-  const [pairingUri, setPairingUri] = useState<{ pairingUri: string } | null>(
-    null,
-  );
+  const [pairingUri, setPairingUri] = useState<string | null>(null);
   const auth = getAuth();
   const currency = auth.getCurrency();
 
@@ -105,9 +104,15 @@ export default function ManualConnectionPage() {
 
   const handleContinue = () => {
     const today = dayjs();
-    const expiration = today
-      .add(1, connectionSettings.expirationPeriod.toLowerCase())
-      .toISOString();
+    const expiration =
+      connectionSettings.expirationPeriod === ExpirationPeriod.NONE
+        ? undefined
+        : today
+            .add(
+              1,
+              connectionSettings.expirationPeriod.toLowerCase() as ManipulateType,
+            )
+            .toISOString();
 
     async function submitConnection() {
       setIsConnecting(true);
