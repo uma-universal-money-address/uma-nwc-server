@@ -4,7 +4,14 @@ import { fetchWithAuth } from "src/utils/fetchWithAuth";
 
 export const fetchAppInfo = async (clientId: string) => {
   const response = await fetchWithAuth(`/api/app?clientId=${clientId}`);
-  return await response.json();
+  const appInfo = await response.json();
+  return {
+    clientId: appInfo.clientId,
+    name: appInfo.name,
+    verified: appInfo.verified === "VERIFIED",
+    domain: appInfo.domain,
+    avatar: appInfo.avatar,
+  };
 };
 
 export const useAppInfo = ({ clientId }: { clientId: string }) => {
