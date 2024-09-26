@@ -27,6 +27,7 @@ from nwc_backend.exceptions import (
 from nwc_backend.models.__tests__.model_examples import (
     create_nip47_request,
     create_nip47_request_with_spending_limit,
+    create_usd_currency,
 )
 from nwc_backend.models.nip47_request import ErrorCode
 from nwc_backend.models.outgoing_payment import (
@@ -48,7 +49,7 @@ async def test_pay_to_address_success__spending_limit_disabled(
         "preimage": "b6f1086f61561bacf2f05fa02ab30a06c3432c1aea62817c019ea33c1730eeb3",
         "quote": {
             "sending_currency_code": "SAT",
-            "receiving_currency_code": "USD",
+            "receiving_currency": create_usd_currency().to_dict(),
             "payment_hash": token_hex(),
             "expires_at": int((now + timedelta(minutes=5)).timestamp()),
             "multiplier": 15351.4798,
@@ -190,7 +191,7 @@ async def test_pay_to_address_success__sending_SAT_budget_SAT(
         "preimage": "b6f1086f61561bacf2f05fa02ab30a06c3432c1aea62817c019ea33c1730eeb3",
         "quote": {
             "sending_currency_code": "SAT",
-            "receiving_currency_code": "USD",
+            "receiving_currency": create_usd_currency().to_dict(),
             "payment_hash": token_hex(),
             "expires_at": int((now + timedelta(minutes=5)).timestamp()),
             "multiplier": 15351.4798,
@@ -347,7 +348,7 @@ async def test_pay_to_address_success__sending_SAT_budget_USD(
         "preimage": "b6f1086f61561bacf2f05fa02ab30a06c3432c1aea62817c019ea33c1730eeb3",
         "quote": {
             "sending_currency_code": "SAT",
-            "receiving_currency_code": "USD",
+            "receiving_currency": create_usd_currency().to_dict(),
             "payment_hash": token_hex(),
             "expires_at": int((now + timedelta(minutes=5)).timestamp()),
             "multiplier": 15351.4798,

@@ -2,7 +2,7 @@
 # pyre-strict
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
@@ -19,7 +19,7 @@ from nwc_backend.models.permissions_grouping import (
     PERMISSIONS_GROUP_TO_METHODS,
     PermissionsGroup,
 )
-from nwc_backend.models.spending_limit import Currency, SpendingLimit
+from nwc_backend.models.spending_limit import SpendingLimit
 from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.models.user import User
 from nwc_backend.models.vasp_jwt import VaspJwt
@@ -134,25 +134,17 @@ async def _initialize_connection_data(
         nwc_connection.connection_expires_at = round(expires_at.timestamp())
 
     if limit_enabled:
-        currency = await Currency.from_currency_code(
-            vasp_access_token=short_lived_vasp_token,
-            currency_code=currency_code or "SAT",
-        )
-        if not currency:
-            raise InvalidApiParamsException("The currency of budget is not allowed.")
-
         limit_frequency = (
             SpendingLimitFrequency(limit_frequency)
             if limit_frequency
             else SpendingLimitFrequency.NONE
         )
-        spending_limit = SpendingLimit(
-            id=uuid4(),
+        spending_limit = await SpendingLimit.create(
+            vasp_access_token=short_lived_vasp_token,
+            currency_code=currency_code or "SAT",
             nwc_connection_id=nwc_connection.id,
-            currency=currency,
             amount=amount_in_lowest_denom,
             frequency=limit_frequency,
-            start_time=datetime.now(timezone.utc),
         )
         db.session.add(spending_limit)
         nwc_connection.spending_limit_id = spending_limit.id

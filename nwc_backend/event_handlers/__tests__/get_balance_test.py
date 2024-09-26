@@ -13,6 +13,7 @@ from quart.app import QuartClient
 from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
 from nwc_backend.event_handlers.get_balance_handler import get_balance
 from nwc_backend.exceptions import InvalidInputException
+from nwc_backend.models.__tests__.model_examples import create_usd_currency
 from nwc_backend.models.nip47_request import Nip47Request
 
 
@@ -25,8 +26,8 @@ async def test_get_balance_success(
     mock_get: Mock, currency_code: Optional[str], test_client: QuartClient
 ) -> None:
     vasp_response: dict[str, Any] = {"balance": 1_000_000}
-    if currency_code:
-        vasp_response["currency_code"] = currency_code
+    if currency_code == "USD":
+        vasp_response["currency"] = create_usd_currency().to_dict()
 
     mock_response = AsyncMock()
     mock_response.text = AsyncMock(return_value=json.dumps(vasp_response))

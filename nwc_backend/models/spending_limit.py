@@ -1,9 +1,7 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import json
 import re
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 from uuid import UUID, uuid4
@@ -14,58 +12,25 @@ from sqlalchemy import ForeignKey, TypeDecorator
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import select
+from uma_auth.models.currency import Currency
 
 from nwc_backend.db import UUID as DBUUID
 from nwc_backend.db import DateTime, db
+from nwc_backend.exceptions import InvalidApiParamsException
 from nwc_backend.models.model_base import ModelBase
 from nwc_backend.models.spending_cycle import SpendingCycle
 from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.vasp_client import VaspUmaClient
 
 
-@dataclass
-class Currency:
-    code: str
-    symbol: str
-    name: str
-    decimals: int
-
-    def get_type(self) -> str:
-        return "crypto" if self.code == "SAT" else "fiat"
-
-    @staticmethod
-    async def from_currency_code(
-        vasp_access_token: str, currency_code: str
-    ) -> Optional["Currency"]:
-        response = await VaspUmaClient.instance().get_info(
-            access_token=vasp_access_token
-        )
-        currencies = [
-            currency
-            for currency in response.currencies or []
-            if currency.code == currency_code
-        ]
-
-        return (
-            Currency(
-                code=currencies[0].code,
-                symbol=currencies[0].symbol,
-                name=currencies[0].name,
-                decimals=currencies[0].decimals,
-            )
-            if currencies
-            else None
-        )
-
-
 class DBCurrency(TypeDecorator):
     impl = JSON
 
     def process_bind_param(self, value: Currency, dialect: Dialect) -> Optional[str]:
-        return json.dumps(value.__dict__) if value else None
+        return value.to_json() if value else None
 
     def process_result_value(self, value: str, dialect: Dialect) -> Optional[Currency]:
-        return Currency(**json.loads(value)) if value else None
+        return Currency.from_json(value) if value else None
 
 
 class SpendingLimit(ModelBase):
@@ -190,6 +155,33 @@ class SpendingLimit(ModelBase):
                 "name": self.currency.name,
                 "symbol": self.currency.symbol,
                 "decimals": self.currency.decimals,
-                "type": self.currency.get_type(),
+                "type": "crypto" if self.currency.code == "SAT" else "fiat",
             },
         }
+
+    @staticmethod
+    async def create(
+        vasp_access_token: str,
+        nwc_connection_id: UUID,
+        currency_code: str,
+        amount: int,
+        frequency: SpendingLimitFrequency,
+    ) -> "SpendingLimit":
+        response = await VaspUmaClient.instance().get_info(
+            access_token=vasp_access_token
+        )
+        currency_preferences = [
+            currency
+            for currency in response.currencies or []
+            if currency.currency.code == currency_code
+        ]
+        if not currency_preferences:
+            raise InvalidApiParamsException("The currency of budget is not allowed.")
+        return SpendingLimit(
+            id=uuid4(),
+            nwc_connection_id=nwc_connection_id,
+            currency=currency_preferences[0].currency,
+            amount=amount,
+            frequency=frequency,
+            start_time=datetime.now(timezone.utc),
+        )

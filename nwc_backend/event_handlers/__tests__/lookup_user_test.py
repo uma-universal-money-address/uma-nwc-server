@@ -18,6 +18,7 @@ from nwc_backend.exceptions import (
     Nip47RequestException,
     NotImplementedException,
 )
+from nwc_backend.models.__tests__.model_examples import create_usd_currency
 from nwc_backend.models.nip47_request import ErrorCode, Nip47Request
 
 
@@ -26,11 +27,8 @@ async def test_lookup_user_success(mock_get: Mock, test_client: QuartClient) -> 
     vasp_response = {
         "currencies": [
             {
-                "code": "USD",
-                "symbol": "$",
-                "name": "US Dollar",
+                "currency": create_usd_currency().to_dict(),
                 "multiplier": 1000,
-                "decimals": 2,
                 "min": 1000,
                 "max": 1000000,
             }
