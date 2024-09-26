@@ -65,8 +65,14 @@ def jwt_for_user(user: User) -> str:
     )
 
 
-def create_usd_currency() -> Currency:
-    return Currency(code="USD", symbol="$", name="US Dollar", decimals=2)
+def create_currency(code: str) -> Currency:
+    match code:
+        case "USD":
+            return Currency(code="USD", symbol="$", name="US Dollar", decimals=2)
+        case "SAT":
+            return Currency(code="SAT", symbol="", name="Satoshi", decimals=0)
+        case _:
+            raise NotImplementedError()
 
 
 async def create_nwc_connection(

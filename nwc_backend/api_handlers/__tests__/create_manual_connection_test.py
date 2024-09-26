@@ -11,7 +11,7 @@ import requests
 from quart.app import QuartClient
 
 from nwc_backend.models.__tests__.model_examples import (
-    create_usd_currency,
+    create_currency,
     create_user,
     jwt_for_user,
 )
@@ -43,7 +43,7 @@ async def test_create_manual_connection_success(
         ],
         "currencies": [
             {
-                "currency": create_usd_currency().to_dict(),
+                "currency": create_currency("USD").to_dict(),
                 "multiplier": 15351.4798,
                 "min": 1,
                 "max": 1000_00,
