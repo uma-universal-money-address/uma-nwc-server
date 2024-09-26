@@ -22,6 +22,7 @@ METHOD_TO_PERMISSIONS_GROUP = {
     Nip47RequestMethod.LIST_TRANSACTIONS.value: PermissionsGroup.READ_TRANSACTIONS,
     Nip47RequestMethod.LOOKUP_USER.value: PermissionsGroup.ALWAYS_GRANTED,
     Nip47RequestMethod.GET_INFO.value: PermissionsGroup.ALWAYS_GRANTED,
+    Nip47RequestMethod.GET_BUDGET.value: PermissionsGroup.ALWAYS_GRANTED,
     # groups map to themselves
     PermissionsGroup.SEND_PAYMENTS.value: PermissionsGroup.SEND_PAYMENTS,
     PermissionsGroup.RECEIVE_PAYMENTS.value: PermissionsGroup.RECEIVE_PAYMENTS,
@@ -50,5 +51,6 @@ PERMISSIONS_GROUP_TO_METHODS = {
     PermissionsGroup.ALWAYS_GRANTED: [
         Nip47RequestMethod.LOOKUP_USER.value,
         Nip47RequestMethod.GET_INFO.value,
+        Nip47RequestMethod.GET_BUDGET.value,
     ],
 }
