@@ -10,6 +10,7 @@ from quart.app import QuartClient
 
 from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
 from nwc_backend.event_handlers.get_info_handler import get_info
+from nwc_backend.models.__tests__.model_examples import create_usd_currency
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 
@@ -26,11 +27,8 @@ async def test_get_info_success(mock_get: Mock, test_client: QuartClient) -> Non
         "lud16": "$alice@uma.me",
         "currencies": [
             {
-                "code": "USD",
-                "symbol": "$",
-                "name": "US Dollar",
+                "currency": create_usd_currency().to_dict(),
                 "multiplier": 15351.4798,
-                "decimals": 2,
                 "min": 1,
                 "max": 1000_00,
             }

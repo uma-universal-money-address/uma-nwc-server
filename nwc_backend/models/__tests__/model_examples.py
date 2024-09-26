@@ -8,6 +8,7 @@ from uuid import uuid4
 import jwt
 from nostr_sdk import Keys
 from quart import current_app
+from uma_auth.models.currency import Currency
 
 from nwc_backend.db import db
 from nwc_backend.models.client_app import ClientApp
@@ -22,11 +23,7 @@ from nwc_backend.models.outgoing_payment import (
 from nwc_backend.models.payment_quote import PaymentQuote
 from nwc_backend.models.permissions_grouping import PermissionsGroup
 from nwc_backend.models.spending_cycle import SpendingCycle
-from nwc_backend.models.spending_limit import (
-    Currency,
-    SpendingLimit,
-    SpendingLimitFrequency,
-)
+from nwc_backend.models.spending_limit import SpendingLimit, SpendingLimitFrequency
 from nwc_backend.models.user import User
 
 
@@ -66,6 +63,10 @@ def jwt_for_user(user: User) -> str:
         jwt_private_key,
         algorithm="ES256",
     )
+
+
+def create_usd_currency() -> Currency:
+    return Currency(code="USD", symbol="$", name="US Dollar", decimals=2)
 
 
 async def create_nwc_connection(
