@@ -5,6 +5,7 @@ import { type Connection } from "./Connection";
 interface LoaderDataBase {
   appInfo: AppInfo;
   connectionSettings: ConnectionSettings;
+  permissionsEditable: boolean;
 }
 
 interface LoaderDataFromUrl extends LoaderDataBase {

@@ -129,6 +129,7 @@ export const PermissionsPage = () => {
         updateConnectionSettings={handleUpdateConnectionSettings}
         onBack={() => setIsPersonalizeVisible(false)}
         onReset={handleReset}
+        permissionsEditable={loaderData.permissionsEditable}
       />
     );
   }

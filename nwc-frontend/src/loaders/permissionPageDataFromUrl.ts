@@ -3,6 +3,7 @@ import { fetchAppInfo } from "src/hooks/useAppInfo";
 import {
   DEFAULT_CONNECTION_SETTINGS,
   PERMISSION_DESCRIPTIONS,
+  type PermissionState,
   type PermissionType,
 } from "src/types/Connection";
 import { type Currency } from "src/types/Currency";
@@ -23,7 +24,7 @@ const getClientAppDefaultSettings = ({
   budget: string | undefined;
   expirationPeriod: string | undefined;
 }) => {
-  const requiredPermissionStates =
+  const requiredPermissionStates: PermissionState[] =
     requiredCommands.length > 0
       ? requiredCommands.split(",").map((command) => ({
           permission: {
@@ -35,7 +36,7 @@ const getClientAppDefaultSettings = ({
           enabled: true,
         }))
       : [];
-  const optionalPermissionStates =
+  const optionalPermissionStates: PermissionState[] =
     optionalCommands && optionalCommands.length > 0
       ? optionalCommands.split(",").map((command) => ({
           permission: {
@@ -109,6 +110,7 @@ export const permissionsPageDataFromUrl = (async ({ request }) => {
       appInfo,
       connectionSettings: getClientAppDefaultSettings(nwcParams),
       oauthParams,
+      permissionsEditable: true,
     } as PermissionPageLoaderData,
     { status: 200 },
   );

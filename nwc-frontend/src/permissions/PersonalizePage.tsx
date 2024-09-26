@@ -16,6 +16,7 @@ import { formatConnectionString } from "src/utils/formatConnectionString";
 import { EditExpiration } from "./EditExpiration";
 import { EditLimit } from "./EditLimit";
 import { PermissionsEditableList } from "./PermissionsEditableList";
+import { PermissionsList } from "./PermissionsList";
 
 export interface ConnectionSettings {
   permissionStates: PermissionState[];
@@ -31,6 +32,7 @@ interface Props {
   updateConnectionSettings: (connectionSettings: ConnectionSettings) => void;
   onBack: () => void;
   onReset: () => void;
+  permissionsEditable: boolean;
 }
 
 export const PersonalizePage = ({
@@ -39,6 +41,7 @@ export const PersonalizePage = ({
   updateConnectionSettings,
   onBack,
   onReset,
+  permissionsEditable,
 }: Props) => {
   const [isEditLimitVisible, setIsEditLimitVisible] = useState<boolean>(false);
   const [isEditExpirationVisible, setIsEditExpirationVisible] =
@@ -121,10 +124,18 @@ export const PersonalizePage = ({
           </AppSection>
           <Permissions>
             <Label size="Large" content="Would like to" />
-            <PermissionsEditableList
-              permissionStates={internalConnectionSettings.permissionStates}
-              updatePermissionStates={handleUpdatePermissionStates}
-            />
+            {permissionsEditable ? (
+              <PermissionsEditableList
+                permissionStates={internalConnectionSettings.permissionStates}
+                updatePermissionStates={handleUpdatePermissionStates}
+              />
+            ) : (
+              <PermissionsList
+                permissions={internalConnectionSettings.permissionStates
+                  .filter((permissionState) => permissionState.enabled)
+                  .map((permissionState) => permissionState.permission)}
+              />
+            )}
           </Permissions>
         </PermissionsDescription>
         <Limit onClick={handleEditLimit}>
