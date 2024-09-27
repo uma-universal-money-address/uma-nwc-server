@@ -104,7 +104,7 @@ async def test_pay_invoice_success__spending_limit_USD_enabled(
             headers=ANY,
         )
         assert exclude_none_values(response.to_dict()) == {
-            "total_budget": estimated_budget_currency_amount * 1000,
+            "total_budget": estimated_budget_currency_amount,
             "used_budget": 0,
             "renews_at": ANY,
             "currency": {
