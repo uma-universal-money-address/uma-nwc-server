@@ -49,12 +49,14 @@ async def _handle_client_app_oauth_request() -> Response | WerkzeugResponse:
     _require_string_param(request.args, "code_challenge")
     redirect_uri = _require_string_param(request.args, "redirect_uri")
 
-    budget = unquote(request.args.get("budget"))
-    if budget and not SpendingLimit.is_budget_valid(budget):
-        return Response(
-            "Budget should be in the format <max_amount>.<currency>/<period>",
-            status=400,
-        )
+    budget = request.args.get("budget")
+    if budget:
+        budget = unquote(budget)
+        if not SpendingLimit.is_budget_valid(budget):
+            return Response(
+                "Budget should be in the format <max_amount>.<currency>/<period>",
+                status=400,
+            )
 
     client_app_info = await look_up_client_app_identity(client_id)
     if not client_app_info:
