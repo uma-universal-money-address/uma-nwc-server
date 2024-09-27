@@ -24,7 +24,7 @@ async def test_spending_cycle(test_client: QuartClient) -> None:
         spending_cycle = await db.session.get_one(SpendingCycle, spending_cycle.id)
         assert spending_cycle.spending_limit_id == spending_limit.id
         assert spending_cycle.limit_amount == spending_limit.amount
-        assert spending_cycle.limit_currency == spending_limit.currency.code
+        assert spending_cycle.limit_currency == spending_limit.currency
         assert spending_cycle.start_time == spending_limit.start_time
         assert spending_cycle.end_time == spending_cycle.start_time + timedelta(days=7)
         assert spending_cycle.total_spent == 0

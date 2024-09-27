@@ -158,7 +158,7 @@ async def test_pay_keysend_success__spending_limit_SAT_enabled(
         spending_cycle = (await db.session.execute(select(SpendingCycle))).scalar_one()
         spending_limit = none_throws(request.nwc_connection.spending_limit)
         assert spending_cycle.spending_limit_id == spending_limit.id
-        assert spending_cycle.limit_currency == spending_limit.currency.code
+        assert spending_cycle.limit_currency == spending_limit.currency
         assert spending_cycle.limit_amount == spending_limit.amount
         assert spending_cycle.total_spent == payment_amount_sats
         assert spending_cycle.total_spent_on_hold == 0
@@ -211,7 +211,7 @@ async def test_pay_keysend_payment_failed__spending_limit_SAT_enabled(
         spending_cycle = (await db.session.execute(select(SpendingCycle))).scalar_one()
         spending_limit = none_throws(request.nwc_connection.spending_limit)
         assert spending_cycle.spending_limit_id == spending_limit.id
-        assert spending_cycle.limit_currency == spending_limit.currency.code
+        assert spending_cycle.limit_currency == spending_limit.currency
         assert spending_cycle.limit_amount == spending_limit.amount
         assert spending_cycle.total_spent == 0
         assert spending_cycle.total_spent_on_hold == 0
@@ -248,7 +248,7 @@ async def test_budget_not_enough__spending_limit_SAT_enabled(
         spending_cycle = (await db.session.execute(select(SpendingCycle))).scalar_one()
         spending_limit = none_throws(request.nwc_connection.spending_limit)
         assert spending_cycle.spending_limit_id == spending_limit.id
-        assert spending_cycle.limit_currency == spending_limit.currency.code
+        assert spending_cycle.limit_currency == spending_limit.currency
         assert spending_cycle.limit_amount == spending_limit.amount
         assert spending_cycle.total_spent == 0
         assert spending_cycle.total_spent_on_hold == 0
@@ -309,7 +309,7 @@ async def test_pay_keysend_success__spending_limit_USD_enabled(
         spending_cycle = (await db.session.execute(select(SpendingCycle))).scalar_one()
         spending_limit = none_throws(request.nwc_connection.spending_limit)
         assert spending_cycle.spending_limit_id == spending_limit.id
-        assert spending_cycle.limit_currency == spending_limit.currency.code
+        assert spending_cycle.limit_currency == spending_limit.currency
         assert spending_cycle.limit_amount == spending_limit.amount
         assert spending_cycle.total_spent == final_budget_currency_amount
         assert spending_cycle.total_spent_on_hold == 0
@@ -387,7 +387,7 @@ async def test_pay_keysend_payment_failed__spending_limit_USD_enabled(
         spending_cycle = (await db.session.execute(select(SpendingCycle))).scalar_one()
         spending_limit = none_throws(request.nwc_connection.spending_limit)
         assert spending_cycle.spending_limit_id == spending_limit.id
-        assert spending_cycle.limit_currency == spending_limit.currency.code
+        assert spending_cycle.limit_currency == spending_limit.currency
         assert spending_cycle.limit_amount == spending_limit.amount
         assert spending_cycle.total_spent == 0
         assert spending_cycle.total_spent_on_hold == 0
@@ -448,7 +448,7 @@ async def test_budget_not_enough__spending_limit_USD_enabled(
         spending_cycle = (await db.session.execute(select(SpendingCycle))).scalar_one()
         spending_limit = none_throws(request.nwc_connection.spending_limit)
         assert spending_cycle.spending_limit_id == spending_limit.id
-        assert spending_cycle.limit_currency == spending_limit.currency.code
+        assert spending_cycle.limit_currency == spending_limit.currency
         assert spending_cycle.limit_amount == spending_limit.amount
         assert spending_cycle.total_spent == 0
         assert spending_cycle.total_spent_on_hold == 0

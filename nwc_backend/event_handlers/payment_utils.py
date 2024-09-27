@@ -79,7 +79,7 @@ async def create_outgoing_payment(
         if spending_cycle.get_available_budget_amount() == 0:
             raise InsufficientBudgetException()
 
-        if spending_cycle.limit_currency == sending_currency_code:
+        if spending_cycle.limit_currency.code == sending_currency_code:
             estimated_budget_currency_amount = sending_currency_amount
         else:
             budget_estimate_response = (
@@ -87,7 +87,7 @@ async def create_outgoing_payment(
                     access_token=access_token,
                     sending_currency_code=sending_currency_code,
                     sending_currency_amount=sending_currency_amount,
-                    budget_currency_code=spending_cycle.limit_currency,
+                    budget_currency_code=spending_cycle.limit_currency.code,
                 )
             )
             estimated_budget_currency_amount = (

@@ -185,7 +185,7 @@ async def create_spending_cycle(
     spending_cycle = SpendingCycle(
         id=uuid4(),
         spending_limit_id=spending_limit.id,
-        limit_currency=spending_limit.currency.code,
+        limit_currency=spending_limit.currency,
         limit_amount=spending_limit.amount,
         start_time=spending_limit.start_time,
         end_time=(spending_limit.start_time + cycle_length) if cycle_length else None,
