@@ -77,8 +77,8 @@ class OutgoingPayment(ModelBase):
             "status": self.status.value,
             "receiver": self.receiver,
             "receiver_type": self.receiver_type.name,
-            "budget_currency_code": (
-                spending_cycle.limit_currency if spending_cycle else None
+            "budget_currency": (
+                spending_cycle.limit_currency.to_dict() if spending_cycle else None
             ),
             "budget_currency_amount": self.settled_budget_currency_amount,
             "budget_on_hold": (

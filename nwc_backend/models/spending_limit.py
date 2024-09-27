@@ -6,31 +6,21 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import JSON, BigInteger, Dialect
+from sqlalchemy import BigInteger
 from sqlalchemy import Enum as DBEnum
-from sqlalchemy import ForeignKey, TypeDecorator
+from sqlalchemy import ForeignKey
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import select
 from uma_auth.models.currency import Currency
 
 from nwc_backend.db import UUID as DBUUID
-from nwc_backend.db import DateTime, db
+from nwc_backend.db import DateTime, DBCurrency, db
 from nwc_backend.exceptions import InvalidApiParamsException
 from nwc_backend.models.model_base import ModelBase
 from nwc_backend.models.spending_cycle import SpendingCycle
 from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.vasp_client import VaspUmaClient
-
-
-class DBCurrency(TypeDecorator):
-    impl = JSON
-
-    def process_bind_param(self, value: Currency, dialect: Dialect) -> Optional[str]:
-        return value.to_json() if value else None
-
-    def process_result_value(self, value: str, dialect: Dialect) -> Optional[Currency]:
-        return Currency.from_json(value) if value else None
 
 
 class SpendingLimit(ModelBase):
@@ -72,7 +62,7 @@ class SpendingLimit(ModelBase):
         return SpendingCycle(
             id=uuid4(),
             spending_limit_id=self.id,
-            limit_currency=self.currency.code,
+            limit_currency=self.currency,
             limit_amount=self.amount,
             start_time=start_time,
             end_time=start_time + cycle_length if cycle_length else None,

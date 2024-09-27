@@ -10,12 +10,13 @@ from typing import Any, Callable, Optional, Type, Union
 import sqlalchemy
 from botocore.client import BaseClient
 from quart import Quart, Response, g
-from sqlalchemy import Uuid, event, types
+from sqlalchemy import JSON, Uuid, event, types
 from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_connection
 from sqlalchemy.engine import Dialect, Result
 from sqlalchemy.ext.asyncio.engine import AsyncEngine, create_async_engine
 from sqlalchemy.ext.asyncio.scoping import AsyncSession, async_scoped_session
 from sqlalchemy.orm import sessionmaker
+from uma_auth.models.currency import Currency
 
 
 class DateTime(types.TypeDecorator):
@@ -63,6 +64,17 @@ class UUID(Uuid):
             return str(value) if value is not None else None
 
         return process
+
+
+class DBCurrency(types.TypeDecorator):
+    impl = JSON
+    cache_ok = True
+
+    def process_bind_param(self, value: Currency, dialect: Dialect) -> Optional[str]:
+        return value.to_json() if value else None
+
+    def process_result_value(self, value: str, dialect: Dialect) -> Optional[Currency]:
+        return Currency.from_json(value) if value else None
 
 
 class LockingAsyncSession(AsyncSession):
