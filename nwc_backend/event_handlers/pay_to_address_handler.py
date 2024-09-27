@@ -60,7 +60,7 @@ async def pay_to_address(
             if not settled_budget_currency_amount:
                 if (
                     current_spending_limit.currency
-                    == response.quote.sending_currency_code
+                    == response.quote.sending_currency.code
                 ):
                     settled_budget_currency_amount = response.quote.total_sending_amount
                 else:

@@ -44,7 +44,7 @@ async def fetch_quote(access_token: str, request: Nip47Request) -> Quote:
             nip47_request_id=request.id,
             payment_hash=response.payment_hash,
             receiver_address=receiving_address.address,
-            sending_currency_code=response.sending_currency_code,
+            sending_currency_code=response.sending_currency.code,
             sending_currency_amount=response.total_sending_amount,
         )
     )

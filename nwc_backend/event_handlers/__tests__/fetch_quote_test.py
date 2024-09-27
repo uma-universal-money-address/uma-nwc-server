@@ -14,8 +14,8 @@ from nwc_backend.event_handlers.__tests__.utils import exclude_none_values
 from nwc_backend.event_handlers.fetch_quote_handler import fetch_quote
 from nwc_backend.exceptions import InvalidInputException, NotImplementedException
 from nwc_backend.models.__tests__.model_examples import (
+    create_currency,
     create_nip47_request,
-    create_usd_currency,
 )
 from nwc_backend.models.nip47_request import Nip47Request
 from nwc_backend.models.payment_quote import PaymentQuote
@@ -26,8 +26,8 @@ async def test_fetch_quote_success(mock_get: Mock, test_client: QuartClient) -> 
     now = datetime.now(timezone.utc)
     payment_hash = token_hex()
     vasp_response = {
-        "sending_currency_code": "SAT",
-        "receiving_currency": create_usd_currency().to_dict(),
+        "sending_currency": create_currency("SAT").to_dict(),
+        "receiving_currency": create_currency("USD").to_dict(),
         "payment_hash": payment_hash,
         "expires_at": int((now + timedelta(minutes=5)).timestamp()),
         "multiplier": 15351.4798,
@@ -63,7 +63,7 @@ async def test_fetch_quote_success(mock_get: Mock, test_client: QuartClient) -> 
 
         stored_quote = await PaymentQuote.from_payment_hash(payment_hash=payment_hash)
         assert stored_quote
-        assert stored_quote.sending_currency_code == quote.sending_currency_code
+        assert stored_quote.sending_currency_code == quote.sending_currency.code
         assert stored_quote.sending_currency_amount == quote.total_sending_amount
         assert stored_quote.receiver_address == receiver_address
 

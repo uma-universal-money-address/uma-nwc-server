@@ -18,7 +18,7 @@ from quart.app import QuartClient
 from sqlalchemy.sql import select
 
 from nwc_backend.db import db
-from nwc_backend.models.__tests__.model_examples import create_usd_currency
+from nwc_backend.models.__tests__.model_examples import create_currency
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
@@ -145,7 +145,7 @@ async def test_create_client_app_connection_success(
             ],
             "currencies": [
                 {
-                    "currency": create_usd_currency().to_dict(),
+                    "currency": create_currency("USD").to_dict(),
                     "multiplier": 15351.4798,
                     "min": 1,
                     "max": 1000_00,
