@@ -52,6 +52,7 @@ export const permissionsPageData = (async ({ params }) => {
       appInfo,
       connectionSettings: getConnectionSettings(connection),
       connection,
+      permissionsEditable: false,
     } as PermissionPageLoaderData,
     { status: 200 },
   );

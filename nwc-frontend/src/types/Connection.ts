@@ -18,7 +18,7 @@ export const PERMISSION_DESCRIPTIONS = {
 export interface Permission {
   type: PermissionType;
   description: string;
-  optional: boolean;
+  optional?: boolean;
 }
 
 export interface PermissionState {
@@ -79,11 +79,7 @@ export interface RawConnection {
       type: string;
     };
   };
-  permissions: {
-    type: PermissionType;
-    description: string;
-    optional?: boolean;
-  }[];
+  permissions: PermissionType[];
   expires_at?: string;
   status: ConnectionStatus;
 }
