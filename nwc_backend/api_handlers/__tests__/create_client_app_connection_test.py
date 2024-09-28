@@ -174,7 +174,6 @@ async def test_create_client_app_connection_success(
         assert nwc_connection.code_challenge == code_challenge
         assert nwc_connection.authorization_code == auth_code
         assert nwc_connection.spending_limit.amount == budget_amount
-        assert nwc_connection.spending_limit.currency.code == budget_currency
         assert nwc_connection.spending_limit.frequency == budget_frequency
 
     # test fourth client api /oauth/token call

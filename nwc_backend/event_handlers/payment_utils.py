@@ -74,12 +74,13 @@ async def create_outgoing_payment(
         receiver=receiver,
         receiver_type=receiver_type,
     )
+    budget_currency = request.nwc_connection.budget_currency
     if spending_limit:
         spending_cycle = await spending_limit.get_or_create_current_spending_cycle()
         if spending_cycle.get_available_budget_amount() == 0:
             raise InsufficientBudgetException()
 
-        if spending_cycle.limit_currency.code == sending_currency_code:
+        if budget_currency.code == sending_currency_code:
             estimated_budget_currency_amount = sending_currency_amount
         else:
             budget_estimate_response = (
@@ -87,7 +88,7 @@ async def create_outgoing_payment(
                     access_token=access_token,
                     sending_currency_code=sending_currency_code,
                     sending_currency_amount=sending_currency_amount,
-                    budget_currency_code=spending_cycle.limit_currency.code,
+                    budget_currency_code=budget_currency.code,
                 )
             )
             estimated_budget_currency_amount = (

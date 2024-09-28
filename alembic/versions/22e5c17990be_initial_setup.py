@@ -12,8 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql.json import JSONB
 
 from alembic import op
-from nwc_backend.db import UUID, DateTime
-from nwc_backend.models.spending_limit import DBCurrency
+from nwc_backend.db import UUID, DateTime, DBCurrency
 
 # revision identifiers, used by Alembic.
 revision: str = "22e5c17990be"

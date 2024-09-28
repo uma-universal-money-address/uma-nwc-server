@@ -13,9 +13,10 @@ from sqlalchemy import JSON, CheckConstraint, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql.json import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import select
+from uma_auth.models.currency import Currency
 
 from nwc_backend.db import UUID as DBUUID
-from nwc_backend.db import db
+from nwc_backend.db import DBCurrency, db
 from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.model_base import ModelBase
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
@@ -52,6 +53,7 @@ class NWCConnection(ModelBase):
     )
     long_lived_vasp_token: Mapped[str] = mapped_column(String(1024), nullable=False)
     connection_expires_at: Mapped[Optional[int]] = mapped_column(Integer())
+    budget_currency: Mapped[Currency] = mapped_column(DBCurrency(), nullable=False)
     spending_limit_id: Mapped[Optional[UUID]] = mapped_column(
         DBUUID(),
         ForeignKey(
@@ -136,7 +138,9 @@ class NWCConnection(ModelBase):
             "expires_in": ACCESS_TOKEN_EXPIRES_IN,
             "token_type": "Bearer",
             "nwc_connection_uri": self.get_nwc_connection_uri(access_token),
-            "budget": spending_limit.get_budget_repr() if spending_limit else None,
+            "budget": (
+                await spending_limit.get_budget_repr() if spending_limit else None
+            ),
             "commands": self.get_all_granted_granular_permissions(),
             "nwc_expires_at": self.connection_expires_at,
             "uma_address": self.user.uma_address,
@@ -218,6 +222,7 @@ class NWCConnection(ModelBase):
                 else None
             ),
             "permissions": self.granted_permissions_groups,
+            "budget_currency": self.budget_currency.to_dict(),
             "spending_limit": (
                 await self.spending_limit.to_dict() if self.spending_limit else None
             ),

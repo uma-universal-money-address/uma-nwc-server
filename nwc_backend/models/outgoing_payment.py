@@ -68,7 +68,6 @@ class OutgoingPayment(ModelBase):
     )
 
     def to_dict(self) -> dict[str, Any]:
-        spending_cycle = self.spending_cycle
         return {
             "id": str(self.id),
             "created_at": str(self.created_at),
@@ -77,9 +76,6 @@ class OutgoingPayment(ModelBase):
             "status": self.status.value,
             "receiver": self.receiver,
             "receiver_type": self.receiver_type.name,
-            "budget_currency": (
-                spending_cycle.limit_currency.to_dict() if spending_cycle else None
-            ),
             "budget_currency_amount": self.settled_budget_currency_amount,
             "budget_on_hold": (
                 self.budget_on_hold
