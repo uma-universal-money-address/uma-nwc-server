@@ -1,6 +1,7 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
+import logging
 import math
 from typing import Optional
 from uuid import uuid4
@@ -23,19 +24,24 @@ from nwc_backend.vasp_client import VaspUmaClient
 
 
 async def update_on_payment_succeeded(
+    request: Nip47Request,
     payment: OutgoingPayment,
     settled_budget_currency_amount: Optional[int],
 ) -> None:
     payment.status = PaymentStatus.SUCCEEDED
+    if not settled_budget_currency_amount:
+        settled_budget_currency_amount = (
+            _get_settled_budget_currency_amount_from_payment(request, payment)
+        )
+    payment.settled_budget_currency_amount = settled_budget_currency_amount
+
     if payment.spending_cycle:
         spending_cycle = await db.session.get_one(
             SpendingCycle, payment.spending_cycle_id, with_for_update=True
         )
-        payment.settled_budget_currency_amount = none_throws(
-            settled_budget_currency_amount
-        )
         spending_cycle.total_spent_on_hold -= none_throws(payment.budget_on_hold)
         spending_cycle.total_spent += none_throws(settled_budget_currency_amount)
+
     await db.session.commit()
 
 
@@ -114,3 +120,18 @@ async def create_outgoing_payment(
     db.session.add(payment)
     await db.session.commit()
     return payment
+
+
+def _get_settled_budget_currency_amount_from_payment(
+    request: Nip47Request, payment: OutgoingPayment
+) -> Optional[int]:
+    budget_currency = request.nwc_connection.budget_currency
+    if budget_currency.code == payment.sending_currency_code:
+        return payment.sending_currency_amount
+    else:
+        logging.error(
+            "Expected vasp to return total_budget_currency_amount in %s request %s.",
+            request.method.name,
+            request.id,
+        )
+        return payment.estimated_budget_currency_amount

@@ -37,7 +37,7 @@ INVOICE = "lnbc1pj794v0pp53yddnj782m5ydlya6t3rv9vmys9jmh8neyp6nrr282su9ygpw0vqdq
 
 @patch.object(aiohttp.ClientSession, "post")
 @patch.object(aiohttp.ClientSession, "get")
-async def test_pay_invoice_success__spending_limit_disabled(
+async def test_pay_invoice_success__spending_limit_disabled__budget_SAT(
     mock_get_budget_estimate: Mock, mock_pay_invoice: Mock, test_client: QuartClient
 ) -> None:
     vasp_response = {
@@ -52,7 +52,7 @@ async def test_pay_invoice_success__spending_limit_disabled(
     payment_amount_sats = 2
     params = {"invoice": INVOICE, "amount": payment_amount_msats}
     async with test_client.app.app_context():
-        request = await create_nip47_request(params=params)
+        request = await create_nip47_request(params=params, budget_currency_code="SAT")
         response = await pay_invoice(access_token=token_hex(), request=request)
 
         mock_pay_invoice.assert_called_once_with(
@@ -71,7 +71,50 @@ async def test_pay_invoice_success__spending_limit_disabled(
         assert payment.spending_cycle_id is None
         assert payment.estimated_budget_currency_amount is None
         assert payment.budget_on_hold is None
-        assert payment.settled_budget_currency_amount is None
+        assert payment.settled_budget_currency_amount == payment_amount_sats
+        assert payment.status == PaymentStatus.SUCCEEDED
+
+
+@patch.object(aiohttp.ClientSession, "post")
+@patch.object(aiohttp.ClientSession, "get")
+async def test_pay_invoice_success__spending_limit_disabled__budget_USD(
+    mock_get_budget_estimate: Mock, mock_pay_invoice: Mock, test_client: QuartClient
+) -> None:
+    total_budget_currency_amount = 100
+    vasp_response = {
+        "preimage": "b6f1086f61561bacf2f05fa02ab30a06c3432c1aea62817c019ea33c1730eeb3",
+        "total_budget_currency_amount": total_budget_currency_amount,
+    }
+    mock_response = AsyncMock()
+    mock_response.text = AsyncMock(return_value=json.dumps(vasp_response))
+    mock_response.ok = True
+    mock_pay_invoice.return_value.__aenter__.return_value = mock_response
+
+    payment_amount_msats = 1030
+    payment_amount_sats = 2
+    params = {"invoice": INVOICE, "amount": payment_amount_msats}
+    async with test_client.app.app_context():
+        request = await create_nip47_request(params=params, budget_currency_code="USD")
+        response = await pay_invoice(access_token=token_hex(), request=request)
+
+        params["budget_currency_code"] = "USD"
+        mock_pay_invoice.assert_called_once_with(
+            url="/payments/bolt11",
+            data=PayInvoiceRequest.from_dict(params).to_json(),
+            headers=ANY,
+        )
+        mock_get_budget_estimate.assert_not_called()
+        assert exclude_none_values(response.to_dict()) == vasp_response
+
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.BOLT11
+        assert payment.receiver == INVOICE
+        assert payment.sending_currency_code == "SAT"
+        assert payment.sending_currency_amount == payment_amount_sats
+        assert payment.spending_cycle_id is None
+        assert payment.estimated_budget_currency_amount is None
+        assert payment.budget_on_hold is None
+        assert payment.settled_budget_currency_amount == total_budget_currency_amount
         assert payment.status == PaymentStatus.SUCCEEDED
 
 

@@ -139,12 +139,15 @@ async def create_nip47_request(
     nwc_connection: Optional[NWCConnection] = None,
     params: Optional[dict[str, Any]] = None,
     event_id: Optional[str] = None,
+    budget_currency_code: str = "USD",
 ) -> Nip47Request:
     if params is None:
         params = {
             "invoice": "lnbcrt1pjrsa37pp50geu5vxkzn4ddc4hmfkz9x308tw9lrrqtktz2hpm0rccjyhcyp5qdqh2d68yetpd45kueeqv3jk6mccqzpgxq9z0rgqsp5ge2rdw0tzvakxslmtvfmqf2fr7eucg9ughps5vdvp6fm2utk20rs9q8pqqqssqjs3k4nzrzg2nu9slu9c3srv2ae8v69ge097q9seukyw2nger8arj93m6erz8u657hfdzztfmc55wjjm9k337krl00fyw6s9nnwaafaspcqp2uv"
         }
-    nwc_connection = nwc_connection or await create_nwc_connection()
+    nwc_connection = nwc_connection or await create_nwc_connection(
+        budget_currency_code=budget_currency_code
+    )
     nip47_request = Nip47Request(
         id=uuid4(),
         nwc_connection=nwc_connection,

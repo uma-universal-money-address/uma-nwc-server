@@ -41,7 +41,7 @@ from nwc_backend.typing import none_throws
 
 @patch.object(aiohttp.ClientSession, "post")
 @patch.object(aiohttp.ClientSession, "get")
-async def test_pay_to_address_success__spending_limit_disabled(
+async def test_pay_to_address_success__spending_limit_disabled__sending_SAT_budget_SAT(
     mock_get_budget_estimate: Mock, mock_pay_to_address: Mock, test_client: QuartClient
 ) -> None:
     now = datetime.now(timezone.utc)
@@ -72,7 +72,7 @@ async def test_pay_to_address_success__spending_limit_disabled(
         "sending_currency_amount": sending_currency_amount,
     }
     async with test_client.app.app_context():
-        request = await create_nip47_request(params=params)
+        request = await create_nip47_request(params=params, budget_currency_code="SAT")
         response = await pay_to_address(access_token=token_hex(), request=request)
 
         params["receiver_address"] = params.pop("receiver")["lud16"]  # pyre-ignore[16]
@@ -92,7 +92,67 @@ async def test_pay_to_address_success__spending_limit_disabled(
         assert payment.spending_cycle_id is None
         assert payment.estimated_budget_currency_amount is None
         assert payment.budget_on_hold is None
-        assert payment.settled_budget_currency_amount is None
+        assert payment.settled_budget_currency_amount == sending_currency_amount
+        assert payment.status == PaymentStatus.SUCCEEDED
+
+
+@patch.object(aiohttp.ClientSession, "post")
+@patch.object(aiohttp.ClientSession, "get")
+async def test_pay_to_address_success__spending_limit_disabled__sending_SAT_budget_USD(
+    mock_get_budget_estimate: Mock, mock_pay_to_address: Mock, test_client: QuartClient
+) -> None:
+    now = datetime.now(timezone.utc)
+    total_budget_currency_amount = 100
+    vasp_response = {
+        "preimage": "b6f1086f61561bacf2f05fa02ab30a06c3432c1aea62817c019ea33c1730eeb3",
+        "quote": {
+            "sending_currency": create_currency("SAT").to_dict(),
+            "receiving_currency": create_currency("USD").to_dict(),
+            "payment_hash": token_hex(),
+            "expires_at": int((now + timedelta(minutes=5)).timestamp()),
+            "multiplier": 15351.4798,
+            "fees": 10,
+            "total_sending_amount": 1_000_000,
+            "total_receiving_amount": 65,
+            "created_at": int(now.timestamp()),
+        },
+        "total_budget_currency_amount": total_budget_currency_amount,
+    }
+    mock_response = AsyncMock()
+    mock_response.text = AsyncMock(return_value=json.dumps(vasp_response))
+    mock_response.ok = True
+    mock_pay_to_address.return_value.__aenter__.return_value = mock_response
+
+    sending_currency_amount = 1_000_000
+    receiver_address = "$alice@uma.me"
+    params = {
+        "receiver": {"lud16": receiver_address},
+        "sending_currency_code": "SAT",
+        "sending_currency_amount": sending_currency_amount,
+    }
+    async with test_client.app.app_context():
+        request = await create_nip47_request(params=params, budget_currency_code="USD")
+        response = await pay_to_address(access_token=token_hex(), request=request)
+
+        params["receiver_address"] = params.pop("receiver")["lud16"]  # pyre-ignore[16]
+        params["budget_currency_code"] = "USD"
+        mock_pay_to_address.assert_called_once_with(
+            url="/payments/lud16",
+            data=PayToAddressRequest.from_dict(params).to_json(),
+            headers=ANY,
+        )
+        mock_get_budget_estimate.assert_not_called()
+        assert exclude_none_values(response.to_dict()) == vasp_response
+
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.LUD16
+        assert payment.receiver == receiver_address
+        assert payment.sending_currency_code == "SAT"
+        assert payment.sending_currency_amount == sending_currency_amount
+        assert payment.spending_cycle_id is None
+        assert payment.estimated_budget_currency_amount is None
+        assert payment.budget_on_hold is None
+        assert payment.settled_budget_currency_amount == total_budget_currency_amount
         assert payment.status == PaymentStatus.SUCCEEDED
 
 

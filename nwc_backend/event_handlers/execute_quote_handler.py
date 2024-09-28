@@ -1,8 +1,6 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import logging
-
 from uma_auth.models.execute_quote_request import ExecuteQuoteRequest
 from uma_auth.models.execute_quote_response import ExecuteQuoteResponse
 
@@ -40,7 +38,7 @@ async def execute_quote(
         receiver_type=ReceivingAddressType.LUD16,
     )
     budget_currency_code = None
-    if current_spending_limit and budget_currency.code != quote.sending_currency_code:
+    if budget_currency.code != quote.sending_currency_code:
         budget_currency_code = budget_currency.code
 
     try:
@@ -49,21 +47,10 @@ async def execute_quote(
             payment_hash=payment_hash,
             request=ExecuteQuoteRequest(budget_currency_code=budget_currency_code),
         )
-        settled_budget_currency_amount = None
-        if current_spending_limit:
-            settled_budget_currency_amount = response.total_budget_currency_amount
-            if not settled_budget_currency_amount:
-                if budget_currency.code == quote.sending_currency_code:
-                    settled_budget_currency_amount = quote.sending_currency_amount
-                else:
-                    logging.warning(
-                        "Expected vasp to return total_budget_currency_amount on execute_quote request %s.",
-                        request.id,
-                    )
-                    settled_budget_currency_amount = (
-                        payment.estimated_budget_currency_amount
-                    )
-        await update_on_payment_succeeded(payment, settled_budget_currency_amount)
+        settled_budget_currency_amount = response.total_budget_currency_amount
+        await update_on_payment_succeeded(
+            request, payment, settled_budget_currency_amount
+        )
         return response
     except Exception:
         await update_on_payment_failed(payment)

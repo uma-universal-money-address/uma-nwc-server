@@ -1,7 +1,6 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import logging
 import math
 
 from bolt11 import decode as bolt11_decode
@@ -42,28 +41,17 @@ async def pay_invoice(access_token: str, request: Nip47Request) -> PayInvoiceRes
         receiver=pay_invoice_request.invoice,
         receiver_type=ReceivingAddressType.BOLT11,
     )
-    if current_spending_limit and budget_currency.code != "SAT":
+    if budget_currency.code != "SAT":
         pay_invoice_request.budget_currency_code = budget_currency.code
 
     try:
         response = await VaspUmaClient.instance().pay_invoice(
             access_token=access_token, request=pay_invoice_request
         )
-        settled_budget_currency_amount = None
-        if current_spending_limit:
-            settled_budget_currency_amount = response.total_budget_currency_amount
-            if not settled_budget_currency_amount:
-                if budget_currency.code == "SAT":
-                    settled_budget_currency_amount = payment_amount_sats
-                else:
-                    logging.warning(
-                        "Expected vasp to return total_budget_currency_amount on pay_invoice request %s.",
-                        request.id,
-                    )
-                    settled_budget_currency_amount = (
-                        payment.estimated_budget_currency_amount
-                    )
-        await update_on_payment_succeeded(payment, settled_budget_currency_amount)
+        settled_budget_currency_amount = response.total_budget_currency_amount
+        await update_on_payment_succeeded(
+            request, payment, settled_budget_currency_amount
+        )
         return response
     except Exception:
         await update_on_payment_failed(payment)

@@ -1,7 +1,6 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import logging
 from copy import deepcopy
 
 from uma_auth.models.pay_to_address_request import PayToAddressRequest
@@ -40,10 +39,7 @@ async def pay_to_address(
         receiver=receiving_address.address,
         receiver_type=ReceivingAddressType.LUD16,
     )
-    if (
-        current_spending_limit
-        and budget_currency.code != pay_to_address_request.sending_currency_code
-    ):
+    if budget_currency.code != pay_to_address_request.sending_currency_code:
         pay_to_address_request.budget_currency_code = budget_currency.code
 
     try:
@@ -52,21 +48,10 @@ async def pay_to_address(
             request=pay_to_address_request,
             address_type=receiving_address.type,
         )
-        settled_budget_currency_amount = None
-        if current_spending_limit:
-            settled_budget_currency_amount = response.total_budget_currency_amount
-            if not settled_budget_currency_amount:
-                if budget_currency.code == response.quote.sending_currency.code:
-                    settled_budget_currency_amount = response.quote.total_sending_amount
-                else:
-                    logging.warning(
-                        "Expected vasp to return total_budget_currency_amount on pay_to_address request %s.",
-                        request.id,
-                    )
-                    settled_budget_currency_amount = (
-                        payment.estimated_budget_currency_amount
-                    )
-        await update_on_payment_succeeded(payment, settled_budget_currency_amount)
+        settled_budget_currency_amount = response.total_budget_currency_amount
+        await update_on_payment_succeeded(
+            request, payment, settled_budget_currency_amount
+        )
         return response
     except Exception:
         await update_on_payment_failed(payment)
