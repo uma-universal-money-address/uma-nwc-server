@@ -5,7 +5,7 @@ import json
 import logging
 from time import time
 from typing import Any
-from urllib.parse import urlencode, unquote, urlparse, urlunparse, parse_qsl
+from urllib.parse import unquote, urlencode
 from uuid import uuid4
 
 from aioauth.utils import create_s256_code_challenge
