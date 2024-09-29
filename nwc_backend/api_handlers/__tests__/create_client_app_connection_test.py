@@ -1,5 +1,6 @@
 # Copyright ©, 2024, Lightspark Group, Inc. - All Rights Reserved
 
+from hashlib import sha256
 import json
 from datetime import datetime, timedelta, timezone
 from secrets import token_hex
@@ -195,5 +196,8 @@ async def test_create_client_app_connection_success(
             select(NWCConnection).filter_by(client_app_id=client_app.id)
         )
         assert nwc_connection
-        assert nwc_connection.refresh_token == response_data["refresh_token"]
+        hashed_refresh_token = sha256(
+            response_data["refresh_token"].encode()
+        ).hexdigest()
+        assert nwc_connection.hashed_refresh_token == hashed_refresh_token
         assert nwc_connection.nostr_pubkey == nostr_keys.public_key().to_hex()

@@ -2,6 +2,7 @@
 # pyre-strict
 
 from datetime import datetime, timezone
+from hashlib import sha256
 from time import time
 from typing import Any, Optional
 from uuid import UUID
@@ -63,7 +64,9 @@ class NWCConnection(ModelBase):
     nostr_pubkey: Mapped[Optional[str]] = mapped_column(String(255), unique=True)
 
     # The following fields are only for client app oauth
-    refresh_token: Mapped[Optional[str]] = mapped_column(String(1024), unique=True)
+    hashed_refresh_token: Mapped[Optional[str]] = mapped_column(
+        String(1024), unique=True
+    )
     authorization_code: Mapped[Optional[str]] = mapped_column(String(1024), unique=True)
     redirect_uri: Mapped[Optional[str]] = mapped_column(String(2048))
     code_challenge: Mapped[Optional[str]] = mapped_column(String(1024))
@@ -112,7 +115,8 @@ class NWCConnection(ModelBase):
 
     async def refresh_oauth_tokens(self) -> dict[str, Any]:
         now = int(time())
-        self.refresh_token = generate_token()
+        refresh_token = generate_token()
+        self.hashed_refresh_token = sha256(refresh_token.encode()).hexdigest()
         self.refresh_token_expires_at = now + REFRESH_TOKEN_EXPIRES_IN
         keypair = Keys.generate()
         self.nostr_pubkey = keypair.public_key().to_hex()
@@ -132,7 +136,7 @@ class NWCConnection(ModelBase):
         spending_limit = self.spending_limit
         return {
             "access_token": access_token,
-            "refresh_token": self.refresh_token,
+            "refresh_token": refresh_token,
             "expires_in": ACCESS_TOKEN_EXPIRES_IN,
             "token_type": "Bearer",
             "nwc_connection_uri": self.get_nwc_connection_uri(access_token),
@@ -168,8 +172,9 @@ class NWCConnection(ModelBase):
     async def from_oauth_refresh_token(
         refresh_token: str,
     ) -> Optional["NWCConnection"]:
+        hashed_refresh_token = sha256(refresh_token.encode()).hexdigest()
         result = await db.session.execute(
-            select(NWCConnection).filter_by(refresh_token=refresh_token)
+            select(NWCConnection).filter_by(hashed_refresh_token=hashed_refresh_token)
         )
         return result.scalars().one_or_none()
 

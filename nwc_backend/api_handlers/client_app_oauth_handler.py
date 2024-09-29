@@ -5,7 +5,7 @@ import json
 import logging
 from time import time
 from typing import Any
-from urllib.parse import urlencode, unquote
+from urllib.parse import urlencode, unquote, urlparse, urlunparse, parse_qsl
 from uuid import uuid4
 
 from aioauth.utils import create_s256_code_challenge
@@ -106,7 +106,11 @@ async def _handle_client_app_oauth_request() -> Response | WerkzeugResponse:
             + request_params,
         }
     )
-    vasp_url_with_query = uma_vasp_login_url + "?" + query_params
+    vasp_url_with_query = (
+        uma_vasp_login_url + "?" + query_params
+        if "?" not in uma_vasp_login_url
+        else uma_vasp_login_url + "&" + query_params
+    )
     logging.debug("REDIRECT to %s", vasp_url_with_query)
     return redirect(vasp_url_with_query)
 
