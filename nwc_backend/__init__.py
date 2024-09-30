@@ -20,7 +20,7 @@ def create_app() -> Quart:
     app: Quart = Quart(__name__)
 
     app.config.from_envvar("QUART_CONFIG")
-    app.static_folder = app.config["FRONTEND_BUILD_PATH"]
+    app.static_folder = app.config.get("FRONTEND_BUILD_PATH") or "../static"
     db.init_app(app)
     if app.config.get("DATABASE_MODE") == "rds":
         setup_rds_iam_auth(db.engine)

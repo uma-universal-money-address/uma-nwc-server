@@ -1,6 +1,7 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
 from secrets import token_hex
 from typing import Any, Optional
 from uuid import uuid4
@@ -92,6 +93,8 @@ async def create_nwc_connection(
         access_token_expires_at = now - timedelta(days=30)
     else:
         access_token_expires_at = now + timedelta(days=30)
+    refresh_token = token_hex()
+    hashed_refresh_token = sha256(refresh_token.encode()).hexdigest()
     nwc_connection = NWCConnection(
         id=uuid4(),
         client_app=client_app,
@@ -105,7 +108,7 @@ async def create_nwc_connection(
         ),
         nostr_pubkey=keys.public_key().to_hex(),
         access_token_expires_at=int(access_token_expires_at.timestamp()),
-        refresh_token=token_hex(),
+        hashed_refresh_token=hashed_refresh_token,
         refresh_token_expires_at=int((now + timedelta(days=120)).timestamp()),
         authorization_code=token_hex(),
         authorization_code_expires_at=int((now + timedelta(minutes=10)).timestamp()),
