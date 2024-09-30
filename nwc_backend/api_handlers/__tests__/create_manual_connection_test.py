@@ -57,9 +57,7 @@ async def test_create_manual_connection_success(
 
     async with test_client.app.app_context():
         user = await create_user()
-    async with test_client.session_transaction() as session:
-        session["user_id"] = user.id
-        session["short_lived_vasp_token"] = jwt_for_user(user)
+        token = jwt_for_user(user)
 
     request_data = {
         "permissions": ["receive_payments", "send_payments"],
@@ -71,7 +69,11 @@ async def test_create_manual_connection_success(
         "name": "Test Connection",
     }
 
-    response = await test_client.post("/api/connection/manual", json=request_data)
+    response = await test_client.post(
+        "/api/connection/manual",
+        json=request_data,
+        headers={"Authorization": f"Bearer {token}"},
+    )
     assert response.status_code == 200
     response_json = await response.get_json()
     assert response_json["connectionId"] is not None

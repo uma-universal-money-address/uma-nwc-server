@@ -3,16 +3,12 @@
 
 import json
 
-from quart import Response, request, session
+from quart import Response, request
 
 from nwc_backend.nostr.client_app_identity_lookup import look_up_client_app_identity
 
 
 async def get_client_app() -> Response:
-    user_id = session.get("user_id")
-    if not user_id:
-        return Response("User not authenticated", status=401)
-
     client_id = request.args.get("clientId")
     if not client_id:
         return Response("Client ID not provided", status=400)

@@ -4,7 +4,7 @@
 from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse
 from uuid import uuid4
 
-from quart import current_app, redirect, request, session
+from quart import current_app, redirect, request
 from werkzeug import Response as WerkzeugResponse
 
 from nwc_backend.db import db
@@ -34,7 +34,7 @@ async def handle_vasp_token_callback() -> WerkzeugResponse:
     query_params = parse_qs(parsed_url.query)
     query_params["token"] = short_lived_vasp_token
     query_params["uma_address"] = [vasp_jwt.uma_address]
-    query_params["expiry"] = [vasp_jwt.expiry]
+    query_params["expiry"] = [str(vasp_jwt.expiry)]
     query_params["currency"] = request.args.get("currency")
     parsed_url = parsed_url._replace(query=urlencode(query_params, doseq=True))
     frontend_redirect_url = str(urlunparse(parsed_url))
@@ -42,7 +42,6 @@ async def handle_vasp_token_callback() -> WerkzeugResponse:
     if not short_lived_vasp_token:
         return WerkzeugResponse("No token provided", status=400)
 
-    # TODO: Add middleware to handle authed requests instead of relying on user_id in session
     user = await User.from_vasp_user_id(vasp_jwt.user_id)
     if not user:
         user = User(
@@ -52,6 +51,5 @@ async def handle_vasp_token_callback() -> WerkzeugResponse:
         )
         db.session.add(user)
         await db.session.commit()
-    session["user_id"] = user.id
 
     return redirect(frontend_redirect_url)

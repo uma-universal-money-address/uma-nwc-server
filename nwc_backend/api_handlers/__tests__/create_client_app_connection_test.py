@@ -158,7 +158,9 @@ async def test_create_client_app_connection_success(
         mock_response.ok = True
         mock_vasp_get_info.return_value.__aenter__.return_value = mock_response
 
-        response = await test_client.post("/apps/new", json=request_data)
+        response = await test_client.post(
+            "/api/app", json=request_data, headers={"Authorization": f"Bearer {token}"}
+        )
         assert response.status_code == 200
         auth_code = json.loads((await response.data).decode())["code"]
 
