@@ -27,6 +27,7 @@ async def execute_quote(
     if not quote:
         raise InvalidInputException("Cannot recognize `payment_hash`.")
 
+    budget_currency = request.nwc_connection.budget_currency
     current_spending_limit = request.get_spending_limit()
     payment = await create_outgoing_payment(
         access_token=access_token,
@@ -39,11 +40,8 @@ async def execute_quote(
         receiver_type=ReceivingAddressType.LUD16,
     )
     budget_currency_code = None
-    if (
-        current_spending_limit
-        and current_spending_limit.currency.code != quote.sending_currency_code
-    ):
-        budget_currency_code = current_spending_limit.currency.code
+    if current_spending_limit and budget_currency.code != quote.sending_currency_code:
+        budget_currency_code = budget_currency.code
 
     try:
         response = await VaspUmaClient.instance().execute_quote(
@@ -55,7 +53,7 @@ async def execute_quote(
         if current_spending_limit:
             settled_budget_currency_amount = response.total_budget_currency_amount
             if not settled_budget_currency_amount:
-                if current_spending_limit.currency == quote.sending_currency_code:
+                if budget_currency.code == quote.sending_currency_code:
                     settled_budget_currency_amount = quote.sending_currency_amount
                 else:
                     logging.warning(

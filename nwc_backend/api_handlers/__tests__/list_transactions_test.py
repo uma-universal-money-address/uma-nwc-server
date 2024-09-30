@@ -26,9 +26,7 @@ async def test_get_outgoing_payments(
             sending_currency_code="USD",
         )
         await asyncio.sleep(1)
-        spending_limit = await create_spending_limit(
-            nwc_connection=nwc_connection, currency_code="USD"
-        )
+        spending_limit = await create_spending_limit(nwc_connection=nwc_connection)
         spending_cycle = await create_spending_cycle(spending_limit=spending_limit)
         payment2 = await create_outgoing_payment(  # has spending limit
             nwc_connection=nwc_connection,
@@ -65,7 +63,6 @@ async def test_get_outgoing_payments(
     assert result_tx_3["sending_currency_code"] == payment3.sending_currency_code
     assert result_tx_3["sending_currency_amount"] == payment3.sending_currency_amount
     assert result_tx_3["status"] == payment3.status.value
-    assert result_tx_3["budget_currency"] == spending_cycle.limit_currency.to_dict()
     assert result_tx_3["budget_currency_amount"] is None
     assert result_tx_3["budget_on_hold"] == payment3.budget_on_hold
     assert result_tx_3["receiver"] == payment3.receiver
@@ -86,7 +83,6 @@ async def test_get_outgoing_payments(
     assert result_tx_2["sending_currency_code"] == payment2.sending_currency_code
     assert result_tx_2["sending_currency_amount"] == payment2.sending_currency_amount
     assert result_tx_2["status"] == payment2.status.value
-    assert result_tx_2["budget_currency"] == spending_cycle.limit_currency.to_dict()
     assert (
         result_tx_2["budget_currency_amount"] == payment2.settled_budget_currency_amount
     )
@@ -97,7 +93,6 @@ async def test_get_outgoing_payments(
     assert result_tx_1["sending_currency_code"] == payment1.sending_currency_code
     assert result_tx_1["sending_currency_amount"] == payment1.sending_currency_amount
     assert result_tx_1["status"] == payment1.status.value
-    assert result_tx_1["budget_currency"] is None
     assert result_tx_1["budget_currency_amount"] is None
     assert result_tx_1["budget_on_hold"] is None
     assert result_tx_1["receiver"] == payment1.receiver

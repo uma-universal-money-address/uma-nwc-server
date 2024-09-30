@@ -8,16 +8,11 @@ from quart.app import QuartClient
 
 from nwc_backend.db import db
 from nwc_backend.models.__tests__.model_examples import create_nwc_connection
-from nwc_backend.models.spending_limit import (
-    Currency,
-    SpendingLimit,
-    SpendingLimitFrequency,
-)
+from nwc_backend.models.spending_limit import SpendingLimit, SpendingLimitFrequency
 
 
 async def test_spending_limit(test_client: QuartClient) -> None:
     id = uuid4()
-    currency_code = "USD"
     amount = 100
     frequency = SpendingLimitFrequency.MONTHLY
     start_time = datetime.now(timezone.utc)
@@ -27,9 +22,6 @@ async def test_spending_limit(test_client: QuartClient) -> None:
         spending_limit = SpendingLimit(
             id=id,
             nwc_connection_id=nwc_connection_id,
-            currency=Currency(
-                code=currency_code, symbol="$", name="US Dollar", decimals=2
-            ),
             amount=amount,
             frequency=frequency,
             start_time=start_time,
@@ -40,7 +32,6 @@ async def test_spending_limit(test_client: QuartClient) -> None:
     async with test_client.app.app_context():
         spending_limit = await db.session.get_one(SpendingLimit, id)
         assert spending_limit.nwc_connection_id == nwc_connection_id
-        assert spending_limit.currency.code == currency_code
         assert spending_limit.amount == amount
         assert spending_limit.frequency == frequency
         assert spending_limit.start_time == start_time
@@ -58,7 +49,6 @@ async def test_budget_repr_invalid_format(
 
 async def test_get_current_spending_cycle(test_client: QuartClient) -> None:
     id = uuid4()
-    currency_code = "USD"
     amount = 100
     frequency = SpendingLimitFrequency.WEEKLY
     start_time = datetime.now(timezone.utc) - timedelta(days=9)
@@ -68,9 +58,6 @@ async def test_get_current_spending_cycle(test_client: QuartClient) -> None:
         spending_limit = SpendingLimit(
             id=id,
             nwc_connection_id=nwc_connection_id,
-            currency=Currency(
-                code=currency_code, symbol="$", name="US Dollar", decimals=2
-            ),
             amount=amount,
             frequency=frequency,
             start_time=start_time,
@@ -82,7 +69,6 @@ async def test_get_current_spending_cycle(test_client: QuartClient) -> None:
         spending_limit = await db.session.get_one(SpendingLimit, id)
         spending_cycle = await spending_limit.get_or_create_current_spending_cycle()
         assert spending_cycle.spending_limit_id == spending_limit.id
-        assert spending_cycle.limit_currency == spending_limit.currency
         assert spending_cycle.limit_amount == amount
         assert spending_cycle.start_time == start_time + timedelta(days=7)
         assert spending_cycle.end_time == start_time + timedelta(days=14)

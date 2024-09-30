@@ -29,6 +29,7 @@ async def pay_to_address(
 
     pay_to_address_request = PayToAddressRequest.from_dict(params)
 
+    budget_currency = request.nwc_connection.budget_currency
     current_spending_limit = request.get_spending_limit()
     payment = await create_outgoing_payment(
         access_token=access_token,
@@ -41,12 +42,9 @@ async def pay_to_address(
     )
     if (
         current_spending_limit
-        and current_spending_limit.currency.code
-        != pay_to_address_request.sending_currency_code
+        and budget_currency.code != pay_to_address_request.sending_currency_code
     ):
-        pay_to_address_request.budget_currency_code = (
-            current_spending_limit.currency.code
-        )
+        pay_to_address_request.budget_currency_code = budget_currency.code
 
     try:
         response = await VaspUmaClient.instance().pay_to_address(
@@ -58,10 +56,7 @@ async def pay_to_address(
         if current_spending_limit:
             settled_budget_currency_amount = response.total_budget_currency_amount
             if not settled_budget_currency_amount:
-                if (
-                    current_spending_limit.currency
-                    == response.quote.sending_currency.code
-                ):
+                if budget_currency.code == response.quote.sending_currency.code:
                     settled_budget_currency_amount = response.quote.total_sending_amount
                 else:
                     logging.warning(

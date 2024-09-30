@@ -12,15 +12,12 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import select
-from uma_auth.models.currency import Currency
 
 from nwc_backend.db import UUID as DBUUID
-from nwc_backend.db import DateTime, DBCurrency, db
-from nwc_backend.exceptions import InvalidApiParamsException
+from nwc_backend.db import DateTime, db
 from nwc_backend.models.model_base import ModelBase
 from nwc_backend.models.spending_cycle import SpendingCycle
 from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
-from nwc_backend.vasp_client import VaspUmaClient
 
 
 class SpendingLimit(ModelBase):
@@ -31,7 +28,6 @@ class SpendingLimit(ModelBase):
         ForeignKey("nwc_connection.id", deferrable=True, initially="DEFERRED"),
         nullable=False,
     )
-    currency: Mapped[Currency] = mapped_column(DBCurrency(), nullable=False)
     amount: Mapped[int] = mapped_column(BigInteger(), nullable=False)
     frequency: Mapped[SpendingLimitFrequency] = mapped_column(
         DBEnum(SpendingLimitFrequency, native_enum=False, nullable=False)
@@ -50,8 +46,11 @@ class SpendingLimit(ModelBase):
         pattern = re.compile(r"^\d+(?:\.\w{3})?(?:\/\w+)?$")
         return bool(pattern.match(budget))
 
-    def get_budget_repr(self) -> str:
-        return f"{self.amount}.{self.currency.code}/{self.frequency.value}"
+    async def get_budget_repr(self) -> str:
+        from nwc_backend.models.nwc_connection import NWCConnection
+
+        nwc_connection = await db.session.get_one(NWCConnection, self.nwc_connection_id)
+        return f"{self.amount}.{nwc_connection.budget_currency.code}/{self.frequency.value}"
 
     def create_spending_cycle(self, start_time: datetime) -> SpendingCycle:
         assert start_time >= self.start_time
@@ -62,7 +61,6 @@ class SpendingLimit(ModelBase):
         return SpendingCycle(
             id=uuid4(),
             spending_limit_id=self.id,
-            limit_currency=self.currency,
             limit_amount=self.amount,
             start_time=start_time,
             end_time=start_time + cycle_length if cycle_length else None,
@@ -140,38 +138,4 @@ class SpendingLimit(ModelBase):
             "amount_on_hold": (
                 current_cycle.total_spent_on_hold if current_cycle else 0
             ),
-            "currency": {
-                "code": self.currency.code,
-                "name": self.currency.name,
-                "symbol": self.currency.symbol,
-                "decimals": self.currency.decimals,
-                "type": "crypto" if self.currency.code == "SAT" else "fiat",
-            },
         }
-
-    @staticmethod
-    async def create(
-        vasp_access_token: str,
-        nwc_connection_id: UUID,
-        currency_code: str,
-        amount: int,
-        frequency: SpendingLimitFrequency,
-    ) -> "SpendingLimit":
-        response = await VaspUmaClient.instance().get_info(
-            access_token=vasp_access_token
-        )
-        currency_preferences = [
-            currency
-            for currency in response.currencies or []
-            if currency.currency.code == currency_code
-        ]
-        if not currency_preferences:
-            raise InvalidApiParamsException("The currency of budget is not allowed.")
-        return SpendingLimit(
-            id=uuid4(),
-            nwc_connection_id=nwc_connection_id,
-            currency=currency_preferences[0].currency,
-            amount=amount,
-            frequency=frequency,
-            start_time=datetime.now(timezone.utc),
-        )

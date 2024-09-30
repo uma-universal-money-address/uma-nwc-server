@@ -2,7 +2,7 @@
 # pyre-strict
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
@@ -23,6 +23,11 @@ from nwc_backend.models.spending_limit import SpendingLimit
 from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.models.user import User
 from nwc_backend.models.vasp_jwt import VaspJwt
+from nwc_backend.vasp_client import VaspUmaClient
+
+
+class NoSupportedCurrenciesException(Exception):
+    pass
 
 
 async def create_manual_connection() -> Response:
@@ -65,6 +70,8 @@ async def create_manual_connection() -> Response:
         )
     except InvalidApiParamsException as ex:
         return Response(ex.message, status=400)
+    except NoSupportedCurrenciesException:
+        return Response("Wallet has no supported currency", status=404)
 
     db.session.add(nwc_connection)
     await db.session.commit()
@@ -101,6 +108,8 @@ async def create_client_app_connection() -> Response:
         )
     except InvalidApiParamsException as ex:
         return Response(ex.message, status=400)
+    except NoSupportedCurrenciesException:
+        return Response("Wallet has no supported currency", status=404)
 
     auth_code = nwc_connection.create_oauth_auth_code()
     db.session.add(nwc_connection)
@@ -133,18 +142,36 @@ async def _initialize_connection_data(
         expires_at = datetime.fromisoformat(expiration)
         nwc_connection.connection_expires_at = round(expires_at.timestamp())
 
+    preferred_currencies = (
+        await VaspUmaClient.instance().get_info(access_token=short_lived_vasp_token)
+    ).currencies
+    if not preferred_currencies:
+        raise NoSupportedCurrenciesException()
+
+    if currency_code:
+        preferred_currencies = [
+            currency
+            for currency in preferred_currencies
+            if currency.currency.code == currency_code
+        ]
+        if not preferred_currencies:
+            raise InvalidApiParamsException(
+                "The currency of budget is not supported by user's wallet."
+            )
+    nwc_connection.budget_currency = preferred_currencies[0].currency
+
     if limit_enabled:
         limit_frequency = (
             SpendingLimitFrequency(limit_frequency)
             if limit_frequency
             else SpendingLimitFrequency.NONE
         )
-        spending_limit = await SpendingLimit.create(
-            vasp_access_token=short_lived_vasp_token,
-            currency_code=currency_code or "SAT",
+        spending_limit = SpendingLimit(
+            id=uuid4(),
             nwc_connection_id=nwc_connection.id,
             amount=amount_in_lowest_denom,
             frequency=limit_frequency,
+            start_time=datetime.now(timezone.utc),
         )
         db.session.add(spending_limit)
         nwc_connection.spending_limit_id = spending_limit.id

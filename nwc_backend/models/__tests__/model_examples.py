@@ -65,7 +65,7 @@ def jwt_for_user(user: User) -> str:
     )
 
 
-def create_currency(code: str) -> Currency:
+def create_currency(code: str = "USD") -> Currency:
     match code:
         case "USD":
             return Currency(code="USD", symbol="$", name="US Dollar", decimals=2)
@@ -82,6 +82,7 @@ async def create_nwc_connection(
     ],
     keys: Optional[Keys] = None,
     access_token_expired: bool = False,
+    budget_currency_code="USD",
 ) -> NWCConnection:
     user = await create_user()
     client_app = await create_client_app()
@@ -108,6 +109,7 @@ async def create_nwc_connection(
         refresh_token_expires_at=int((now + timedelta(days=120)).timestamp()),
         authorization_code=token_hex(),
         authorization_code_expires_at=int((now + timedelta(minutes=10)).timestamp()),
+        budget_currency=create_currency(budget_currency_code),
     )
     db.session.add(nwc_connection)
     await db.session.commit()
@@ -118,13 +120,11 @@ async def create_spending_limit(
     nwc_connection: Optional[NWCConnection] = None,
     frequency: SpendingLimitFrequency = SpendingLimitFrequency.MONTHLY,
     amount: int = 100,
-    currency_code: str = "USD",
 ) -> SpendingLimit:
     nwc_connection = nwc_connection or await create_nwc_connection()
     spending_limit = SpendingLimit(
         id=uuid4(),
         nwc_connection_id=nwc_connection.id,
-        currency=Currency(code=currency_code, symbol="$", name="US Dollar", decimals=2),
         amount=amount,
         frequency=frequency,
         start_time=datetime.now(timezone.utc),
@@ -162,14 +162,15 @@ async def create_nip47_request(
 
 
 async def create_nip47_request_with_spending_limit(
-    spending_limit_currency_code,
-    spending_limit_currency_amount,
+    spending_limit_currency_code: str,
+    spending_limit_currency_amount: int,
     params: dict[str, Any],
 ) -> Nip47Request:
-    nwc_connection = await create_nwc_connection()
+    nwc_connection = await create_nwc_connection(
+        budget_currency_code=spending_limit_currency_code
+    )
     limit = await create_spending_limit(
         nwc_connection=nwc_connection,
-        currency_code=spending_limit_currency_code,
         amount=spending_limit_currency_amount,
     )
     await create_spending_cycle(limit)
@@ -185,7 +186,6 @@ async def create_spending_cycle(
     spending_cycle = SpendingCycle(
         id=uuid4(),
         spending_limit_id=spending_limit.id,
-        limit_currency=spending_limit.currency,
         limit_amount=spending_limit.amount,
         start_time=spending_limit.start_time,
         end_time=(spending_limit.start_time + cycle_length) if cycle_length else None,

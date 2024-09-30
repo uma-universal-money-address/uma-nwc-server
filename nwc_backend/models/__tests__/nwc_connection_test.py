@@ -10,15 +10,15 @@ from quart.app import QuartClient
 from sqlalchemy.exc import IntegrityError
 
 from nwc_backend.db import db
-from nwc_backend.models.__tests__.model_examples import create_client_app, create_user
+from nwc_backend.models.__tests__.model_examples import (
+    create_client_app,
+    create_currency,
+    create_user,
+)
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.permissions_grouping import PermissionsGroup
-from nwc_backend.models.spending_limit import (
-    Currency,
-    SpendingLimit,
-    SpendingLimitFrequency,
-)
+from nwc_backend.models.spending_limit import SpendingLimit, SpendingLimitFrequency
 
 
 async def test_nwc_connection_model(test_client: QuartClient) -> None:
@@ -37,6 +37,7 @@ async def test_nwc_connection_model(test_client: QuartClient) -> None:
             ],
             code_challenge=token_hex(),
             redirect_uri="https://example.com",
+            budget_currency=create_currency(),
         )
         db.session.add(nwc_connection)
         await db.session.commit()
@@ -63,7 +64,6 @@ async def test_creation_with_spending_limit(
         spending_limit = SpendingLimit(
             id=spending_limit_id,
             nwc_connection_id=nwc_connection_id,
-            currency=Currency(code="USD", symbol="$", name="US Dollar", decimals=2),
             amount=100,
             frequency=SpendingLimitFrequency.MONTHLY,
             start_time=datetime.now(timezone.utc),
@@ -81,6 +81,7 @@ async def test_creation_with_spending_limit(
             spending_limit_id=spending_limit_id,
             code_challenge=token_hex(),
             redirect_uri="https://example.com",
+            budget_currency=create_currency(),
         )
         db.session.add(nwc_connection)
         db.session.add(spending_limit)
@@ -110,6 +111,7 @@ async def test_client_app_id_or_custom_name_constraint(
             redirect_uri="https://example.com",
             long_lived_vasp_token=token_hex(),
             connection_expires_at=time(),
+            budget_currency=create_currency(),
         )
         db.session.add(nwc_connection)
         await db.session.commit()
@@ -126,6 +128,7 @@ async def test_client_app_id_or_custom_name_constraint(
             redirect_uri="https://example.com",
             long_lived_vasp_token=token_hex(),
             connection_expires_at=time(),
+            budget_currency=create_currency(),
         )
         db.session.add(nwc_connection)
         await db.session.commit()
@@ -142,6 +145,7 @@ async def test_client_app_id_or_custom_name_constraint(
                 redirect_uri="https://example.com",
                 long_lived_vasp_token=token_hex(),
                 connection_expires_at=time(),
+                budget_currency=create_currency(),
             )
             db.session.add(nwc_connection)
             await db.session.commit()

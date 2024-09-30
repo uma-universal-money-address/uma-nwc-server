@@ -31,6 +31,7 @@ async def pay_invoice(access_token: str, request: Nip47Request) -> PayInvoiceRes
         )
     payment_amount_sats = math.ceil(payment_amount_msats / 1000)
 
+    budget_currency = request.nwc_connection.budget_currency
     current_spending_limit = request.get_spending_limit()
     payment = await create_outgoing_payment(
         access_token=access_token,
@@ -41,8 +42,8 @@ async def pay_invoice(access_token: str, request: Nip47Request) -> PayInvoiceRes
         receiver=pay_invoice_request.invoice,
         receiver_type=ReceivingAddressType.BOLT11,
     )
-    if current_spending_limit and current_spending_limit.currency.code != "SAT":
-        pay_invoice_request.budget_currency_code = current_spending_limit.currency.code
+    if current_spending_limit and budget_currency.code != "SAT":
+        pay_invoice_request.budget_currency_code = budget_currency.code
 
     try:
         response = await VaspUmaClient.instance().pay_invoice(
@@ -52,7 +53,7 @@ async def pay_invoice(access_token: str, request: Nip47Request) -> PayInvoiceRes
         if current_spending_limit:
             settled_budget_currency_amount = response.total_budget_currency_amount
             if not settled_budget_currency_amount:
-                if current_spending_limit.currency == "SAT":
+                if budget_currency.code == "SAT":
                     settled_budget_currency_amount = payment_amount_sats
                 else:
                     logging.warning(

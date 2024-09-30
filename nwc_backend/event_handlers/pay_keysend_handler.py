@@ -20,6 +20,7 @@ from nwc_backend.vasp_client import VaspUmaClient
 async def pay_keysend(access_token: str, request: Nip47Request) -> PayKeysendResponse:
     pay_keysend_request = PayKeysendRequest.from_dict(request.params)
 
+    budget_currency = request.nwc_connection.budget_currency
     current_spending_limit = request.get_spending_limit()
     payment_amount_sats = math.ceil(pay_keysend_request.amount / 1000)
     payment = await create_outgoing_payment(
@@ -31,8 +32,8 @@ async def pay_keysend(access_token: str, request: Nip47Request) -> PayKeysendRes
         receiver=pay_keysend_request.pubkey,
         receiver_type=ReceivingAddressType.NODE_PUBKEY,
     )
-    if current_spending_limit and current_spending_limit.currency.code != "SAT":
-        pay_keysend_request.budget_currency_code = current_spending_limit.currency.code
+    if current_spending_limit and budget_currency.code != "SAT":
+        pay_keysend_request.budget_currency_code = budget_currency.code
 
     try:
         response = await VaspUmaClient.instance().pay_keysend(
@@ -42,7 +43,7 @@ async def pay_keysend(access_token: str, request: Nip47Request) -> PayKeysendRes
         if current_spending_limit:
             settled_budget_currency_amount = response.total_budget_currency_amount
             if not settled_budget_currency_amount:
-                if current_spending_limit.currency == "SAT":
+                if budget_currency.code == "SAT":
                     settled_budget_currency_amount = payment_amount_sats
                 else:
                     logging.warning(
