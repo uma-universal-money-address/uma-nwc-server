@@ -1,7 +1,6 @@
 # Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
-import logging
 import math
 
 from uma_auth.models.pay_keysend_request import PayKeysendRequest
@@ -32,28 +31,17 @@ async def pay_keysend(access_token: str, request: Nip47Request) -> PayKeysendRes
         receiver=pay_keysend_request.pubkey,
         receiver_type=ReceivingAddressType.NODE_PUBKEY,
     )
-    if current_spending_limit and budget_currency.code != "SAT":
+    if budget_currency.code != "SAT":
         pay_keysend_request.budget_currency_code = budget_currency.code
 
     try:
         response = await VaspUmaClient.instance().pay_keysend(
             access_token=access_token, request=pay_keysend_request
         )
-        settled_budget_currency_amount = None
-        if current_spending_limit:
-            settled_budget_currency_amount = response.total_budget_currency_amount
-            if not settled_budget_currency_amount:
-                if budget_currency.code == "SAT":
-                    settled_budget_currency_amount = payment_amount_sats
-                else:
-                    logging.warning(
-                        "Expected vasp to return total_budget_currency_amount on pay_keysend request %s.",
-                        request.id,
-                    )
-                    settled_budget_currency_amount = (
-                        payment.estimated_budget_currency_amount
-                    )
-        await update_on_payment_succeeded(payment, settled_budget_currency_amount)
+        settled_budget_currency_amount = response.total_budget_currency_amount
+        await update_on_payment_succeeded(
+            request, payment, settled_budget_currency_amount
+        )
         return response
     except Exception:
         await update_on_payment_failed(payment)

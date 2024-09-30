@@ -35,7 +35,7 @@ from nwc_backend.typing import none_throws
 
 @patch.object(aiohttp.ClientSession, "post")
 @patch.object(aiohttp.ClientSession, "get")
-async def test_pay_keysend_success__spending_limit_disabled(
+async def test_pay_keysend_success__spending_limit_disabled__budget_SAT(
     mock_get_budget_estimate: Mock, mock_pay_keysend: Mock, test_client: QuartClient
 ) -> None:
     vasp_response = {
@@ -55,7 +55,7 @@ async def test_pay_keysend_success__spending_limit_disabled(
         "tlv_records": [{"type": 5482373484, "value": "0123456789abcdef"}],
     }
     async with test_client.app.app_context():
-        request = await create_nip47_request(params=params)
+        request = await create_nip47_request(params=params, budget_currency_code="SAT")
         response = await pay_keysend(access_token=token_hex(), request=request)
 
         mock_pay_keysend.assert_called_once_with(
@@ -74,7 +74,55 @@ async def test_pay_keysend_success__spending_limit_disabled(
         assert payment.spending_cycle_id is None
         assert payment.estimated_budget_currency_amount is None
         assert payment.budget_on_hold is None
-        assert payment.settled_budget_currency_amount is None
+        assert payment.settled_budget_currency_amount == payment_amount_sats
+        assert payment.status == PaymentStatus.SUCCEEDED
+
+
+@patch.object(aiohttp.ClientSession, "post")
+@patch.object(aiohttp.ClientSession, "get")
+async def test_pay_keysend_success__spending_limit_disabled__budget_USD(
+    mock_get_budget_estimate: Mock, mock_pay_keysend: Mock, test_client: QuartClient
+) -> None:
+    total_budget_currency_amount = 100
+    vasp_response = {
+        "preimage": "b6f1086f61561bacf2f05fa02ab30a06c3432c1aea62817c019ea33c1730eeb3",
+        "total_budget_currency_amount": total_budget_currency_amount,
+    }
+    mock_response = AsyncMock()
+    mock_response.text = AsyncMock(return_value=json.dumps(vasp_response))
+    mock_response.ok = True
+    mock_pay_keysend.return_value.__aenter__.return_value = mock_response
+
+    payment_amount_msats = 5000
+    payment_amount_sats = 5
+    node_pubkey = token_hex()
+    params = {
+        "pubkey": node_pubkey,
+        "amount": payment_amount_msats,
+        "tlv_records": [{"type": 5482373484, "value": "0123456789abcdef"}],
+    }
+    async with test_client.app.app_context():
+        request = await create_nip47_request(params=params, budget_currency_code="USD")
+        response = await pay_keysend(access_token=token_hex(), request=request)
+
+        params["budget_currency_code"] = "USD"
+        mock_pay_keysend.assert_called_once_with(
+            url="/payments/keysend",
+            data=PayKeysendRequest.from_dict(params).to_json(),
+            headers=ANY,
+        )
+        assert exclude_none_values(response.to_dict()) == vasp_response
+        mock_get_budget_estimate.assert_not_called()
+
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.NODE_PUBKEY
+        assert payment.receiver == node_pubkey
+        assert payment.sending_currency_code == "SAT"
+        assert payment.sending_currency_amount == payment_amount_sats
+        assert payment.spending_cycle_id is None
+        assert payment.estimated_budget_currency_amount is None
+        assert payment.budget_on_hold is None
+        assert payment.settled_budget_currency_amount == total_budget_currency_amount
         assert payment.status == PaymentStatus.SUCCEEDED
 
 

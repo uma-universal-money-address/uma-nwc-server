@@ -39,7 +39,7 @@ from nwc_backend.typing import none_throws
 
 @patch.object(aiohttp.ClientSession, "post")
 @patch.object(aiohttp.ClientSession, "get")
-async def test_execute_quote_success__spending_limit_disabled(
+async def test_execute_quote_success__spending_limit_disabled__sending_SAT_budget_SAT(
     mock_get_budget_estimate: Mock, mock_execute_quote: Mock, test_client: QuartClient
 ) -> None:
     vasp_response = {"preimage": token_hex()}
@@ -49,9 +49,9 @@ async def test_execute_quote_success__spending_limit_disabled(
     mock_execute_quote.return_value.__aenter__.return_value = mock_response
 
     async with test_client.app.app_context():
-        quote = await create_payment_quote()
+        quote = await create_payment_quote(sending_currency_code="SAT")
         request = await create_nip47_request(
-            params={"payment_hash": quote.payment_hash}
+            params={"payment_hash": quote.payment_hash}, budget_currency_code="SAT"
         )
         response = await execute_quote(access_token=token_hex(), request=request)
         assert exclude_none_values(response.to_dict()) == vasp_response
@@ -71,7 +71,50 @@ async def test_execute_quote_success__spending_limit_disabled(
         assert payment.spending_cycle_id is None
         assert payment.estimated_budget_currency_amount is None
         assert payment.budget_on_hold is None
-        assert payment.settled_budget_currency_amount is None
+        assert payment.settled_budget_currency_amount == quote.sending_currency_amount
+        assert payment.status == PaymentStatus.SUCCEEDED
+        assert payment.quote_id == quote.id
+
+
+@patch.object(aiohttp.ClientSession, "post")
+@patch.object(aiohttp.ClientSession, "get")
+async def test_execute_quote_success__spending_limit_disabled__sending_SAT_budget_USD(
+    mock_get_budget_estimate: Mock, mock_execute_quote: Mock, test_client: QuartClient
+) -> None:
+    total_budget_currency_amount = 100
+    vasp_response = {
+        "preimage": token_hex(),
+        "total_budget_currency_amount": total_budget_currency_amount,
+    }
+    mock_response = AsyncMock()
+    mock_response.text = AsyncMock(return_value=json.dumps(vasp_response))
+    mock_response.ok = True
+    mock_execute_quote.return_value.__aenter__.return_value = mock_response
+
+    async with test_client.app.app_context():
+        quote = await create_payment_quote(sending_currency_code="SAT")
+        request = await create_nip47_request(
+            params={"payment_hash": quote.payment_hash}, budget_currency_code="USD"
+        )
+        response = await execute_quote(access_token=token_hex(), request=request)
+        assert exclude_none_values(response.to_dict()) == vasp_response
+
+        mock_execute_quote.assert_called_once_with(
+            url=f"/quote/{quote.payment_hash}",
+            data=ExecuteQuoteRequest(budget_currency_code="USD").to_json(),
+            headers=ANY,
+        )
+        mock_get_budget_estimate.assert_not_called()
+
+        payment = (await db.session.execute(select(OutgoingPayment))).scalar_one()
+        assert payment.receiver_type == ReceivingAddressType.LUD16
+        assert payment.receiver == quote.receiver_address
+        assert payment.sending_currency_code == quote.sending_currency_code
+        assert payment.sending_currency_amount == quote.sending_currency_amount
+        assert payment.spending_cycle_id is None
+        assert payment.estimated_budget_currency_amount is None
+        assert payment.budget_on_hold is None
+        assert payment.settled_budget_currency_amount == total_budget_currency_amount
         assert payment.status == PaymentStatus.SUCCEEDED
         assert payment.quote_id == quote.id
 
