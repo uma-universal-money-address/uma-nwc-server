@@ -8,10 +8,6 @@ export interface Transaction {
   id: string;
   budgetAmountInLowestDenom: number;
   sendingAmountInLowestDenom: number;
-  receivingAmountInLowestDenom: number;
-  sendingCurrency: Currency;
-  receivingCurrency: Currency;
-  budgetCurrency: Currency;
   createdAt: string;
 }
 
@@ -22,7 +18,6 @@ interface RawTransaction {
   receiving_currency: Currency;
   budget_currency_amount: number;
   sending_currency_amount: number;
-  receiving_currency_amount: number;
   receiver: string;
   receiver_type: string;
   status: string;
@@ -37,10 +32,6 @@ const hydrateTransactions = (
       id: rawTransaction.id,
       budgetAmountInLowestDenom: rawTransaction.budget_currency_amount,
       sendingAmountInLowestDenom: rawTransaction.sending_currency_amount,
-      receivingAmountInLowestDenom: rawTransaction.receiving_currency_amount,
-      budgetCurrency: rawTransaction.budget_currency,
-      sendingCurrency: rawTransaction.sending_currency,
-      receivingCurrency: rawTransaction.receiving_currency,
       createdAt: formatTimestamp(rawTransaction.created_at),
     };
   });

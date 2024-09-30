@@ -71,13 +71,12 @@ export interface RawConnection {
     limit_frequency: LimitFrequency;
     amount_used: number;
     amount_on_hold: number;
-    currency: {
-      code: string;
-      symbol: string;
-      name: string;
-      decimals: number;
-      type: string;
-    };
+  };
+  budget_currency: {
+    code: string;
+    symbol: string;
+    name: string;
+    decimals: number;
   };
   permissions: PermissionType[];
   expires_at?: string;
@@ -93,7 +92,7 @@ export interface Connection {
   amountInLowestDenom?: number | undefined;
   amountInLowestDenomUsed?: number | undefined;
   limitEnabled: boolean;
-  currency?: Currency | undefined;
+  budgetCurrency: Currency;
   status: ConnectionStatus;
   limitFrequency?: LimitFrequency | undefined;
   expiresAt?: string | undefined;

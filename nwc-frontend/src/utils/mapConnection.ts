@@ -33,14 +33,12 @@ export const mapConnection = (rawConnection: RawConnection): Connection => ({
   amountInLowestDenomUsed: rawConnection.spending_limit?.amount_used,
   limitFrequency: rawConnection.spending_limit?.limit_frequency,
   limitEnabled: Boolean(rawConnection.spending_limit),
-  currency: rawConnection.spending_limit
-    ? {
-        code: rawConnection.spending_limit.currency.code,
-        symbol: rawConnection.spending_limit.currency.symbol,
-        name: rawConnection.spending_limit.currency.name,
-        decimals: rawConnection.spending_limit.currency.decimals,
-      }
-    : undefined,
+  budgetCurrency: {
+    code: rawConnection.budget_currency.code,
+    symbol: rawConnection.budget_currency.symbol,
+    name: rawConnection.budget_currency.name,
+    decimals: rawConnection.budget_currency.decimals,
+  },
   permissions: mapPermissions(rawConnection.permissions),
   avatar: rawConnection.client_app?.avatar,
   status: getStatus(rawConnection),
