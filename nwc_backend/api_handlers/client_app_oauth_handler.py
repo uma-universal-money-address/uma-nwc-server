@@ -237,7 +237,11 @@ async def _exchange_token(request_data: dict[str, Any]) -> Response:
     return Response(
         json.dumps(response),
         status=200,
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store",
+            "Pragma": "no-cache",
+        },
     )
 
 
@@ -262,7 +266,11 @@ async def _refresh_token(request_data: dict[str, Any]) -> Response:
     return Response(
         json.dumps(response),
         status=200,
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store",
+            "Pragma": "no-cache",
+        },
     )
 
 
