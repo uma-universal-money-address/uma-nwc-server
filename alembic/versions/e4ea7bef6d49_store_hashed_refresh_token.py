@@ -1,7 +1,7 @@
 """Store hashed refresh token
 
 Revision ID: e4ea7bef6d49
-Revises: 3ddd75dea8cf
+Revises: a15389988245
 Create Date: 2024-09-29 10:35:42.783210
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "e4ea7bef6d49"
-down_revision: Union[str, None] = "3ddd75dea8cf"
+down_revision: Union[str, None] = "a15389988245"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
