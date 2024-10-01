@@ -27,6 +27,7 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
             total_budget=current_spending_limit.amount * 1000,
             used_budget=used_budget_sats * 1000,
             renews_at=current_cycle_renews_at,
+            renewal_period=current_spending_limit.frequency.value,
         )
 
     budget_estimate_response = await VaspUmaClient.instance().get_budget_estimate(
@@ -56,4 +57,5 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
         total_budget=total_budget_sats * 1000,
         used_budget=used_budget_sats * 1000,
         renews_at=current_cycle_renews_at,
+        renewal_period=current_spending_limit.frequency.value,
     )
