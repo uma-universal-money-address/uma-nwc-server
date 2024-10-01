@@ -1,5 +1,3 @@
-# Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
-
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 from secrets import token_hex

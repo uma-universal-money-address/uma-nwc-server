@@ -1,5 +1,3 @@
-# Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
-
 from secrets import token_hex
 from uuid import uuid4
 

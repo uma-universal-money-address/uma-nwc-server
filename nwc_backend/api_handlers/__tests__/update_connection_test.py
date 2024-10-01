@@ -1,5 +1,3 @@
-# Copyright ©, 2024, Lightspark Group, Inc. - All Rights Reserved
-
 from datetime import datetime, timezone
 
 import pytest

@@ -1,5 +1,3 @@
-# Copyright ©, 2024, Lightspark Group, Inc. - All Rights Reserved
-
 import asyncio
 import json
 from urllib.parse import urlencode, urlparse, urlunparse

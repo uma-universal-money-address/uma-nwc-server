@@ -1,4 +1,3 @@
-# Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
 from urllib.parse import parse_qs, unquote, urlencode, urlparse, urlunparse

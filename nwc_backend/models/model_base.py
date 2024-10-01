@@ -1,5 +1,3 @@
-# Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
-
 from datetime import datetime
 from typing import Any
 from uuid import UUID
