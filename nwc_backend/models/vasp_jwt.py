@@ -3,7 +3,7 @@ from quart import current_app
 
 
 class VaspJwt:
-    def __init__(self, user_id: str, uma_address: str, expiry: str):
+    def __init__(self, user_id: str, uma_address: str, expiry: int):
         self.user_id = user_id
         self.uma_address = uma_address
         self.expiry = expiry

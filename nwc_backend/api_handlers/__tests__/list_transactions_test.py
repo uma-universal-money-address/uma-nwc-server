@@ -11,6 +11,7 @@ from nwc_backend.models.__tests__.model_examples import (
     create_outgoing_payment,
     create_spending_cycle,
     create_spending_limit,
+    jwt_for_user,
 )
 from nwc_backend.models.outgoing_payment import PaymentStatus
 
@@ -44,16 +45,17 @@ async def test_get_outgoing_payments(
             budget_on_hold=8,
             status=PaymentStatus.PENDING,
         )
-
-    async with test_client.session_transaction() as session:
-        session["user_id"] = nwc_connection.user_id
+        token = jwt_for_user(nwc_connection.user)
 
     # first fetch
     request_params = {"limit": 1}
     url_parts = list(urlparse(f"/api/connection/{nwc_connection.id}/transactions"))
     query = urlencode(request_params)
     url_parts[4] = query
-    response = await test_client.get(urlunparse(url_parts))
+    response = await test_client.get(
+        urlunparse(url_parts),
+        headers={"Authorization": f"Bearer {token}"},
+    )
 
     assert response.status_code == 200
     result = json.loads((await response.data).decode())
@@ -73,7 +75,9 @@ async def test_get_outgoing_payments(
     url_parts = list(urlparse(f"/api/connection/{nwc_connection.id}/transactions"))
     query = urlencode(request_params)
     url_parts[4] = query
-    response = await test_client.get(urlunparse(url_parts))
+    response = await test_client.get(
+        urlunparse(url_parts), headers={"Authorization": f"Bearer {token}"}
+    )
 
     assert response.status_code == 200
     result = json.loads((await response.data).decode())
@@ -104,15 +108,16 @@ async def test_get_outgoing_payments__empty(
 ) -> None:
     async with test_client.app.app_context():
         nwc_connection = await create_nwc_connection()
-
-    async with test_client.session_transaction() as session:
-        session["user_id"] = nwc_connection.user_id
+        token = jwt_for_user(nwc_connection.user)
 
     request_params = {"limit": 10}
     url_parts = list(urlparse(f"/api/connection/{nwc_connection.id}/transactions"))
     query = urlencode(request_params)
     url_parts[4] = query
-    response = await test_client.get(urlunparse(url_parts))
+    response = await test_client.get(
+        urlunparse(url_parts),
+        headers={"Authorization": f"Bearer {token}"},
+    )
 
     assert response.status_code == 200
     result = json.loads((await response.data).decode())

@@ -120,7 +120,7 @@ export const initializeConnection = async (
   initialConnection: InitialConnection,
 ) => {
   try {
-    const response = await fetch("/apps/new", {
+    const response = await fetchWithAuth("/api/app", {
       method: "POST",
       headers: {
         "content-type": "application/json",

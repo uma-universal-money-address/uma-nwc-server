@@ -7,17 +7,18 @@ from quart import Quart, Response, send_from_directory
 
 import nwc_backend.alembic_importer  # noqa: F401
 from nwc_backend.api_handlers import (
-    client_app_lookup_handler,
     client_app_oauth_handler,
-    nwc_connection_handler,
     vasp_token_callback_handler,
 )
 from nwc_backend.db import db, setup_rds_iam_auth
+from nwc_backend.frontend_api import bp as frontend_api_bp
 from nwc_backend.nostr.nostr_client_initializer import init_nostr_client
+from nwc_backend.wrappers import UmaAuthRequest
 
 
 def create_app() -> Quart:
     app: Quart = Quart(__name__)
+    app.request_class = UmaAuthRequest
 
     app.config.from_envvar("QUART_CONFIG")
     app.static_folder = app.config.get("FRONTEND_BUILD_PATH") or "../static"
@@ -60,19 +61,9 @@ def create_app() -> Quart:
                 return Response(content, mimetype="text/html")
 
     app.add_url_rule(
-        "/api/connection/manual",
-        view_func=nwc_connection_handler.create_manual_connection,
-        methods=["POST"],
-    )
-    app.add_url_rule(
         "/oauth/auth",
         view_func=client_app_oauth_handler.handle_oauth_request,
         methods=["GET"],
-    )
-    app.add_url_rule(
-        "/apps/new",
-        view_func=nwc_connection_handler.create_client_app_connection,
-        methods=["POST"],
     )
     app.add_url_rule(
         "/oauth/token",
@@ -80,34 +71,11 @@ def create_app() -> Quart:
         methods=["POST"],
     )
     app.add_url_rule(
-        "/api/connection/<connection_id>",
-        view_func=nwc_connection_handler.get_connection,
-        methods=["GET"],
-    )
-    app.add_url_rule(
-        "/api/connections",
-        view_func=nwc_connection_handler.get_all_connections,
-        methods=["GET"],
-    )
-    app.add_url_rule(
         "/auth/vasp_token_callback",
         view_func=vasp_token_callback_handler.handle_vasp_token_callback,
         methods=["GET"],
     )
-    app.add_url_rule(
-        "/api/app",
-        view_func=client_app_lookup_handler.get_client_app,
-        methods=["GET"],
-    )
-    app.add_url_rule(
-        "/api/connection/<connection_id>/transactions",
-        view_func=nwc_connection_handler.get_all_outgoing_payments,
-        methods=["GET"],
-    )
-    app.add_url_rule(
-        "/api/connection/<connection_id>",
-        view_func=nwc_connection_handler.update_connection,
-        methods=["POST"],
-    )
+
+    app.register_blueprint(frontend_api_bp)
 
     return app

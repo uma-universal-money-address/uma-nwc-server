@@ -154,9 +154,7 @@ async def _handle_vasp_oauth_callback(
         await db.session.commit()
 
     session["redirect_uri"] = request.args["redirect_uri"]
-    session["user_id"] = user.id
     session["client_state"] = request.args.get("state")
-    session["short_lived_vasp_token"] = short_lived_vasp_token
     session["code_challenge"] = request.args["code_challenge"]
 
     # REMOVE ALWAYS_GRANTED PermissionsGroup from lists if it exists since we won't be sending them to the frontend

@@ -19,12 +19,11 @@ from nwc_backend.models.permissions_grouping import (
     PERMISSIONS_GROUP_TO_METHODS,
     PermissionsGroup,
 )
-from nwc_backend.models.spending_limit import SpendingLimit
 from nwc_backend.models.spending_cycle import SpendingCycle
+from nwc_backend.models.spending_limit import SpendingLimit
 from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
-from nwc_backend.models.user import User
-from nwc_backend.models.vasp_jwt import VaspJwt
 from nwc_backend.vasp_client import VaspUmaClient
+from nwc_backend.wrappers import require_auth
 
 
 class NoSupportedCurrenciesException(Exception):
@@ -32,30 +31,13 @@ class NoSupportedCurrenciesException(Exception):
 
 
 async def create_manual_connection() -> Response:
-    short_lived_vasp_token = session.get("short_lived_vasp_token")
-    if not short_lived_vasp_token:
-        bearer_token = request.headers.get("Authorization")
-        if not bearer_token:
-            return Response("Unauthorized", status=401)
-        short_lived_vasp_token = bearer_token.split("Bearer ")[-1]
-
-    if not short_lived_vasp_token:
-        return Response("Unauthorized", status=401)
-    vasp_jwt = VaspJwt.from_jwt(short_lived_vasp_token)
+    auth_state = require_auth(request)
+    user = auth_state.user
     keypair = Keys.generate()
     request_data = await request.get_json()
     name = request_data.get("name")
     if not name:
         return Response("name is required for manual connections", status=400)
-
-    user = await User.from_vasp_user_id(vasp_jwt.user_id)
-    if not user:
-        user = User(
-            id=uuid4(),
-            vasp_user_id=vasp_jwt.user_id,
-            uma_address=vasp_jwt.uma_address,
-        )
-        db.session.add(user)
 
     nwc_connection = NWCConnection(
         id=uuid4(),
@@ -67,7 +49,7 @@ async def create_manual_connection() -> Response:
         await _initialize_connection_data(
             nwc_connection,
             request_data=request_data,
-            short_lived_vasp_token=short_lived_vasp_token,
+            short_lived_vasp_token=auth_state.token,
         )
     except InvalidApiParamsException as ex:
         return Response(ex.message, status=400)
@@ -90,13 +72,10 @@ async def create_manual_connection() -> Response:
 
 
 async def create_client_app_connection() -> Response:
-    short_lived_vasp_token = session.get("short_lived_vasp_token")
-    if not short_lived_vasp_token:
-        return Response("Unauthorized", status=401)
-
+    auth_state = require_auth(request)
     nwc_connection = NWCConnection(
         id=uuid4(),
-        user_id=session["user_id"],
+        user_id=auth_state.user.id,
         client_app_id=session["client_app_id"],
         redirect_uri=session["redirect_uri"],
         code_challenge=session["code_challenge"],
@@ -105,7 +84,7 @@ async def create_client_app_connection() -> Response:
         await _initialize_connection_data(
             nwc_connection,
             request_data=await request.get_json(),
-            short_lived_vasp_token=short_lived_vasp_token,
+            short_lived_vasp_token=auth_state.token,
         )
     except InvalidApiParamsException as ex:
         return Response(ex.message, status=400)
@@ -213,24 +192,20 @@ async def _initialize_connection_data(
 
 
 async def get_connection(connection_id: str) -> Response:
-    user_id = session.get("user_id")
-    if not user_id:
-        return Response("User not authenticated", status=401)
+    auth_state = require_auth(request)
 
     connection = await db.session.get(NWCConnection, connection_id)
-    if not connection or connection.user_id != user_id:
+    if not connection or connection.user_id != auth_state.user.id:
         return Response("Connection not found", status=404)
     response = await connection.to_dict()
     return Response(json.dumps(response), status=200)
 
 
 async def get_all_connections() -> Response:
-    user_id = session.get("user_id")
-    if not user_id:
-        return Response("User not authenticated", status=401)
+    auth_state = require_auth(request)
 
     result = await db.session.execute(
-        select(NWCConnection).filter(NWCConnection.user_id == user_id)
+        select(NWCConnection).filter(NWCConnection.user_id == auth_state.user.id)
     )
     response = []
     for connection in result.scalars():
@@ -239,12 +214,10 @@ async def get_all_connections() -> Response:
 
 
 async def get_all_outgoing_payments(connection_id: str) -> Response:
-    user_id = session.get("user_id")
-    if not user_id:
-        return Response("User not authenticated", status=401)
+    auth_state = require_auth(request)
 
     connection = await db.session.get(NWCConnection, connection_id)
-    if not connection or connection.user_id != user_id:
+    if not connection or connection.user_id != auth_state.user.id:
         return Response("Connection not found", status=404)
 
     if "limit" not in request.args:
@@ -272,9 +245,8 @@ async def get_all_outgoing_payments(connection_id: str) -> Response:
 
 
 async def update_connection(connection_id: str) -> Response:
-    user_id = session.get("user_id")
-    if not user_id:
-        return Response("User not authenticated", status=401)
+    auth_state = require_auth(request)
+    user_id = auth_state.user.id
 
     connection: NWCConnection = await db.session.get(NWCConnection, connection_id)
     if not connection or connection.user_id != user_id:
