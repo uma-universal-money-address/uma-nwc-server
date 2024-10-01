@@ -168,9 +168,9 @@ async def _initialize_connection_data(
         PERMISSIONS_GROUP_TO_METHODS[PermissionsGroup.ALWAYS_GRANTED]
     )
     vasp_supported_commands = current_app.config["VASP_SUPPORTED_COMMANDS"]
-    for permission in all_granted_granular_permissions:
-        if permission not in vasp_supported_commands:
-            all_granted_granular_permissions.remove(permission)
+    all_granted_granular_permissions_list = [
+        p for p in all_granted_granular_permissions if p in vasp_supported_commands
+    ]
 
     # save the long lived token in the db and create the app connection
     response = requests.post(
@@ -180,7 +180,7 @@ async def _initialize_connection_data(
             "Authorization": "Bearer " + short_lived_vasp_token,
         },
         json={
-            "permissions": list(all_granted_granular_permissions),
+            "permissions": all_granted_granular_permissions_list,
             "expiration": nwc_connection.connection_expires_at,
         },
     )
