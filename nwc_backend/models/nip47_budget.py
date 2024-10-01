@@ -17,6 +17,7 @@ class Nip47BudgetResponse:
     used_budget: Optional[int] = None
     total_budget: Optional[int] = None
     renews_at: Optional[int] = None
+    renewal_period: Optional[str] = None
     currency: Optional[Nip47BudgetCurrency] = None
 
     def to_dict(self):

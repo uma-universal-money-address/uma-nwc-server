@@ -67,6 +67,7 @@ async def test_get_budget_success__spending_limit_SAT_enabled(
             "total_budget": 1000000,
             "used_budget": 0,
             "renews_at": round(spending_cycle.end_time.timestamp()),
+            "renewal_period": "monthly",
         }
 
 
@@ -107,6 +108,7 @@ async def test_pay_invoice_success__spending_limit_USD_enabled(
             "total_budget": estimated_budget_currency_amount * 1000,
             "used_budget": 0,
             "renews_at": ANY,
+            "renewal_period": "monthly",
             "currency": {
                 "code": "USD",
                 "total_budget": total_budget_currency_amount,
