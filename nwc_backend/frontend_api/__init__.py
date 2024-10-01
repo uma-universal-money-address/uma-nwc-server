@@ -38,7 +38,7 @@ bp.add_url_rule(
     methods=["POST"],
 )
 bp.add_url_rule(
-    "/api/connection/<connection_id>",
+    "/connection/<connection_id>",
     view_func=nwc_connection_handler.update_connection,
     methods=["POST"],
 )
