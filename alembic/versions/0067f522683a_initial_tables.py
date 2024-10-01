@@ -1,8 +1,8 @@
-"""Initial setup
+"""initial tables
 
-Revision ID: 22e5c17990be
+Revision ID: 0067f522683a
 Revises: 
-Create Date: 2024-09-18 17:34:38.203809
+Create Date: 2024-10-01 14:58:11.136191
 
 """
 
@@ -15,7 +15,7 @@ from alembic import op
 from nwc_backend.db import UUID, DateTime, DBCurrency
 
 # revision identifiers, used by Alembic.
-revision: str = "22e5c17990be"
+revision: str = "0067f522683a"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -83,9 +83,10 @@ def upgrade() -> None:
         ),
         sa.Column("long_lived_vasp_token", sa.String(length=1024), nullable=False),
         sa.Column("connection_expires_at", sa.Integer(), nullable=True),
+        sa.Column("budget_currency", DBCurrency(), nullable=False),
         sa.Column("spending_limit_id", UUID(), nullable=True),
         sa.Column("nostr_pubkey", sa.String(length=255), nullable=True),
-        sa.Column("refresh_token", sa.String(length=1024), nullable=True),
+        sa.Column("hashed_refresh_token", sa.String(length=1024), nullable=True),
         sa.Column("authorization_code", sa.String(length=1024), nullable=True),
         sa.Column("redirect_uri", sa.String(length=2048), nullable=True),
         sa.Column("code_challenge", sa.String(length=1024), nullable=True),
@@ -123,10 +124,10 @@ def upgrade() -> None:
         sa.UniqueConstraint(
             "authorization_code", name="nwc_connection_unique_authorization_code"
         ),
-        sa.UniqueConstraint("nostr_pubkey", name="nwc_connection_unique_nostr_pubkey"),
         sa.UniqueConstraint(
-            "refresh_token", name="nwc_connection_unique_refresh_token"
+            "hashed_refresh_token", name="nwc_connection_unique_hashed_refresh_token"
         ),
+        sa.UniqueConstraint("nostr_pubkey", name="nwc_connection_unique_nostr_pubkey"),
     )
     op.create_table(
         "nip47_request",
@@ -205,7 +206,6 @@ def upgrade() -> None:
     op.create_table(
         "spending_limit",
         sa.Column("nwc_connection_id", UUID(), nullable=False),
-        sa.Column("currency", DBCurrency(), nullable=False),
         sa.Column("amount", sa.BigInteger(), nullable=False),
         sa.Column(
             "frequency",
@@ -254,9 +254,36 @@ def upgrade() -> None:
             deferrable=True,
         )
     op.create_table(
+        "payment_quote",
+        sa.Column("nip47_request_id", UUID(), nullable=False),
+        sa.Column("receiver_address", sa.String(length=200), nullable=False),
+        sa.Column("payment_hash", sa.String(length=255), nullable=False),
+        sa.Column("sending_currency_code", sa.String(length=3), nullable=False),
+        sa.Column("sending_currency_amount", sa.BigInteger(), nullable=False),
+        sa.Column("id", UUID(), nullable=False),
+        sa.Column(
+            "created_at",
+            DateTime(),
+            server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            DateTime(),
+            server_default=sa.text("(CURRENT_TIMESTAMP)"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(
+            ["nip47_request_id"],
+            ["nip47_request.id"],
+            name="payment_quote_nip47_request_id_fkey",
+        ),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("payment_hash", name="payment_quote_unique_payment_hash"),
+    )
+    op.create_table(
         "spending_cycle",
         sa.Column("spending_limit_id", UUID(), nullable=False),
-        sa.Column("limit_currency", sa.String(length=3), nullable=False),
         sa.Column("limit_amount", sa.BigInteger(), nullable=False),
         sa.Column("start_time", DateTime(), nullable=False),
         sa.Column("end_time", DateTime(), nullable=True),
@@ -290,41 +317,10 @@ def upgrade() -> None:
         )
 
     op.create_table(
-        "spending_cycle_quote",
+        "outgoing_payment",
         sa.Column("nip47_request_id", UUID(), nullable=False),
-        sa.Column("payment_hash", sa.String(length=255), nullable=False),
-        sa.Column("sending_currency_code", sa.String(length=3), nullable=False),
-        sa.Column("sending_currency_amount", sa.BigInteger(), nullable=False),
-        sa.Column("id", UUID(), nullable=False),
-        sa.Column(
-            "created_at",
-            DateTime(),
-            server_default=sa.text("(CURRENT_TIMESTAMP)"),
-            nullable=False,
-        ),
-        sa.Column(
-            "updated_at",
-            DateTime(),
-            server_default=sa.text("(CURRENT_TIMESTAMP)"),
-            nullable=False,
-        ),
-        sa.ForeignKeyConstraint(
-            ["nip47_request_id"],
-            ["nip47_request.id"],
-            name="spending_cycle_quote_nip47_request_id_fkey",
-        ),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "payment_hash", name="spending_cycle_quote_unique_payment_hash"
-        ),
-    )
-    op.create_table(
-        "spending_cycle_payment",
-        sa.Column("nip47_request_id", UUID(), nullable=False),
-        sa.Column("spending_cycle_id", UUID(), nullable=False),
+        sa.Column("nwc_connection_id", UUID(), nullable=False),
         sa.Column("quote_id", UUID(), nullable=True),
-        sa.Column("estimated_amount", sa.BigInteger(), nullable=False),
-        sa.Column("budget_on_hold", sa.BigInteger(), nullable=False),
         sa.Column(
             "status",
             sa.Enum(
@@ -336,7 +332,25 @@ def upgrade() -> None:
             ),
             nullable=False,
         ),
-        sa.Column("settled_amount", sa.BigInteger(), nullable=True),
+        sa.Column("sending_currency_code", sa.String(length=3), nullable=False),
+        sa.Column("sending_currency_amount", sa.BigInteger(), nullable=False),
+        sa.Column("receiver", sa.String(length=10240), nullable=False),
+        sa.Column(
+            "receiver_type",
+            sa.Enum(
+                "LUD16",
+                "BOLT12",
+                "BOLT11",
+                "NODE_PUBKEY",
+                name="receivingaddresstype",
+                native_enum=False,
+            ),
+            nullable=False,
+        ),
+        sa.Column("spending_cycle_id", UUID(), nullable=True),
+        sa.Column("estimated_budget_currency_amount", sa.BigInteger(), nullable=True),
+        sa.Column("budget_on_hold", sa.BigInteger(), nullable=True),
+        sa.Column("settled_budget_currency_amount", sa.BigInteger(), nullable=True),
         sa.Column("id", UUID(), nullable=False),
         sa.Column(
             "created_at",
@@ -353,31 +367,46 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["nip47_request_id"],
             ["nip47_request.id"],
-            name="spending_cycle_payment_nip47_request_id_fkey",
+            name="outgoing_payment_nip47_request_id_fkey",
+        ),
+        sa.ForeignKeyConstraint(
+            ["nwc_connection_id"],
+            ["nwc_connection.id"],
+            name="outgoing_payment_nwc_connection_id_fkey",
         ),
         sa.ForeignKeyConstraint(
             ["quote_id"],
-            ["spending_cycle_quote.id"],
-            name="spending_cycle_payment_quote_id_fkey",
+            ["payment_quote.id"],
+            name="outgoing_payment_quote_id_fkey",
         ),
         sa.ForeignKeyConstraint(
             ["spending_cycle_id"],
             ["spending_cycle.id"],
-            name="spending_cycle_payment_spending_cycle_id_fkey",
+            name="outgoing_payment_spending_cycle_id_fkey",
         ),
         sa.PrimaryKeyConstraint("id"),
     )
+    with op.batch_alter_table("outgoing_payment", schema=None) as batch_op:
+        batch_op.create_index(
+            "outgoing_payment_connection_id_status_created_at_idx",
+            ["nwc_connection_id", "status", "created_at"],
+            unique=False,
+        )
+
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_table("spending_cycle_payment")
-    op.drop_table("spending_cycle_quote")
+    with op.batch_alter_table("outgoing_payment", schema=None) as batch_op:
+        batch_op.drop_index("outgoing_payment_connection_id_status_created_at_idx")
+
+    op.drop_table("outgoing_payment")
     with op.batch_alter_table("spending_cycle", schema=None) as batch_op:
         batch_op.drop_index("spending_cycle_spending_limit_id_start_time_unique_idx")
 
     op.drop_table("spending_cycle")
+    op.drop_table("payment_quote")
     op.drop_table("spending_limit")
     op.drop_table("nip47_request")
     op.drop_table("nwc_connection")
