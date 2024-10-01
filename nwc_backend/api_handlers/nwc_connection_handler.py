@@ -3,7 +3,7 @@
 
 import json
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 from uuid import uuid4
 
 import requests
@@ -20,6 +20,7 @@ from nwc_backend.models.permissions_grouping import (
     PermissionsGroup,
 )
 from nwc_backend.models.spending_limit import SpendingLimit
+from nwc_backend.models.spending_cycle import SpendingCycle
 from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.models.user import User
 from nwc_backend.models.vasp_jwt import VaspJwt
@@ -267,4 +268,97 @@ async def get_all_outgoing_payments(connection_id: str) -> Response:
         .where(OutgoingPayment.status != PaymentStatus.FAILED)
     )
     response["count"] = count - offset
+    return Response(json.dumps(response), status=200)
+
+
+async def update_connection(connection_id: str) -> Response:
+    user_id = session.get("user_id")
+    if not user_id:
+        return Response("User not authenticated", status=401)
+
+    connection: NWCConnection = await db.session.get(NWCConnection, connection_id)
+    if not connection or connection.user_id != user_id:
+        return Response("Connection not found", status=404)
+    data = await request.get_data()
+    data = json.loads(data)
+    amount_in_lowest_denom = data.get("amountInLowestDenom")
+    limit_enabled = data.get("limitEnabled")
+    limit_frequency = data.get("limitFrequency")
+    expiration = data.get("expiration")
+    status = data.get("status")
+
+    if status and status == "Inactive":
+        connection.connection_expires_at = int(datetime.now(timezone.utc).timestamp())
+        await db.session.commit()
+        return Response("Connection deleted", status=200)
+
+    if not expiration:
+        return Response("Expiration is required", status=400)
+    connection.connection_expires_at = round(
+        datetime.fromisoformat(expiration).timestamp()
+    )
+
+    current_spending_limit: Optional[SpendingLimit] = connection.spending_limit
+    if limit_enabled:
+        # amount_in_lowest_denom is required if limit is enabled
+        try:
+            amount_in_lowest_denom = int(amount_in_lowest_denom)
+        except ValueError:
+            return Response("Invalid amount", status=400)
+        new_limit_frequency = (
+            SpendingLimitFrequency(limit_frequency)
+            if limit_frequency
+            else SpendingLimitFrequency.NONE
+        )
+
+        if not current_spending_limit:
+            spending_limit = SpendingLimit(
+                id=uuid4(),
+                nwc_connection_id=connection_id,
+                amount=amount_in_lowest_denom,
+                frequency=new_limit_frequency,
+                start_time=datetime.now(timezone.utc),
+            )
+            db.session.add(spending_limit)
+            connection.spending_limit_id = spending_limit.id
+        elif limit_frequency != current_spending_limit.frequency.value:
+            # if limit frequency is changed, we need to end the current limit and cycle and create a new one
+            current_spending_limit.end_time = datetime.now(timezone.utc)
+            cycle: Optional[SpendingCycle] = (
+                await current_spending_limit.get_current_spending_cycle()
+            )
+            if cycle:
+                cycle.end_time = datetime.now(timezone.utc)
+
+            spending_limit = SpendingLimit(
+                id=uuid4(),
+                nwc_connection_id=connection_id,
+                amount=amount_in_lowest_denom or current_spending_limit.amount,
+                frequency=new_limit_frequency,
+                start_time=datetime.now(timezone.utc),
+            )
+            db.session.add(spending_limit)
+            connection.spending_limit_id = spending_limit.id
+        elif amount_in_lowest_denom != current_spending_limit.amount:
+            # if limit amount is changed, we need to update the current limit and cycle amounts
+            current_spending_limit.amount = amount_in_lowest_denom
+            cycle: Optional[SpendingCycle] = (
+                await current_spending_limit.get_current_spending_cycle()
+            )
+            if cycle:
+                cycle.limit_amount = amount_in_lowest_denom
+
+    else:
+        if current_spending_limit:
+            current_spending_limit.end_time = datetime.now(timezone.utc)
+            cycle: Optional[SpendingCycle] = (
+                await current_spending_limit.get_current_spending_cycle()
+            )
+            if cycle:
+                cycle.end_time = datetime.now(timezone.utc)
+            connection.spending_limit_id = None
+
+    await db.session.commit()
+    connection = await db.session.get(NWCConnection, connection_id)
+    response = await connection.to_dict()
     return Response(json.dumps(response), status=200)

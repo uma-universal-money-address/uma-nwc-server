@@ -53,11 +53,10 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
   }) => {
     try {
       const response = await fetchWithAuth(
-        `${getBackendUrl()}/api/connection`,
+        `${getBackendUrl()}/api/connection/${connectionId}`,
         {
           method: "POST",
           body: JSON.stringify({
-            connectionId: connectionId,
             amountInLowestDenom,
             limitFrequency,
             limitEnabled,
@@ -101,10 +100,9 @@ export const updateConnection = async ({
   status: ConnectionStatus;
 }) => {
   try {
-    await fetchWithAuth(`${getBackendUrl()}/api/connection`, {
+    await fetchWithAuth(`${getBackendUrl()}/api/connection/${connectionId}`, {
       method: "POST",
       body: JSON.stringify({
-        connectionId: connectionId,
         amountInLowestDenom,
         limitFrequency,
         limitEnabled,

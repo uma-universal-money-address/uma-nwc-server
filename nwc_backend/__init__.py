@@ -104,5 +104,10 @@ def create_app() -> Quart:
         view_func=nwc_connection_handler.get_all_outgoing_payments,
         methods=["GET"],
     )
+    app.add_url_rule(
+        "/api/connection/<connection_id>",
+        view_func=nwc_connection_handler.update_connection,
+        methods=["POST"],
+    )
 
     return app
