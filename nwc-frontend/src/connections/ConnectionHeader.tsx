@@ -37,6 +37,7 @@ export const ConnectionHeader = ({
       .then((succeeded) => {
         if (succeeded) {
           setSuccessMessage(`${connection.name} disconnected successfully`);
+          navigate(`/`);
         } else {
           setError(new Error(`Failed to disconnect ${connection.name}`));
         }

@@ -5,7 +5,7 @@ import { Shimmer } from "./Shimmer";
 interface Props {
   size?: number | undefined;
   uma?: string;
-  src?: string;
+  src?: string | undefined;
   isLoading?: boolean;
   shadow?: boolean;
 }

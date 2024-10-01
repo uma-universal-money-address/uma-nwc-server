@@ -3,7 +3,7 @@ import { Body } from "@lightsparkdev/ui/components/typography/Body";
 import type React from "react";
 import { useConnection } from "src/hooks/useConnection";
 import { useTransactions, type Transaction } from "src/hooks/useTransactions";
-import { type Connection } from "src/types/Connection";
+import { ConnectionStatus, type Connection } from "src/types/Connection";
 import { formatAmountString } from "src/utils/formatConnectionString";
 import { formatTimestamp } from "src/utils/formatTimestamp";
 import { Shimmer } from "./Shimmer";
@@ -87,7 +87,13 @@ export const TransactionTable = ({
   } else if (!transactions || !transactions.length) {
     return (
       <EmptyResults>
-        <Body content="No transactions yet." />
+        <Body
+          content={
+            connection.status === ConnectionStatus.INACTIVE
+              ? "No transactions."
+              : "No transactions yet."
+          }
+        />
       </EmptyResults>
     );
   } else {

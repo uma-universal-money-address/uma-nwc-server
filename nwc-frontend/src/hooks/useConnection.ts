@@ -4,6 +4,7 @@ import {
   type ConnectionStatus,
   type InitialConnection,
   type LimitFrequency,
+  type RawConnection,
 } from "src/types/Connection";
 import { getBackendUrl } from "src/utils/backendUrl";
 import { fetchWithAuth } from "src/utils/fetchWithAuth";
@@ -64,8 +65,11 @@ export const useConnection = ({ connectionId }: { connectionId: string }) => {
           }),
         },
       );
-      const rawConnection = await response.json();
-      const updatedConnection = mapConnection(rawConnection);
+      const result = await response.json();
+      if (result.success) {
+        return true;
+      }
+      const updatedConnection = mapConnection(result as RawConnection);
       setConnection(updatedConnection);
       return true;
     } catch (e) {

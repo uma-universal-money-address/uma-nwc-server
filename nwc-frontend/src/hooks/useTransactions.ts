@@ -63,7 +63,6 @@ export function useTransactions({ connectionId }: { connectionId: string }) {
         });
 
         if (!ignore) {
-          console.log(response.transactions);
           setTransactions(hydrateTransactions(response.transactions));
           setIsLoading(false);
         }

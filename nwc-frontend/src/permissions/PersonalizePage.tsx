@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Avatar } from "src/components/Avatar";
 import { type AppInfo } from "src/types/AppInfo";
 import {
+  type Connection,
   ExpirationPeriod,
   type LimitFrequency,
   type PermissionState,
@@ -27,7 +28,8 @@ export interface ConnectionSettings {
 }
 
 interface Props {
-  appInfo: AppInfo;
+  appInfo?: AppInfo | undefined;
+  connection?: Connection | undefined;
   connectionSettings: ConnectionSettings;
   updateConnectionSettings: (connectionSettings: ConnectionSettings) => void;
   onBack: () => void;
@@ -37,6 +39,7 @@ interface Props {
 
 export const PersonalizePage = ({
   appInfo,
+  connection,
   connectionSettings,
   updateConnectionSettings,
   onBack,
@@ -50,8 +53,6 @@ export const PersonalizePage = ({
     useState<ConnectionSettings>(connectionSettings);
   const auth = getAuth();
   const currency = auth.getCurrency();
-
-  const { name, domain, avatar, verified } = appInfo;
 
   const handleEditLimit = () => {
     setIsEditLimitVisible(true);
@@ -109,17 +110,22 @@ export const PersonalizePage = ({
       <PermissionsContainer>
         <PermissionsDescription>
           <AppSection>
-            <Avatar src={avatar} size={48} />
+            <Avatar src={appInfo?.avatar} size={48} />
             <AppDetails>
               <AppName>
-                {name}
-                {verified ? (
-                  <VerifiedBadge>
-                    <Icon name="CheckmarkCircleTier3" width={20} />
-                  </VerifiedBadge>
-                ) : null}
+                {appInfo && (
+                  <>
+                    {appInfo.name}
+                    {appInfo.verified && (
+                      <VerifiedBadge>
+                        <Icon name="CheckmarkCircleTier3" width={20} />
+                      </VerifiedBadge>
+                    )}
+                  </>
+                )}
+                {connection && <>{connection.name}</>}
               </AppName>
-              <AppDomain>{domain}</AppDomain>
+              {appInfo && <AppDomain>{appInfo.domain}</AppDomain>}
             </AppDetails>
           </AppSection>
           <Permissions>
