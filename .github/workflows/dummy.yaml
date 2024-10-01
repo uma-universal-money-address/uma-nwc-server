@@ -1,0 +1,14 @@
+name: "Dummy"
+
+on:
+  pull_request:
+    paths:
+      - '*'
+      - 'alembic/**'
+
+jobs:
+  lint-and-test:
+    if: false
+    runs-on: "ubuntu-22.04"
+    steps:
+      - run: "true"
