@@ -1,5 +1,6 @@
 import { json, type LoaderFunction } from "react-router-dom";
 import { fetchAppInfo } from "src/hooks/useAppInfo";
+import { type AppInfo } from "src/types/AppInfo";
 import {
   type Connection,
   DEFAULT_CONNECTION_SETTINGS,
@@ -45,7 +46,10 @@ export const permissionsPageData = (async ({ params }) => {
     throw new Response("Connection not found", { status: 404 });
   }
 
-  const appInfo = await fetchAppInfo(connection.clientId);
+  let appInfo: AppInfo | undefined;
+  if (connection.clientId) {
+    appInfo = await fetchAppInfo(connection.clientId);
+  }
 
   return json(
     {

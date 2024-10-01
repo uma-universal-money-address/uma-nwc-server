@@ -14,12 +14,12 @@ export const fetchAppInfo = async (clientId: string) => {
   };
 };
 
-export const useAppInfo = ({ clientId }: { clientId: string }) => {
+export const useAppInfo = ({ clientId }: { clientId?: string | undefined }) => {
   const [appInfo, setAppInfo] = useState<AppInfo>();
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    async function fetchAppInfoInternal() {
+    async function fetchAppInfoInternal(clientId: string) {
       setIsLoading(true);
       try {
         const appInfo = await fetchAppInfo(clientId);
@@ -33,7 +33,9 @@ export const useAppInfo = ({ clientId }: { clientId: string }) => {
     }
 
     let ignore = false;
-    fetchAppInfoInternal();
+    if (clientId) {
+      fetchAppInfoInternal(clientId);
+    }
     return () => {
       ignore = true;
     };

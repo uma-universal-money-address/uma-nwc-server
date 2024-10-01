@@ -15,7 +15,11 @@ import {
 } from "src/hooks/useConnection";
 import { type AppInfo } from "src/types/AppInfo";
 import { ExpirationPeriod, type Permission } from "src/types/Connection";
-import { type PermissionPageLoaderData } from "src/types/PermissionPageLoaderData";
+import {
+  isLoaderDataFromConnection,
+  isLoaderDataFromUrl,
+  type PermissionPageLoaderData,
+} from "src/types/PermissionPageLoaderData";
 import { getAuth } from "src/utils/auth";
 import { formatConnectionString } from "src/utils/formatConnectionString";
 import { PermissionsList } from "./PermissionsList";
@@ -69,8 +73,6 @@ export const PermissionsPage = () => {
     useState<ConnectionSettings>(initialConnectionSettings);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const { name, domain, avatar, verified } = appInfo;
-
   const handleShowPersonalize = () => {
     setIsPersonalizeVisible(true);
   };
@@ -100,9 +102,9 @@ export const PermissionsPage = () => {
             .toISOString();
 
     setIsSubmitting(true);
-    if ("oauthParams" in loaderData) {
+    if (isLoaderDataFromUrl(loaderData)) {
       initConnection({
-        appInfo,
+        appInfo: loaderData.appInfo,
         connectionSettings,
         currencyCode: currency?.code ?? "SAT",
         redirectUri: loaderData.oauthParams.redirectUri,
@@ -125,6 +127,11 @@ export const PermissionsPage = () => {
     return (
       <PersonalizePage
         appInfo={appInfo}
+        connection={
+          isLoaderDataFromConnection(loaderData)
+            ? loaderData.connection
+            : undefined
+        }
         connectionSettings={connectionSettings}
         updateConnectionSettings={handleUpdateConnectionSettings}
         onBack={() => setIsPersonalizeVisible(false)}
@@ -168,17 +175,24 @@ export const PermissionsPage = () => {
       <PermissionsContainer>
         <PermissionsDescription>
           <AppSection>
-            <Avatar src={avatar} size={48} />
+            <Avatar src={appInfo?.avatar} size={48} />
             <AppDetails>
               <AppName>
-                {name}
-                {verified ? (
-                  <VerifiedBadge>
-                    <Icon name="CheckmarkCircleTier3" width={20} />
-                  </VerifiedBadge>
-                ) : null}
+                {appInfo && (
+                  <>
+                    {appInfo.name}
+                    {appInfo.verified && (
+                      <VerifiedBadge>
+                        <Icon name="CheckmarkCircleTier3" width={20} />
+                      </VerifiedBadge>
+                    )}
+                  </>
+                )}
+                {isLoaderDataFromConnection(loaderData) && (
+                  <>{loaderData.connection.name}</>
+                )}
               </AppName>
-              <AppDomain>{domain}</AppDomain>
+              {appInfo && <AppDomain>{appInfo.domain}</AppDomain>}
             </AppDetails>
           </AppSection>
           <Permissions>

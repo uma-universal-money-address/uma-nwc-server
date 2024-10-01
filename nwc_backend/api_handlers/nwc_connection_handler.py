@@ -261,7 +261,7 @@ async def update_connection(connection_id: str) -> Response:
     if status and status == "Inactive":
         connection.connection_expires_at = int(datetime.now(timezone.utc).timestamp())
         await db.session.commit()
-        return Response("Connection deleted", status=200)
+        return Response(json.dumps({"success": "Connection deleted"}), status=200)
 
     if not expiration:
         return Response("Expiration is required", status=400)
