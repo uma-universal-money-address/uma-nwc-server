@@ -1,4 +1,3 @@
-# Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
 from uma_auth.models.execute_quote_request import ExecuteQuoteRequest

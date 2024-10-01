@@ -1,5 +1,3 @@
-# Copyright ©, 2024, Lightspark Group, Inc. - All Rights Reserved
-
 from hashlib import sha256
 import json
 from datetime import datetime, timedelta, timezone

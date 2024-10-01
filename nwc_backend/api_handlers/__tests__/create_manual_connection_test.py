@@ -1,5 +1,3 @@
-# Copyright ©, 2024, Lightspark Group, Inc. - All Rights Reserved
-
 import json
 from secrets import token_hex
 from unittest.mock import AsyncMock, Mock, patch

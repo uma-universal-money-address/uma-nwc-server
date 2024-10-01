@@ -1,4 +1,3 @@
-# Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
 # pyre-strict
 
 from nwc_backend.models.nip47_budget import Nip47BudgetCurrency, Nip47BudgetResponse

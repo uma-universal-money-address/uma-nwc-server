@@ -1,5 +1,3 @@
-# Copyright ©, 2022, Lightspark Group, Inc. - All Rights Reserved
-
 from uuid import uuid4
 
 from quart.app import QuartClient
