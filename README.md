@@ -10,7 +10,7 @@ Create a `.quartenv` file:
 
 ```bash
 QUART_DEBUG=True
-QUART_RUN_PORT=5000
+QUART_RUN_PORT=8080
 QUART_ENV=development
 ```
 

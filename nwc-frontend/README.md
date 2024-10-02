@@ -12,7 +12,7 @@ yarn install
 yarn dev
 ```
 
-Navigate to `http://localhost:3000`
+Navigate to `http://localhost:8080`
 
 ## Build
 
@@ -40,7 +40,6 @@ To test this locally, you must:
 1. Follow the setup instructions in the root `README.md`
 1. Build with `yarn build` from the `nwc-frontend` directory.
 1. Start the backend in the root directory with `FLASK_CONFIG="local_dev.py" flask run`
-1. Navigate to `http://localhost:5000` _instead of_ `http://localhost:3000`.
+1. Navigate to `http://localhost:8080`.
 
-Now both frontend files and the API will be served by the same URL `http://localhost:5000`!
-But you'll need to rebuild the frontend every time to test a frontend change.
+Now both frontend files and the API will be served by the same URL `http://localhost:8080`!
