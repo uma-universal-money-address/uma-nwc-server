@@ -5,6 +5,8 @@ on:
     paths:
       - '*'
       - 'alembic/**'
+      - '.github/**'
+      - 'nwc-frontend/**'
 
 jobs:
   lint-and-test:
