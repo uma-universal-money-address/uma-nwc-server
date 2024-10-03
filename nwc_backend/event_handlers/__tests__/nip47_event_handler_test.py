@@ -65,7 +65,7 @@ class Harness:
                 ),
                 keys=self.client_app_keys,
             )
-            .encrypt_content(self.nwc_keys.public_key())
+            .encrypt_content(self.nwc_keys.public_key(), use_nip44=True)
             .add_tag(["p", self.nwc_keys.public_key().to_hex()])
             .build()
         )

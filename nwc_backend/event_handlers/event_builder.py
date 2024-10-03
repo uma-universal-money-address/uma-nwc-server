@@ -27,7 +27,9 @@ class EventBuilder:
         self.tags.append(tag)
         return self
 
-    def encrypt_content(self, recipient_pubkey: PublicKey) -> "EventBuilder":
+    def encrypt_content(
+        self, recipient_pubkey: PublicKey, use_nip44: bool
+    ) -> "EventBuilder":
         if self.content_encrypted:
             raise EventBuilderException("Content has already been encrypted.")
 
@@ -82,7 +84,7 @@ class EventBuilder:
 
 
 def create_nip47_response(
-    event: Event, method: Nip47RequestMethod, result: dict[str, Any]
+    event: Event, method: Nip47RequestMethod, result: dict[str, Any], use_nip44: bool
 ) -> Event:
     content = {"result_type": method.value, "result": result}
     return (
@@ -90,7 +92,7 @@ def create_nip47_response(
             kind=KindEnum.WALLET_CONNECT_RESPONSE(),  # pyre-ignore[6]
             content=json.dumps(content),
         )
-        .encrypt_content(event.author())
+        .encrypt_content(event.author(), use_nip44)
         .add_tag(["p", NostrConfig.instance().identity_keys.public_key().to_hex()])
         .add_tag(["e", event.id().to_hex()])
         .build()
@@ -98,7 +100,10 @@ def create_nip47_response(
 
 
 def create_nip47_error_response(
-    event: Event, method: Optional[Nip47RequestMethod], error: Nip47Error
+    event: Event,
+    method: Optional[Nip47RequestMethod],
+    error: Nip47Error,
+    use_nip44: bool,
 ) -> Event:
     content = {
         "error": {"code": error.code.name, "message": error.message},
@@ -111,7 +116,7 @@ def create_nip47_error_response(
             kind=KindEnum.WALLET_CONNECT_RESPONSE(),  # pyre-ignore[6]
             content=json.dumps(content),
         )
-        .encrypt_content(event.author())
+        .encrypt_content(event.author(), use_nip44)
         .add_tag(["p", NostrConfig.instance().identity_keys.public_key().to_hex()])
         .add_tag(["e", event.id().to_hex()])
         .build()
