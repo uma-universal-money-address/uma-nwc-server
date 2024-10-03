@@ -4,7 +4,14 @@ import json
 import logging
 from datetime import datetime, timezone
 
-from nostr_sdk import ErrorCode, Event, Nip47Error, TagKind, nip04_decrypt
+from nostr_sdk import (
+    ErrorCode,
+    Event,
+    Nip47Error,
+    TagKind,
+    nip04_decrypt,
+    nip44_decrypt,
+)
 from pydantic_core import ValidationError as PydanticValidationError
 from sqlalchemy.exc import IntegrityError
 
@@ -33,6 +40,33 @@ from nwc_backend.nostr.nostr_config import NostrConfig
 
 
 async def handle_nip47_event(event: Event) -> None:
+    expiration = event.get_tag_content(TagKind.EXPIRATION())  # pyre-ignore[6]
+    if expiration and datetime.fromtimestamp(
+        float(expiration), timezone.utc
+    ) < datetime.now(timezone.utc):
+        logging.debug("Event ignored: expired at %s.", expiration)
+        return
+
+    # Try to decrypt the content with NIP44 first, then fallback to NIP04
+    is_nip44_encrypted = False
+    try:
+        content = json.loads(
+            nip44_decrypt(
+                secret_key=NostrConfig.instance().identity_keys.secret_key(),
+                public_key=event.author(),
+                payload=event.content(),
+            )
+        )
+        is_nip44_encrypted = True
+    except Exception:
+        content = json.loads(
+            nip04_decrypt(
+                secret_key=NostrConfig.instance().identity_keys.secret_key(),
+                public_key=event.author(),
+                encrypted_content=event.content(),
+            )
+        )
+
     nwc_connection = await NWCConnection.from_nostr_pubkey(event.author().to_hex())
     if not nwc_connection:
         error_response = create_nip47_error_response(
@@ -42,24 +76,10 @@ async def handle_nip47_event(event: Event) -> None:
                 code=ErrorCode.UNAUTHORIZED,
                 message="The public key for nwc connection is not recognized.",
             ),
+            use_nip44=is_nip44_encrypted,
         )
         await nostr_client.send_event(error_response)
         return
-
-    expiration = event.get_tag_content(TagKind.EXPIRATION())  # pyre-ignore[6]
-    if expiration and datetime.fromtimestamp(
-        float(expiration), timezone.utc
-    ) < datetime.now(timezone.utc):
-        logging.debug("Event ignored: expired at %s.", expiration)
-        return
-
-    content = json.loads(
-        nip04_decrypt(
-            secret_key=NostrConfig.instance().identity_keys.secret_key(),
-            public_key=event.author(),
-            encrypted_content=event.content(),
-        )
-    )
 
     method = Nip47RequestMethod(content["method"])
     if not nwc_connection.has_command_permission(method):
@@ -70,6 +90,7 @@ async def handle_nip47_event(event: Event) -> None:
                 code=ErrorCode.RESTRICTED,
                 message=f"No permission for request method {method.name}.",
             ),
+            use_nip44=is_nip44_encrypted,
         )
         await nostr_client.send_event(error_response)
         return
@@ -82,6 +103,7 @@ async def handle_nip47_event(event: Event) -> None:
                 code=ErrorCode.UNAUTHORIZED,
                 message="The nwc connection secret has expired.",
             ),
+            use_nip44=is_nip44_encrypted,
         )
         await nostr_client.send_event(error_response)
         return
@@ -152,12 +174,18 @@ async def handle_nip47_event(event: Event) -> None:
 
     if isinstance(response, Nip47Error):
         response_event = create_nip47_error_response(
-            event=event, method=method, error=response
+            event=event,
+            method=method,
+            error=response,
+            use_nip44=is_nip44_encrypted,
         )
     else:
         response = response.to_dict()
         response_event = create_nip47_response(
-            event=event, method=method, result=response
+            event=event,
+            method=method,
+            result=response,
+            use_nip44=is_nip44_encrypted,
         )
 
     output = await nostr_client.send_event(response_event)
