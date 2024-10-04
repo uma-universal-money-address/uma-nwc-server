@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 alembic = "*"
 aiohttp = "*"
+aiosqlite = "*"
 bolt11 = "*"
 greenlet = "*"
 gunicorn = "*"
@@ -25,7 +26,6 @@ quart-cors = "*"
 asyncpg = "*"
 
 [dev-packages]
-aiosqlite = "*"
 black = "*"
 pyre-check = "*"
 ruff = "*"
