@@ -98,9 +98,9 @@ class Harness:
 
     def validate_response_event(
         self,
-        response_event: Any,
+        response_event: Any,  # pyre-ignore[2]
         request_event_id: EventId,
-        expect_nip44: bool = True,  # pyre-ignore[2]
+        expect_nip44: bool = True,
     ) -> dict[str, Any]:
         assert isinstance(response_event, Event)
         assert response_event.verify()

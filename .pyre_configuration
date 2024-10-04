@@ -4,6 +4,6 @@
     "."
   ],
   "exclude": [
-    "nwc-frontend"
+    ".*\/node_modules\/.*"
   ]
 }
