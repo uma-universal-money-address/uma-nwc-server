@@ -2,5 +2,8 @@
   "site_package_search_strategy": "all",
   "source_directories": [
     "."
+  ],
+  "exclude": [
+    ".*\/node_modules\/.*"
   ]
 }
