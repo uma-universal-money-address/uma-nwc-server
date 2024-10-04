@@ -47,25 +47,20 @@ async def handle_nip47_event(event: Event) -> None:
         logging.debug("Event ignored: expired at %s.", expiration)
         return
 
-    # Try to decrypt the content with NIP44 first, then fallback to NIP04
-    is_nip44_encrypted = False
-    try:
-        content = json.loads(
-            nip44_decrypt(
-                secret_key=NostrConfig.instance().identity_keys.secret_key(),
-                public_key=event.author(),
-                payload=event.content(),
-            )
+    is_nip04_encrypted = "?iv=" in event.content()
+    content = json.loads(
+        nip04_decrypt(
+            secret_key=NostrConfig.instance().identity_keys.secret_key(),
+            public_key=event.author(),
+            encrypted_content=event.content(),
         )
-        is_nip44_encrypted = True
-    except Exception:
-        content = json.loads(
-            nip04_decrypt(
-                secret_key=NostrConfig.instance().identity_keys.secret_key(),
-                public_key=event.author(),
-                encrypted_content=event.content(),
-            )
+        if is_nip04_encrypted
+        else nip44_decrypt(
+            secret_key=NostrConfig.instance().identity_keys.secret_key(),
+            public_key=event.author(),
+            payload=event.content(),
         )
+    )
 
     nwc_connection = await NWCConnection.from_nostr_pubkey(event.author().to_hex())
     if not nwc_connection:
@@ -76,7 +71,7 @@ async def handle_nip47_event(event: Event) -> None:
                 code=ErrorCode.UNAUTHORIZED,
                 message="The public key for nwc connection is not recognized.",
             ),
-            use_nip44=is_nip44_encrypted,
+            use_nip44=not is_nip04_encrypted,
         )
         await nostr_client.send_event(error_response)
         return
@@ -90,7 +85,7 @@ async def handle_nip47_event(event: Event) -> None:
                 code=ErrorCode.RESTRICTED,
                 message=f"No permission for request method {method.name}.",
             ),
-            use_nip44=is_nip44_encrypted,
+            use_nip44=not is_nip04_encrypted,
         )
         await nostr_client.send_event(error_response)
         return
@@ -103,7 +98,7 @@ async def handle_nip47_event(event: Event) -> None:
                 code=ErrorCode.UNAUTHORIZED,
                 message="The nwc connection secret has expired.",
             ),
-            use_nip44=is_nip44_encrypted,
+            use_nip44=not is_nip04_encrypted,
         )
         await nostr_client.send_event(error_response)
         return
@@ -177,7 +172,7 @@ async def handle_nip47_event(event: Event) -> None:
             event=event,
             method=method,
             error=response,
-            use_nip44=is_nip44_encrypted,
+            use_nip44=not is_nip04_encrypted,
         )
     else:
         response = response.to_dict()
@@ -185,7 +180,7 @@ async def handle_nip47_event(event: Event) -> None:
             event=event,
             method=method,
             result=response,
-            use_nip44=is_nip44_encrypted,
+            use_nip44=not is_nip04_encrypted,
         )
 
     output = await nostr_client.send_event(response_event)

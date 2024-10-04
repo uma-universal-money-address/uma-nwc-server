@@ -17,7 +17,9 @@ from nostr_sdk import (
     Output,
     SendEventOutput,
     nip04_decrypt,
+    nip44_decrypt,
 )
+import pytest
 from quart.app import QuartClient
 from sqlalchemy.sql import select
 from uma_auth.models.error_response import ErrorCode as VaspErrorCode
@@ -51,6 +53,7 @@ class Harness:
         self,
         method: Nip47RequestMethod = Nip47RequestMethod.PAY_INVOICE,
         params: Optional[dict[str, Any]] = None,
+        use_nip44: bool = True,
     ) -> Event:
         if params is None:
             params = self.get_default_request_params()
@@ -65,7 +68,7 @@ class Harness:
                 ),
                 keys=self.client_app_keys,
             )
-            .encrypt_content(self.nwc_keys.public_key(), use_nip44=True)
+            .encrypt_content(self.nwc_keys.public_key(), use_nip44=use_nip44)
             .add_tag(["p", self.nwc_keys.public_key().to_hex()])
             .build()
         )
@@ -75,16 +78,29 @@ class Harness:
             "invoice": "lnbcrt1u1pjd4dnypp556q6aag8hf6rweejfdv8tp2v4034jdfvxj8p94rr2fwgvuy8xxxqsp5cqyc3alzjf3ua6up2jpvfu9xqa8rjk5txpeh3jhvcm2h8xprk8kqxqyz5vqnp4qga909cwg8hfr95yqftg6k7a99cm5f8xpzuven6680l0vancdhyjvcqzpgdqq9qyyssq2tcyjf6l4at69ljxnk8wcnx20s3qn2k356pn86qjah83ym3dhg4n48ukdmw79axgtd4fj6e9cezjyyca7m28q2flcj2wua0an5434dgppwa0mv"
         }
 
-    def _load_encrypted_content(self, encrypted_content: str) -> dict[str, Any]:
-        content = nip04_decrypt(
-            secret_key=self.nwc_keys.secret_key(),
-            public_key=self.client_app_keys.public_key(),
-            encrypted_content=encrypted_content,
+    def _load_encrypted_content(
+        self, encrypted_content: str, expect_nip44: bool
+    ) -> dict[str, Any]:
+        content = (
+            nip44_decrypt(
+                secret_key=self.nwc_keys.secret_key(),
+                public_key=self.client_app_keys.public_key(),
+                payload=encrypted_content,
+            )
+            if expect_nip44
+            else nip04_decrypt(
+                secret_key=self.nwc_keys.secret_key(),
+                public_key=self.client_app_keys.public_key(),
+                encrypted_content=encrypted_content,
+            )
         )
         return json.loads(content)
 
     def validate_response_event(
-        self, response_event: Any, request_event_id: EventId  # pyre-ignore[2]
+        self,
+        response_event: Any,
+        request_event_id: EventId,
+        expect_nip44: bool = True,  # pyre-ignore[2]
     ) -> dict[str, Any]:
         assert isinstance(response_event, Event)
         assert response_event.verify()
@@ -93,7 +109,7 @@ class Harness:
             KindEnum.WALLET_CONNECT_RESPONSE()  # pyre-ignore[6]
         )
         assert response_event.event_ids() == [request_event_id]
-        return self._load_encrypted_content(response_event.content())
+        return self._load_encrypted_content(response_event.content(), expect_nip44)
 
 
 @patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
@@ -159,9 +175,11 @@ async def test_failed__no_permission(
 
 
 @patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
+@pytest.mark.parametrize("use_nip44", [True, False])
 async def test_failed__invalid_input_params(
     mock_nostr_send: AsyncMock,
     test_client: QuartClient,
+    use_nip44: bool,
 ) -> None:
     mock_nostr_send.return_value = SendEventOutput(
         id=EventId.from_hex(token_hex()),
@@ -173,22 +191,26 @@ async def test_failed__invalid_input_params(
             granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
             keys=harness.client_app_keys,
         )
-        request_event = harness.create_request_event(params={})
+        request_event = harness.create_request_event(params={}, use_nip44=use_nip44)
         await handle_nip47_event(request_event)
 
         mock_nostr_send.assert_called_once()
         response_event = mock_nostr_send.call_args[0][0]
-        content = harness.validate_response_event(response_event, request_event.id())
+        content = harness.validate_response_event(
+            response_event, request_event.id(), use_nip44
+        )
         assert content["result_type"] == Nip47RequestMethod.PAY_INVOICE.value
         assert content["error"]["code"] == ErrorCode.OTHER.name
 
 
 @patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
 @patch.object(aiohttp.ClientSession, "post")
+@pytest.mark.parametrize("use_nip44", [True, False])
 async def test_succeeded(
     mock_vasp_pay_invoice: Mock,
     mock_nostr_send: AsyncMock,
     test_client: QuartClient,
+    use_nip44: bool,
 ) -> None:
     vasp_response = {
         "preimage": "b6f1086f61561bacf2f05fa02ab30a06c3432c1aea62817c019ea33c1730eeb3",
@@ -210,12 +232,14 @@ async def test_succeeded(
             granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
             keys=harness.client_app_keys,
         )
-        request_event = harness.create_request_event()
+        request_event = harness.create_request_event(use_nip44=use_nip44)
         await handle_nip47_event(request_event)
 
         mock_nostr_send.assert_called_once()
         response_event = mock_nostr_send.call_args[0][0]
-        content = harness.validate_response_event(response_event, request_event.id())
+        content = harness.validate_response_event(
+            response_event, request_event.id(), use_nip44
+        )
         assert content["result_type"] == Nip47RequestMethod.PAY_INVOICE.value
         assert content["result"] == vasp_response
 
@@ -236,10 +260,12 @@ async def test_succeeded(
 
 @patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
 @patch.object(aiohttp.ClientSession, "post")
+@pytest.mark.parametrize("use_nip44", [True, False])
 async def test_failed__vasp_error_response(
     mock_vasp_pay_invoice: Mock,
     mock_nostr_send: AsyncMock,
     test_client: QuartClient,
+    use_nip44: bool,
 ) -> None:
     vasp_response = VaspErrorResponse.from_dict(
         {
@@ -263,12 +289,14 @@ async def test_failed__vasp_error_response(
             granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
             keys=harness.client_app_keys,
         )
-        request_event = harness.create_request_event()
+        request_event = harness.create_request_event(use_nip44=use_nip44)
         await handle_nip47_event(request_event)
 
         mock_nostr_send.assert_called_once()
         response_event = mock_nostr_send.call_args[0][0]
-        content = harness.validate_response_event(response_event, request_event.id())
+        content = harness.validate_response_event(
+            response_event, request_event.id(), use_nip44
+        )
         assert content["error"]["code"] == vasp_response.code.value
         assert content["error"]["message"] == vasp_response.message
 

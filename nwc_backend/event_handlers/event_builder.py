@@ -5,7 +5,17 @@ from datetime import datetime, timezone
 from hashlib import sha256
 from typing import Any, Optional
 
-from nostr_sdk import Event, Keys, Kind, KindEnum, Nip47Error, PublicKey, nip04_encrypt
+from nostr_sdk import (
+    Event,
+    Keys,
+    Kind,
+    KindEnum,
+    Nip44Version,
+    Nip47Error,
+    PublicKey,
+    nip04_encrypt,
+    nip44_encrypt,
+)
 
 from nwc_backend.exceptions import EventBuilderException
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
@@ -33,10 +43,19 @@ class EventBuilder:
         if self.content_encrypted:
             raise EventBuilderException("Content has already been encrypted.")
 
-        self.content = nip04_encrypt(
-            secret_key=self.keys.secret_key(),
-            public_key=recipient_pubkey,
-            content=self.content,
+        self.content = (
+            nip44_encrypt(
+                secret_key=self.keys.secret_key(),
+                public_key=recipient_pubkey,
+                content=self.content,
+                version=Nip44Version.V2,
+            )
+            if use_nip44
+            else nip04_encrypt(
+                secret_key=self.keys.secret_key(),
+                public_key=recipient_pubkey,
+                content=self.content,
+            )
         )
         self.content_encrypted = True
         return self
