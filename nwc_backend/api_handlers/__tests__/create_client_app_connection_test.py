@@ -124,6 +124,9 @@ async def test_create_client_app_connection_success(
         "limitFrequency": budget_frequency.value,
         "expiration": "2025-01-01T00:00:00Z",
         "name": "Test Connection",
+        "clientId": client_id,
+        "codeChallenge": code_challenge,
+        "redirectUri": redirect_uri,
     }
     long_lived_token = token_hex()
     with patch.object(requests, "post") as mock_token_exchange_post, patch.object(

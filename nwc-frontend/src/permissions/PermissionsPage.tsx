@@ -31,14 +31,18 @@ async function initConnection({
   currencyCode,
   redirectUri,
   expiration,
+  clientState,
+  codeChallenge,
 }: {
   appInfo: AppInfo;
   connectionSettings: ConnectionSettings;
   currencyCode: string;
   redirectUri: string;
+  codeChallenge: string;
   expiration: string | undefined;
+  clientState: string | undefined;
 }) {
-  const { code, state, error } = await initializeConnection({
+  const { code, error } = await initializeConnection({
     clientId: appInfo.clientId,
     name: appInfo.name,
     currencyCode,
@@ -49,14 +53,25 @@ async function initConnection({
     limitFrequency: connectionSettings.limitFrequency,
     limitEnabled: connectionSettings.limitEnabled,
     expiration,
+    redirectUri,
+    clientState,
+    codeChallenge,
   });
   if (error) {
     // TODO: Show an error toast.
     console.error(error);
     return;
   }
-  console.log(`Redirecting to ${redirectUri}?code=${code}&state=${state}`);
-  window.location.href = `${redirectUri}?code=${code}&state=${state}`;
+  if (!code) {
+    // TODO: Show an error toast.
+    console.error(`Missing code in connection response: code - ${code}`);
+    return;
+  }
+  const fullRedirectUri =
+    `${redirectUri}?code=${code}` +
+    (clientState !== undefined && `&state=${clientState}`);
+  console.log(`Redirecting to ${fullRedirectUri}`);
+  window.location.href = fullRedirectUri;
 }
 
 export const PermissionsPage = () => {
@@ -108,6 +123,8 @@ export const PermissionsPage = () => {
         connectionSettings,
         currencyCode: currency?.code ?? "SAT",
         redirectUri: loaderData.oauthParams.redirectUri,
+        clientState: loaderData.oauthParams.state,
+        codeChallenge: loaderData.oauthParams.codeChallenge,
         expiration,
       });
     } else {

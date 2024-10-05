@@ -91,6 +91,8 @@ export const permissionsPageDataFromUrl = (async ({ request }) => {
   const oauthParams = {
     clientId: params.get("client_id"),
     redirectUri: params.get("redirect_uri"),
+    state: params.get("state"),
+    codeChallenge: params.get("code_challenge"),
   };
   const nwcParams = {
     requiredCommands: params.get("required_commands") || "",
@@ -99,7 +101,11 @@ export const permissionsPageDataFromUrl = (async ({ request }) => {
     expirationPeriod: params.get("expiration_period") || undefined,
   };
 
-  if (!oauthParams.clientId || !oauthParams.redirectUri) {
+  if (
+    !oauthParams.clientId ||
+    !oauthParams.redirectUri ||
+    !oauthParams.codeChallenge
+  ) {
     throw new Response("Invalid OAuth parameters", { status: 400 });
   }
 
