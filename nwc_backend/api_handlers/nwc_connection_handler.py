@@ -7,11 +7,12 @@ from uuid import uuid4
 
 import requests
 from nostr_sdk import Keys
-from quart import Response, current_app, request, session
+from quart import Response, current_app, request
 from sqlalchemy.sql import func, select
 
 from nwc_backend.db import db
 from nwc_backend.exceptions import InvalidApiParamsException
+from nwc_backend.models.client_app import ClientApp
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.models.outgoing_payment import OutgoingPayment, PaymentStatus
 from nwc_backend.models.permissions_grouping import (
@@ -72,12 +73,17 @@ async def create_manual_connection() -> Response:
 
 async def create_client_app_connection() -> Response:
     auth_state = require_auth(request)
+    request_data = await request.get_json()
+    client_id = request_data["clientId"]
+    client_app = await ClientApp.from_client_id(client_id)
+    if not client_app:
+        return Response("Client app not found", status=404)
     nwc_connection = NWCConnection(
         id=uuid4(),
         user_id=auth_state.user.id,
-        client_app_id=session["client_app_id"],
-        redirect_uri=session["redirect_uri"],
-        code_challenge=session["code_challenge"],
+        client_app_id=client_app.id,
+        redirect_uri=request_data["redirectUri"],
+        code_challenge=request_data["codeChallenge"],
     )
     try:
         await _initialize_connection_data(
@@ -94,14 +100,7 @@ async def create_client_app_connection() -> Response:
     db.session.add(nwc_connection)
     await db.session.commit()
 
-    return Response(
-        json.dumps(
-            {
-                "code": auth_code,
-                "state": session["client_state"],
-            }
-        )
-    )
+    return Response(json.dumps({"code": auth_code}))
 
 
 async def _initialize_connection_data(

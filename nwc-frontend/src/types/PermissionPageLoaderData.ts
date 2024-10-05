@@ -12,6 +12,8 @@ interface LoaderDataFromUrl extends LoaderDataBase {
   oauthParams: {
     clientId: string;
     redirectUri: string;
+    codeChallenge: string;
+    state?: string | undefined;
   };
 }
 

@@ -8,7 +8,7 @@ from urllib.parse import unquote, urlencode
 from uuid import uuid4
 
 from aioauth.utils import create_s256_code_challenge
-from quart import Response, current_app, redirect, request, session
+from quart import Response, current_app, redirect, request
 from quart_cors import route_cors
 from werkzeug import Response as WerkzeugResponse
 
@@ -92,7 +92,6 @@ async def _handle_client_app_oauth_request() -> Response | WerkzeugResponse:
         )
         db.session.add(client_app)
     await db.session.commit()
-    session["client_app_id"] = client_app.id
 
     uma_vasp_login_url = current_app.config["UMA_VASP_LOGIN_URL"]
     # redirect back to the same url with the short lived jwt added
@@ -152,10 +151,6 @@ async def _handle_vasp_oauth_callback(
         db.session.add(user)
         await db.session.commit()
 
-    session["redirect_uri"] = request.args["redirect_uri"]
-    session["client_state"] = request.args.get("state")
-    session["code_challenge"] = request.args["code_challenge"]
-
     # REMOVE ALWAYS_GRANTED PermissionsGroup from lists if it exists since we won't be sending them to the frontend
     required_permissions_groups.discard(PermissionsGroup.ALWAYS_GRANTED)
     optional_permissions_groups.discard(PermissionsGroup.ALWAYS_GRANTED)
@@ -168,6 +163,8 @@ async def _handle_vasp_oauth_callback(
         "token": short_lived_vasp_token,
         "uma_address": vasp_jwt.uma_address,
         "redirect_uri": request.args["redirect_uri"],
+        "state": request.args.get("state"),
+        "code_challenge": request.args["code_challenge"],
         "expiry": vasp_jwt.expiry,
     }
     if "budget" in request.args:

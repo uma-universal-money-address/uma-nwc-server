@@ -55,6 +55,9 @@ export interface InitialConnection {
   limitFrequency?: LimitFrequency;
   expiration?: string | undefined;
   clientId?: string | undefined;
+  redirectUri?: string | undefined;
+  clientState?: string | undefined;
+  codeChallenge?: string | undefined;
 }
 
 export interface RawConnection {
