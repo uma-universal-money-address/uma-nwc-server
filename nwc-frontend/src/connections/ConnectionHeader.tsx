@@ -93,7 +93,7 @@ export const ConnectionHeader = ({
         submitText="Confirm"
         cancelText="Cancel"
         title={`Disconnect ${connection.name}?`}
-        description="Disconnecting WhatsApp will revoke its permissions and stop  WhatsApp from sending money to and from your UMA."
+        description={`Disconnecting ${appInfo?.name ?? "this application"} will revoke its permissions and stop ${appInfo?.name ?? "it"} from sending money to and from your UMA.`}
       ></Modal>
     </Container>
   );
