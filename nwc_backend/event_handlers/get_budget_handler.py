@@ -2,6 +2,7 @@
 
 from nwc_backend.models.nip47_budget import Nip47BudgetCurrency, Nip47BudgetResponse
 from nwc_backend.models.nip47_request import Nip47Request
+from nwc_backend.models.spending_limit_frequency import SpendingLimitFrequency
 from nwc_backend.vasp_client import VaspUmaClient
 
 
@@ -18,6 +19,11 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
     current_cycle_renews_at = (
         round(current_cycle_end_time.timestamp()) if current_cycle_end_time else None
     )
+    renewal_period = (
+        "never"
+        if current_spending_limit.frequency == SpendingLimitFrequency.NONE
+        else current_spending_limit.frequency.value
+    )
     if budget_currency.code == "SAT":
         used_budget_sats = (
             current_spending_limit.amount - current_cycle_remaining_amount
@@ -26,7 +32,7 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
             total_budget=current_spending_limit.amount * 1000,
             used_budget=used_budget_sats * 1000,
             renews_at=current_cycle_renews_at,
-            renewal_period=current_spending_limit.frequency.value,
+            renewal_period=renewal_period,
         )
 
     budget_estimate_response = await VaspUmaClient.instance().get_budget_estimate(
@@ -56,5 +62,5 @@ async def get_budget(access_token: str, request: Nip47Request) -> Nip47BudgetRes
         total_budget=total_budget_sats * 1000,
         used_budget=used_budget_sats * 1000,
         renews_at=current_cycle_renews_at,
-        renewal_period=current_spending_limit.frequency.value,
+        renewal_period=renewal_period,
     )

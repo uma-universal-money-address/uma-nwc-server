@@ -49,7 +49,10 @@ class SpendingLimit(ModelBase):
         from nwc_backend.models.nwc_connection import NWCConnection
 
         nwc_connection = await db.session.get_one(NWCConnection, self.nwc_connection_id)
-        return f"{self.amount}.{nwc_connection.budget_currency.code}/{self.frequency.value}"
+        budget = f"{self.amount}.{nwc_connection.budget_currency.code}"
+        if self.frequency != SpendingLimitFrequency.NONE:
+            budget = f"{budget}/{self.frequency.value}"
+        return budget
 
     def create_spending_cycle(self, start_time: datetime) -> SpendingCycle:
         assert start_time >= self.start_time
