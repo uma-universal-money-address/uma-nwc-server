@@ -37,6 +37,7 @@ from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.models.nwc_connection import NWCConnection
 from nwc_backend.nostr.nostr_client import nostr_client
 from nwc_backend.nostr.nostr_config import NostrConfig
+from nwc_backend.nostr.versions import ParsedVersion, is_version_supported
 
 
 async def handle_nip47_event(event: Event) -> None:
@@ -77,6 +78,22 @@ async def handle_nip47_event(event: Event) -> None:
         return
 
     method = Nip47RequestMethod(content["method"])
+
+    try:
+        _check_version(event)
+    except Nip47RequestException as ex:
+        error_response = create_nip47_error_response(
+            event=event,
+            method=method,
+            error=Nip47Error(
+                code=ex.error_code,
+                message=ex.error_message,
+            ),
+            use_nip44=not is_nip04_encrypted,
+        )
+        await nostr_client.send_event(error_response)
+        return
+
     if not nwc_connection.has_command_permission(method):
         error_response = create_nip47_error_response(
             event=event,
@@ -187,3 +204,33 @@ async def handle_nip47_event(event: Event) -> None:
     await nip47_request.update_response_and_save(
         response_event_id=output.id.to_hex(), response=response
     )
+
+
+def _check_version(event: Event) -> ParsedVersion:
+    is_nip04_encrypted = "?iv=" in event.content()
+    selected_version = ParsedVersion(0, 0)
+    version_tag = next((tag for tag in event.tags() if tag.as_vec()[0] == "v"), None)
+    if version_tag:
+        selected_version_str = version_tag.content() or "0.0"
+        try:
+            selected_version = ParsedVersion.load(selected_version_str)
+        except ValueError:
+            raise Nip47RequestException(
+                error_code=ErrorCode.OTHER,
+                error_message=f"Invalid version {selected_version_str}.",
+            )
+
+        if not is_version_supported(selected_version):
+            raise Nip47RequestException(
+                # TODO: Use ErrorCode.VERSION_NOT_SUPPORTED when added.
+                error_code=ErrorCode.NOT_IMPLEMENTED,
+                error_message=f"Unsupported version {selected_version}.",
+            )
+
+    if selected_version.major > 0 and is_nip04_encrypted:
+        raise Nip47RequestException(
+            error_code=ErrorCode.OTHER,
+            error_message="NIP04 encryption is not supported for version > 0. Please use NIP44.",
+        )
+
+    return selected_version
