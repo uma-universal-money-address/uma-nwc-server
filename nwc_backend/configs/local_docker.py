@@ -34,3 +34,8 @@ VASP_SUPPORTED_COMMANDS = [
     "execute_quote",
     "pay_to_address",
 ]
+
+# NIP-68 client app authorities which can verify app identity events.
+CLIENT_APP_AUTHORITIES = [
+    # "nprofile1qqstse98yvaykl3k2yez3732tmsc9vaq8c3uhex0s4qp4dl8fczmp9spp4mhxue69uhkummn9ekx7mq26saje" # Lightspark at nos.lol
+]
