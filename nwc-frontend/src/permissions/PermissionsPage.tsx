@@ -207,7 +207,8 @@ export const PermissionsPage = () => {
                 {appInfo && (
                   <>
                     <Title content={appInfo.name} />
-                    {appInfo.verified && (
+                    {appInfo.nip05Verified && (
+                      // TODO: Add NIP-68 verification status
                       <VerifiedBadge>
                         <Icon name="NonagonCheckmark" width={20} />
                       </VerifiedBadge>

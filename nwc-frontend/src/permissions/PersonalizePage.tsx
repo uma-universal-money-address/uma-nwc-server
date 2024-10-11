@@ -119,7 +119,8 @@ export const PersonalizePage = ({
                 {appInfo && (
                   <>
                     <Title content={appInfo.name} />
-                    {appInfo.verified && (
+                    {appInfo.nip05Verified && (
+                      // TODO: Add NIP-68 verification status
                       <VerifiedBadge>
                         <Icon name="CheckmarkCircleTier3" width={20} />
                       </VerifiedBadge>

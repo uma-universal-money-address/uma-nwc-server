@@ -8,7 +8,8 @@ export const fetchAppInfo = async (clientId: string) => {
   return {
     clientId: appInfo.clientId,
     name: appInfo.name,
-    verified: appInfo.verified === "VERIFIED",
+    nip05Verified: appInfo.nip05Verification == "VERIFIED",
+    nip68Verification: appInfo.nip68Verification,
     domain: appInfo.domain,
     avatar: appInfo.avatar,
   };
