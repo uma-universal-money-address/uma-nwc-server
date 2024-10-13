@@ -30,3 +30,7 @@ VASP_SUPPORTED_COMMANDS = [
     "execute_quote",
     "pay_to_address",
 ]
+
+CLIENT_APP_AUTHORITIES = [
+    "nprofile1qqstg4syz8qyk9xeyp5j7haaw9nz67a6wzt80tmu5vn5g4ckpxlagvqpp4mhxue69uhkummn9ekx7mqnegwyj"  # Fake authority at nos.lol
+]
