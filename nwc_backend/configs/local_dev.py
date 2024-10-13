@@ -2,6 +2,7 @@
 
 import os
 import secrets
+from typing import List
 
 # DATABASE_URI: str = "postgresql+asyncpg://:@127.0.0.1:5432/nwc"
 DATABASE_URI: str = "sqlite+aiosqlite:///" + os.path.join(
@@ -37,6 +38,6 @@ VASP_SUPPORTED_COMMANDS = [
 ]
 
 # NIP-68 client app authorities which can verify app identity events.
-CLIENT_APP_AUTHORITIES = [
+CLIENT_APP_AUTHORITIES: List[str] = [
     # "nprofile1qqstse98yvaykl3k2yez3732tmsc9vaq8c3uhex0s4qp4dl8fczmp9spp4mhxue69uhkummn9ekx7mq26saje" # Lightspark at nos.lol
 ]

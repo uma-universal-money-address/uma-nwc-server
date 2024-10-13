@@ -4,11 +4,9 @@ export interface AppInfo {
   nip05Verified: boolean;
   domain: string;
   avatar: string;
-  nip68Verification?:
-    | {
-        status: string;
-        authorityName: string;
-        authorityPubKey: string;
-      }
-    | null;
+  nip68Verification?: {
+    status: string;
+    authorityName: string;
+    authorityPubKey: string;
+  } | null;
 }

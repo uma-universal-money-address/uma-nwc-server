@@ -15,7 +15,7 @@ async def get_client_app() -> Response:
     client_app_info = await look_up_client_app_identity(client_id)
     if not client_app_info:
         return Response("Client app not found", status=404)
-    
+
     nip68_verification_json = None
     if client_app_info.app_authority_verification:
         nip68_verification_json = {

@@ -72,6 +72,7 @@ async def test_only_kind0(
 
     assert identity is not None
     assert identity.name == "Blue Drink"
+    assert identity.nip05 is not None
     assert identity.nip05.verification_status == Nip05VerificationStatus.VERIFIED
     assert identity.image_url == "https://bluedrink.com/image.png"
 
@@ -110,6 +111,7 @@ async def test_only_kind13195_no_label(
 
     assert identity is not None
     assert identity.name == "Green Drink"
+    assert identity.nip05 is not None
     assert identity.nip05.verification_status == Nip05VerificationStatus.VERIFIED
     assert identity.image_url == "https://greendrink.com/image.png"
     assert identity.allowed_redirect_urls == ["https://greendrink.com/callback"]
@@ -137,9 +139,10 @@ async def test_only_kind13195_with_label(
     ).to_event(Keys.parse(CLIENT_PRIVKEY))
 
     async def on_get_events(filters: List[Filter], source: EventSource):
-        if Kind(13195) in filters[0].as_record().kinds:
+        filter_kinds = filters[0].as_record().kinds or []
+        if Kind(13195) in filter_kinds:
             return [id_event]
-        if Kind.from_enum(KindEnum.LABEL()) in filters[0].as_record().kinds:
+        if Kind.from_enum(KindEnum.LABEL()) in filter_kinds:  # pyre-ignore[6]
             return [
                 EventBuilder.label("nip68.client_app", ["verified", "nip68.client_app"])
                 .add_tags([Tag.event(id_event.id())])
@@ -161,18 +164,15 @@ async def test_only_kind13195_with_label(
 
     assert identity is not None
     assert identity.name == "Green Drink"
+    assert identity.nip05 is not None
     assert identity.nip05.verification_status == Nip05VerificationStatus.VERIFIED
     assert identity.image_url == "https://greendrink.com/image.png"
     assert identity.allowed_redirect_urls == ["https://greendrink.com/callback"]
-    assert identity.app_authority_verification is not None
-    assert identity.app_authority_verification.authority_name == "Important Authority"
-    assert (
-        identity.app_authority_verification.authority_pubkey
-        == Keys.parse(AUTHORITY_PRIVKEY).public_key().to_hex()
-    )
-    assert (
-        identity.app_authority_verification.status == Nip68VerificationStatus.VERIFIED
-    )
+    nip68 = identity.app_authority_verification
+    assert nip68 is not None
+    assert nip68.authority_name == "Important Authority"
+    assert nip68.authority_pubkey == Keys.parse(AUTHORITY_PRIVKEY).public_key().to_hex()
+    assert nip68.status == Nip68VerificationStatus.VERIFIED
 
 
 @patch.object(Nip05, "verify", new_callable=AsyncMock)
@@ -196,9 +196,10 @@ async def test_kind13195_with_revoked_label(
     ).to_event(Keys.parse(CLIENT_PRIVKEY))
 
     async def on_get_events(filters: List[Filter], source: EventSource):
-        if Kind(13195) in filters[0].as_record().kinds:
+        filter_kinds = filters[0].as_record().kinds or []
+        if Kind(13195) in filter_kinds:
             return [id_event]
-        if Kind.from_enum(KindEnum.LABEL()) in filters[0].as_record().kinds:
+        if Kind.from_enum(KindEnum.LABEL()) in filter_kinds:  # pyre-ignore[6]
             return [
                 EventBuilder.label("nip68.client_app", ["revoked", "nip68.client_app"])
                 .add_tags([Tag.event(id_event.id())])
@@ -220,13 +221,12 @@ async def test_kind13195_with_revoked_label(
 
     assert identity is not None
     assert identity.name == "Yellow Drink"
+    assert identity.nip05 is not None
     assert identity.nip05.verification_status == Nip05VerificationStatus.VERIFIED
     assert identity.image_url == "https://yellowdrink.com/image.png"
     assert identity.allowed_redirect_urls == ["https://yellowdrink.com/callback"]
-    assert identity.app_authority_verification is not None
-    assert identity.app_authority_verification.authority_name == "Important Authority"
-    assert (
-        identity.app_authority_verification.authority_pubkey
-        == Keys.parse(AUTHORITY_PRIVKEY).public_key().to_hex()
-    )
-    assert identity.app_authority_verification.status == Nip68VerificationStatus.REVOKED
+    nip68 = identity.app_authority_verification
+    assert nip68 is not None
+    assert nip68.authority_name == "Important Authority"
+    assert nip68.authority_pubkey == Keys.parse(AUTHORITY_PRIVKEY).public_key().to_hex()
+    assert nip68.status == Nip68VerificationStatus.REVOKED

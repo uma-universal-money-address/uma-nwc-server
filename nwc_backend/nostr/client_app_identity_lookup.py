@@ -288,7 +288,7 @@ async def _check_app_authorities(
         if event.kind().as_enum() == KindEnum.LABEL()
     ]
 
-    metadata_events_by_pubkey = {
+    metadata_events_by_pubkey: dict[str, Event] = {
         event.author().to_hex(): event
         for event in verification_and_metadata_events
         if event.kind().as_enum() == KindEnum.METADATA()
@@ -308,6 +308,7 @@ async def _check_app_authorities(
     # If any verifications were revoked, prioritize that status above all others.
     for event in verification_events:
         status = event.get_tag_content(
+            # pyre-ignore[6]
             TagKind.SINGLE_LETTER(SingleLetterTag.lowercase(Alphabet.L))
         )
         if status and status.lower() == "revoked":
@@ -315,12 +316,13 @@ async def _check_app_authorities(
                 status=Nip68VerificationStatus.REVOKED,
                 authority_pubkey=event.author().to_hex(),
                 authority_name=authority_name_for_pubkey(event.author().to_hex()),
-                revoked_at=event.created_at(),
+                revoked_at=event.created_at().as_secs(),
             )
 
     # If any verifications were confirmed, return the first one.
     for event in verification_events:
         status = event.get_tag_content(
+            # pyre-ignore[6]
             TagKind.SINGLE_LETTER(SingleLetterTag.lowercase(Alphabet.L))
         )
         if status and status.lower() == "verified":
