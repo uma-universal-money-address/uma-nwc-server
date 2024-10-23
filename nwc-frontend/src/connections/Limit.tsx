@@ -102,13 +102,13 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  gap: ${Spacing.md};
+  gap: ${Spacing.px.md};
 `;
 
 const Row = styled.div`
   display: flex;
   flex-direction: row;
-  gap: ${Spacing["3xs"]};
+  gap: ${Spacing.px["3xs"]};
   width: 100%;
   align-items: center;
   justify-content: space-between;
@@ -116,12 +116,13 @@ const Row = styled.div`
 
 const RenewsIn = styled.span`
   font-size: 16px;
-  font-weight: 400;
+  font-weight: 500;
+  line-height: 24px; /* 150% */
 `;
 
 const LimitValue = styled.span`
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 24px;
 `;
 
@@ -143,7 +144,7 @@ const Amounts = styled.div`
   flex-direction: row;
   justify-content: space-between;
   width: 50%;
-  gap: ${Spacing["3xs"]};
+  gap: ${Spacing.px["3xs"]};
   font-size: 16px;
   font-weight: 400;
   line-height: 24px;

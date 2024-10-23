@@ -1,8 +1,11 @@
 import styled from "@emotion/styled";
-import { Icon, type IconName, Modal } from "@lightsparkdev/ui/components";
+import { Button, Icon, type IconName } from "@lightsparkdev/ui/components";
 import { Body } from "@lightsparkdev/ui/components/typography/Body";
-import { Label } from "@lightsparkdev/ui/components/typography/Label";
+import { Headline } from "@lightsparkdev/ui/components/typography/Headline";
+import { Overline } from "@lightsparkdev/ui/components/typography/Overline";
+import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
+import { NwcModal } from "src/components/NwcModal";
 
 interface Props {
   visible: boolean;
@@ -24,9 +27,9 @@ const Step = ({
     <StepContainer>
       <Icon name={icon} width={24} />
       <TextContainer>
-        <Label content={`STEP ${number}`} color="gray40" />
-        <Label size="Large" content={title} />
-        <Body content={description} />
+        <Overline content={`STEP ${number}`} color="grayBlue43" />
+        <Title content={title} />
+        <Body size="Large" content={description} />
       </TextContainer>
     </StepContainer>
   );
@@ -36,23 +39,22 @@ export const ManualConnectionHowItWorksModal = ({
   visible,
   onClose,
 }: Props) => {
+  const buttons = (
+    <Button text="Got it" kind="primary" onClick={onClose} paddingY="short" />
+  );
+
   return (
-    <Modal
-      smKind="drawer"
-      visible={visible}
-      cancelHidden
-      submitText="Got it"
-      onClose={onClose}
-      onCancel={onClose}
-      onSubmit={onClose}
-      title="How to manually create a new UMA connection"
-    >
+    <NwcModal visible={visible} onClose={onClose} buttons={buttons} width={480}>
       <Steps>
+        <Headline
+          size="Small"
+          content="How to manually create a new UMA connection"
+        />
         <Step
           number={1}
           title="Set permissions"
           description="Choose what the NWC-compatible third-party app or service can do with your UMA"
-          icon="Checkmark"
+          icon="Pencil"
         />
         <Step
           number={2}
@@ -61,15 +63,14 @@ export const ManualConnectionHowItWorksModal = ({
           icon="QRCodeIcon"
         />
       </Steps>
-    </Modal>
+    </NwcModal>
   );
 };
 
 const Steps = styled.section`
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding-top: ${Spacing.xl};
+  gap: ${Spacing.px["xl"]};
 `;
 
 const StepContainer = styled.div`

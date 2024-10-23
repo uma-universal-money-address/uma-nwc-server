@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import { Button } from "@lightsparkdev/ui/components";
 import { Body } from "@lightsparkdev/ui/components/typography/Body";
-import { Title } from "@lightsparkdev/ui/components/typography/Title";
+import { Headline } from "@lightsparkdev/ui/components/typography/Headline";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
@@ -40,15 +40,19 @@ function App() {
     <Main>
       <Section>
         <Intro>
-          <Title size="Large" content="Manage your UMA connections" />
+          <Headline size="Large" content="Manage your UMA connections" />
           <Description>
-            <Body content="Review permissions, edit spending limits, and view transactions for the third-party apps and services connected to your UMA. " />
+            <Body
+              size="Large"
+              content="Review permissions, edit spending limits, and view transactions for the third-party apps and services connected to your UMA. "
+              color="grayBlue57"
+            />
             <Button
               text="Learn more"
               kind="ghost"
               onClick={handleLearnMore}
               typography={{ type: "Body", color: "blue39" }}
-              size="Medium"
+              size="Large"
             />
           </Description>
         </Intro>
@@ -64,20 +68,26 @@ function App() {
           )}
           {error ? <div>{`Error loading connections: ${error}`}</div> : null}
         </Content>
+        {activeOrPendingConnections?.length ? (
+          <Button
+            icon={{ name: "Plus" }}
+            text="Manual connection"
+            kind="primary"
+            onClick={() => navigate("/connection/new")}
+          />
+        ) : null}
       </Section>
-      <Button
-        icon="Plus"
-        text="Manual connection"
-        kind="primary"
-        onClick={() => navigate("/connection/new")}
-      />
 
       {isLoadingConnections || !archivedConnections?.length ? null : (
         <Section>
           <Intro>
-            <Title size="Large" content="Archived connections" />
+            <Headline size="Small" content="Archived connections" />
             <Description>
-              <Body content="You can still review past transactions on connections" />
+              <Body
+                size="Large"
+                content="You can still review past transactions on connections"
+                color="grayBlue57"
+              />
             </Description>
           </Intro>
           <Content>
@@ -100,19 +110,19 @@ const Main = styled.main`
   flex-direction: column;
   height: 100%;
   width: 100%;
-  gap: ${Spacing["2xl"]};
+  gap: ${Spacing.px["5xl"]};
 `;
 
 const Intro = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.sm};
+  gap: ${Spacing.px.sm};
 `;
 
 const Description = styled.div``;
 
 const Content = styled.div`
-  padding: ${Spacing["3xl"]} ${Spacing.xl};
+  padding: ${Spacing.px["3xl"]} ${Spacing.px.xl};
   width: 100%;
   height: 100%;
   display: flex;
@@ -120,15 +130,15 @@ const Content = styled.div`
   gap: 32px;
 
   background: ${colors.white};
-  padding: ${Spacing.md} ${Spacing["2xl"]};
+  padding: ${Spacing.px.md} ${Spacing.px["2xl"]};
   border-radius: 24px;
 `;
 
 const Section = styled.section`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.xs};
-  margin-top: ${Spacing["xl"]};
+  gap: ${Spacing.px.xl};
+  margin-top: ${Spacing.px.xl};
 `;
 
 export default App;

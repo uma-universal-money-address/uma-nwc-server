@@ -32,7 +32,7 @@ const hydrateTransactions = (
       id: rawTransaction.id,
       budgetAmountInLowestDenom: rawTransaction.budget_currency_amount,
       sendingAmountInLowestDenom: rawTransaction.sending_currency_amount,
-      createdAt: formatTimestamp(rawTransaction.created_at),
+      createdAt: formatTimestamp(rawTransaction.created_at, { showTime: true }),
     };
   });
 };

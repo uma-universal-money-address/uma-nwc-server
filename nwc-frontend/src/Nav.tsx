@@ -37,23 +37,23 @@ const NavContainer = styled.section`
   justify-content: space-between;
   width: 100%;
   align-items: center;
-  padding: ${Spacing.md} ${Spacing.xl};
+  padding: ${Spacing.px.md} ${Spacing.px.xl};
   border-bottom: 1px solid #dedfe4;
-  gap: ${Spacing.md};
+  gap: ${Spacing.px.md};
 `;
 
 const NavLeftSide = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: ${Spacing.sm};
+  gap: ${Spacing.px.sm};
 `;
 
 const NavRightSide = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: ${Spacing.xl};
+  gap: ${Spacing.px.xl};
 `;
 
 const LogOutButton = styled(UnstyledButton)`

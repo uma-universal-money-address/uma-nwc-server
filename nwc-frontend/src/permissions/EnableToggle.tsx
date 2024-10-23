@@ -27,7 +27,7 @@ const Container = styled.div`
   gap: 4px;
   width: 100%;
   height: 56px;
-  padding: ${Spacing.sm} ${Spacing.md};
+  padding: ${Spacing.px.sm} ${Spacing.px.md};
   border-radius: 8px;
   background: ${colors.gray95};
 `;

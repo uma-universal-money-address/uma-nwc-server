@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import { Button, Icon } from "@lightsparkdev/ui/components";
-import { Label } from "@lightsparkdev/ui/components/typography/Label";
+import { Body } from "@lightsparkdev/ui/components/typography/Body";
+import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { useState } from "react";
@@ -53,6 +54,8 @@ export const PersonalizePage = ({
     useState<ConnectionSettings>(connectionSettings);
   const auth = getAuth();
   const currency = auth.getCurrency();
+
+  const isExistingConnection = !!connection;
 
   const handleEditLimit = () => {
     setIsEditLimitVisible(true);
@@ -115,7 +118,7 @@ export const PersonalizePage = ({
               <AppName>
                 {appInfo && (
                   <>
-                    {appInfo.name}
+                    <Title content={appInfo.name} />
                     {appInfo.verified && (
                       <VerifiedBadge>
                         <Icon name="CheckmarkCircleTier3" width={20} />
@@ -125,11 +128,11 @@ export const PersonalizePage = ({
                 )}
                 {connection && <>{connection.name}</>}
               </AppName>
-              {appInfo && <AppDomain>{appInfo.domain}</AppDomain>}
+              {appInfo && <Body size="Large" content={appInfo.domain} />}
             </AppDetails>
           </AppSection>
           <Permissions>
-            <Label size="Large" content="Would like to" />
+            <Title content="Would like to" />
             {permissionsEditable ? (
               <PermissionsEditableList
                 permissionStates={internalConnectionSettings.permissionStates}
@@ -145,20 +148,24 @@ export const PersonalizePage = ({
           </Permissions>
         </PermissionsDescription>
         <Limit onClick={handleEditLimit}>
-          <LimitDescription>
-            {internalConnectionSettings.limitEnabled
-              ? `${formatConnectionString({ currency, limitFrequency: internalConnectionSettings.limitFrequency, amountInLowestDenom: internalConnectionSettings.amountInLowestDenom })} spending limit`
-              : "No spending limit"}
-          </LimitDescription>
+          <Title
+            content={
+              internalConnectionSettings.limitEnabled
+                ? `${formatConnectionString({ currency, limitFrequency: internalConnectionSettings.limitFrequency, amountInLowestDenom: internalConnectionSettings.amountInLowestDenom })} spending limit`
+                : "No spending limit"
+            }
+          />
           <Icon name="Pencil" width={12} />
         </Limit>
         <Limit onClick={handleEditExpiration}>
-          <LimitDescription>
-            {internalConnectionSettings.expirationPeriod ===
-            ExpirationPeriod.NONE
-              ? "Connection never expires"
-              : `Connection expires in 1 ${internalConnectionSettings.expirationPeriod.toLowerCase()}`}
-          </LimitDescription>
+          <Title
+            content={
+              internalConnectionSettings.expirationPeriod ===
+              ExpirationPeriod.NONE
+                ? "Connection never expires"
+                : `Connection expires in 1 ${internalConnectionSettings.expirationPeriod.toLowerCase()}`
+            }
+          />
           <Icon name="Pencil" width={12} />
         </Limit>
       </PermissionsContainer>
@@ -166,11 +173,18 @@ export const PersonalizePage = ({
       <ButtonSection>
         <Button
           text="Update permissions"
-          kind="primary"
+          kind={isExistingConnection ? "primary" : "tertiary"}
+          paddingY="short"
           fullWidth
           onClick={handleSubmit}
         />
-        <Button text="Reset" kind="secondary" fullWidth onClick={onReset} />
+        <Button
+          text="Reset"
+          kind="secondary"
+          paddingY="short"
+          fullWidth
+          onClick={onReset}
+        />
       </ButtonSection>
 
       <EditLimit
@@ -182,6 +196,7 @@ export const PersonalizePage = ({
         enabled={internalConnectionSettings.limitEnabled}
         handleSubmit={handleSubmitEditLimit}
         handleCancel={() => setIsEditLimitVisible(false)}
+        isExistingConnection={isExistingConnection}
       />
 
       <EditExpiration
@@ -190,6 +205,7 @@ export const PersonalizePage = ({
         expirationPeriod={internalConnectionSettings.expirationPeriod}
         handleSubmit={handleSubmitEditExpiration}
         handleCancel={() => setIsEditExpirationVisible(false)}
+        isExistingConnection={isExistingConnection}
       />
     </Container>
   );
@@ -224,9 +240,9 @@ const PermissionsContainer = styled.div`
 const PermissionsDescription = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.xl};
+  gap: ${Spacing.px.xl};
   width: 100%;
-  padding: ${Spacing.lg};
+  padding: ${Spacing.px.lg};
 `;
 
 const AppSection = styled.div`
@@ -239,18 +255,12 @@ const AppSection = styled.div`
 const AppDetails = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 4px;
 `;
 
 const AppName = styled.div`
   display: flex;
   flex-direction: row;
   gap: 4px;
-`;
-
-const AppDomain = styled.div`
-  color: #686a72;
-  font-size: 14px;
 `;
 
 const VerifiedBadge = styled.div`
@@ -261,7 +271,7 @@ const VerifiedBadge = styled.div`
 const Permissions = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.sm};
+  gap: ${Spacing.px.sm};
 `;
 
 const Limit = styled.div`
@@ -269,13 +279,8 @@ const Limit = styled.div`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: ${Spacing.lg};
+  padding: 20px ${Spacing.px.lg};
   cursor: pointer;
-`;
-
-const LimitDescription = styled.div`
-  color: #686a72;
-  font-size: 16px;
 `;
 
 const ButtonSection = styled.div`

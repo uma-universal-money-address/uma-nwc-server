@@ -46,7 +46,7 @@ export const PermissionsEditableList = ({
 const List = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing["3xs"]};
+  gap: ${Spacing.px.sm};
   width: 100%;
 `;
 
@@ -54,5 +54,10 @@ const PermissionRow = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: ${Spacing["3xs"]};
+  gap: ${Spacing.px.xs};
+
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 24px; /* 150% */
 `;

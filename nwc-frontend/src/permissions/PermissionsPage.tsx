@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
-import { Button, Icon, UnstyledButton } from "@lightsparkdev/ui/components";
-import { Label } from "@lightsparkdev/ui/components/typography/Label";
+import { Button, Icon } from "@lightsparkdev/ui/components";
+import { Body } from "@lightsparkdev/ui/components/typography/Body";
 import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
@@ -104,6 +104,14 @@ export const PermissionsPage = () => {
     setIsPersonalizeVisible(false);
   };
 
+  const handleBack = () => {
+    if (isLoaderDataFromUrl(loaderData)) {
+      window.location.href = loaderData.oauthParams.redirectUri;
+    } else {
+      navigate(`/connection/${loaderData.connection.connectionId}`);
+    }
+  };
+
   const handleSubmit = () => {
     const today = dayjs();
     const expiration =
@@ -176,18 +184,19 @@ export const PermissionsPage = () => {
   const header = (
     <Header>
       <VaspLogo src="/vasp.svg" width={32} height={32} />
-      <UnstyledButton>
-        <Icon name="Close" width={8} />
-      </UnstyledButton>
     </Header>
   );
   return (
     <Container>
-      {header}
-      <Intro>
-        <Title content="Connect your UMA" />
-        <Uma uma={uma ?? undefined} />
-      </Intro>
+      {isLoaderDataFromUrl(loaderData) ? (
+        <>
+          {header}
+          <Intro>
+            <ConnectYourUma>Connect your UMA</ConnectYourUma>
+            <Uma uma={uma ?? undefined} />
+          </Intro>
+        </>
+      ) : null}
 
       <PermissionsContainer>
         <PermissionsDescription>
@@ -197,10 +206,10 @@ export const PermissionsPage = () => {
               <AppName>
                 {appInfo && (
                   <>
-                    {appInfo.name}
+                    <Title content={appInfo.name} />
                     {appInfo.verified && (
                       <VerifiedBadge>
-                        <Icon name="CheckmarkCircleTier3" width={20} />
+                        <Icon name="NonagonCheckmark" width={20} />
                       </VerifiedBadge>
                     )}
                   </>
@@ -209,35 +218,48 @@ export const PermissionsPage = () => {
                   <>{loaderData.connection.name}</>
                 )}
               </AppName>
-              {appInfo && <AppDomain>{appInfo.domain}</AppDomain>}
+              {appInfo && <Body size="Large" content={appInfo.domain} />}
             </AppDetails>
           </AppSection>
           <Permissions>
-            <Label size="Large" content="Would like to" />
+            <Title content="Would like to" />
             <PermissionsList permissions={permissions} />
           </Permissions>
         </PermissionsDescription>
         <Personalize onClick={handleShowPersonalize}>
-          <PersonalizeDescription>
-            Personalize permissions
-          </PersonalizeDescription>
-          <Icon name="CaretRight" width={12} />
+          <Title content="Personalize permissions" />
+          <Icon
+            name="CaretRight"
+            width={12}
+            iconProps={{
+              strokeWidth: "2",
+              strokeLinecap: "round",
+              strokeLinejoin: "round",
+            }}
+          />
         </Personalize>
       </PermissionsContainer>
 
       <ButtonSection>
         <Button
-          text="Connect UMA"
-          kind="primary"
+          text={
+            isLoaderDataFromUrl(loaderData)
+              ? "Connect UMA"
+              : "Update connection"
+          }
+          kind={isLoaderDataFromUrl(loaderData) ? "tertiary" : "primary"}
           fullWidth
+          paddingY="short"
           onClick={handleSubmit}
           loading={isSubmitting}
         />
         <Button
           text="Cancel"
           kind="secondary"
+          paddingY="short"
           fullWidth
           disabled={isSubmitting}
+          onClick={handleBack}
         />
       </ButtonSection>
     </Container>
@@ -270,7 +292,7 @@ const VaspLogo = styled.img``;
 const Intro = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.xs};
+  gap: ${Spacing.px.xs};
   width: 100%;
 `;
 
@@ -286,10 +308,10 @@ const PermissionsContainer = styled.div`
 const PermissionsDescription = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.xl};
+  gap: ${Spacing.px.xl};
   width: 100%;
   border-bottom: 0.5px solid #c0c9d6;
-  padding: ${Spacing.lg};
+  padding: ${Spacing.px.lg};
 `;
 
 const AppSection = styled.div`
@@ -302,18 +324,12 @@ const AppSection = styled.div`
 const AppDetails = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 4px;
 `;
 
 const AppName = styled.div`
   display: flex;
   flex-direction: row;
   gap: 4px;
-`;
-
-const AppDomain = styled.div`
-  color: #686a72;
-  font-size: 14px;
 `;
 
 const VerifiedBadge = styled.div`
@@ -324,7 +340,7 @@ const VerifiedBadge = styled.div`
 const Permissions = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.sm};
+  gap: ${Spacing.px.sm};
 `;
 
 const Personalize = styled.div`
@@ -332,13 +348,8 @@ const Personalize = styled.div`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: ${Spacing.lg};
+  padding: 20px ${Spacing.px.lg};
   cursor: pointer;
-`;
-
-const PersonalizeDescription = styled.div`
-  color: #686a72;
-  font-size: 16px;
 `;
 
 const ButtonSection = styled.div`
@@ -347,4 +358,11 @@ const ButtonSection = styled.div`
   max-width: 345px;
   width: 100%;
   gap: 16px;
+`;
+
+const ConnectYourUma = styled.span`
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 36px; /* 128.571% */
+  letter-spacing: -0.35px;
 `;

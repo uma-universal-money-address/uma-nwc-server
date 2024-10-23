@@ -25,7 +25,7 @@ export const ConnectionHeader = ({
   });
 
   const handleEdit = () => {
-    navigate(`/connection/update/${connection.connectionId}`);
+    navigate(`/connection/${connection.connectionId}/update`);
   };
 
   const handleDisconnect = () => {
@@ -47,10 +47,21 @@ export const ConnectionHeader = ({
       });
   };
 
-  const appDescription =
-    connection.status === ConnectionStatus.ACTIVE
-      ? `Connected on ${formatTimestamp(connection.createdAt)}`
-      : `Disconnected on ${formatTimestamp(connection.expiresAt!)}`;
+  let appDescription;
+  if (connection.status === ConnectionStatus.ACTIVE) {
+    if (connection.lastUsed) {
+      appDescription = `Last used ${formatTimestamp(connection.lastUsed, {
+        showTime: true,
+      })}`;
+    } else if (connection.expiresAt) {
+      appDescription = `Disconnected on ${formatTimestamp(
+        connection.expiresAt,
+        {
+          showTime: true,
+        },
+      )}`;
+    }
+  }
 
   return (
     <Container>
@@ -62,23 +73,28 @@ export const ConnectionHeader = ({
             isLoading={isLoadingAppInfo}
           />
           <AppDetails>
-            <AppName>{connection.name}</AppName>
-            <AppDescription>{appDescription}</AppDescription>
+            <AppName title={connection.name}>{connection.name}</AppName>
+            {appDescription && (
+              <AppDescription>{appDescription}</AppDescription>
+            )}
           </AppDetails>
         </AppSection>
         {connection.status === ConnectionStatus.ACTIVE ? (
           <Buttons>
             <Button
               kind="primary"
-              icon="Restart"
+              icon={{ name: "Recycling" }}
               iconSide="left"
               text="Update"
               onClick={handleEdit}
+              paddingY="short"
             />
             <Button
               text="Disconnect"
-              icon="Remove"
+              kind="quaternary"
+              icon={{ name: "Remove" }}
               onClick={() => setIsDisconnectModalVisible(true)}
+              paddingY="short"
             />
           </Buttons>
         ) : null}
@@ -116,7 +132,7 @@ const AppAndDisconnect = styled.div`
 const AppSection = styled.div`
   display: flex;
   align-items: center;
-  gap: ${Spacing.sm};
+  gap: ${Spacing.px.sm};
 `;
 
 const AppDetails = styled.div`
@@ -127,8 +143,12 @@ const AppDetails = styled.div`
 
 const AppName = styled.span`
   font-size: 32px;
-  font-style: normal;
   line-height: 40px; /* 125% */
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 310px;
+  overflow: hidden;
 `;
 
 const AppDescription = styled.span`
@@ -140,5 +160,5 @@ const AppDescription = styled.span`
 const Buttons = styled.div`
   display: flex;
   flex-direction: row;
-  gap: ${Spacing.sm};
+  gap: ${Spacing.px.sm};
 `;

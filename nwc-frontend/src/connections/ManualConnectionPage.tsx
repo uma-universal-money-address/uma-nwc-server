@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import { Button, Icon, TextInput } from "@lightsparkdev/ui/components";
 import { Body } from "@lightsparkdev/ui/components/typography/Body";
-import { Label } from "@lightsparkdev/ui/components/typography/Label";
+import { Headline } from "@lightsparkdev/ui/components/typography/Headline";
 import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { colors } from "@lightsparkdev/ui/styles/colors";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
@@ -142,54 +142,63 @@ export default function ManualConnectionPage() {
   return (
     <>
       <Intro>
-        <Title size="Large" content="Manual connection" />
+        <Headline size="Large" content="Manual connection" />
         <Description>
-          <Body content="Manually create a new connection to a NWC-compatible third-party app or service. You'll get a pairing secret to paste or scan in the next step. " />
+          <Body
+            size="Large"
+            color="grayBlue43"
+            content="Manually create a new connection to a NWC-compatible third-party app or service. You'll get a pairing secret to paste or scan in the next step. "
+          />
           <Button
             text="How it works"
             kind="ghost"
             onClick={handleHowItWorks}
             typography={{ type: "Body", color: "blue39" }}
-            size="Medium"
+            size="Large"
           />
         </Description>
       </Intro>
       <Content>
         <Section>
-          <Label size="Large" content="Connection name" />
+          <Title content="Connection name" />
           <TextInput
             placeholder="Pick a name for this connection"
             value={connectionName}
             onChange={(value) => setConnectionName(value)}
+            activeOutline
           />
         </Section>
         <Section>
-          <Label size="Large" content="Allow this app to" />
+          <Title content="Allow this app to" />
           <PermissionsEditableList
             permissionStates={connectionSettings.permissionStates}
             updatePermissionStates={handleUpdatePermissionStates}
           />
         </Section>
         <EditSection onClick={handleEditLimit}>
-          <EditDescription>
-            {connectionSettings.limitEnabled
-              ? `${formatConnectionString({ currency, limitFrequency: connectionSettings.limitFrequency, amountInLowestDenom: connectionSettings.amountInLowestDenom })} spending limit`
-              : "No spending limit"}
-          </EditDescription>
+          <Title
+            content={
+              connectionSettings.limitEnabled
+                ? `${formatConnectionString({ currency, limitFrequency: connectionSettings.limitFrequency, amountInLowestDenom: connectionSettings.amountInLowestDenom })} spending limit`
+                : "No spending limit"
+            }
+          />
           <Icon name="Pencil" width={12} />
         </EditSection>
         <EditSection onClick={handleEditExpiration}>
-          <EditDescription>
-            {connectionSettings.expirationPeriod === ExpirationPeriod.NONE
-              ? "Connection never expires"
-              : `Connection expires in 1 ${connectionSettings.expirationPeriod.toLowerCase()}`}
-          </EditDescription>
+          <Title
+            content={
+              connectionSettings.expirationPeriod === ExpirationPeriod.NONE
+                ? "Connection never expires"
+                : `Connection expires in 1 ${connectionSettings.expirationPeriod.toLowerCase()}`
+            }
+          />
           <Icon name="Pencil" width={12} />
         </EditSection>
       </Content>
 
       <ButtonSection>
-        <Button text="Cancel" kind="secondary" href="/" />
+        <Button text="Cancel" kind="quaternary" externalLink="/" />
         <Button
           text="Continue"
           kind="primary"
@@ -207,6 +216,7 @@ export default function ManualConnectionPage() {
         enabled={connectionSettings.limitEnabled}
         handleCancel={() => setIsEditLimitVisible(false)}
         handleSubmit={handleSubmitEditLimit}
+        isExistingConnection
       />
 
       <EditExpiration
@@ -215,6 +225,7 @@ export default function ManualConnectionPage() {
         expirationPeriod={connectionSettings.expirationPeriod}
         handleCancel={() => setIsEditExpirationVisible(false)}
         handleSubmit={handleSubmitEditExpiration}
+        isExistingConnection
       />
 
       <ManualConnectionHowItWorksModal
@@ -228,7 +239,7 @@ export default function ManualConnectionPage() {
 const Intro = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.sm};
+  gap: ${Spacing.px.sm};
 `;
 
 const Description = styled.div``;
@@ -242,16 +253,16 @@ const Content = styled.div`
 
   & > *:not(:last-child) {
     border-bottom: 1px solid ${colors.gray90};
-    padding-bottom: ${Spacing["xl"]};
+    padding-bottom: ${Spacing.px["xl"]};
   }
 `;
 
 const Section = styled.section`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.lg};
+  gap: ${Spacing.px.lg};
   width: 100%;
-  padding: ${Spacing["xl"]};
+  padding: ${Spacing.px["xl"]};
 `;
 
 const EditSection = styled.section`
@@ -259,13 +270,8 @@ const EditSection = styled.section`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: ${Spacing["xl"]};
+  padding: ${Spacing.px["xl"]};
   cursor: pointer;
-`;
-
-const EditDescription = styled.div`
-  color: #686a72;
-  font-size: 16px;
 `;
 
 const ButtonSection = styled.section`

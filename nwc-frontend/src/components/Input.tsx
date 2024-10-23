@@ -70,7 +70,7 @@ export const Input = ({
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing["3xs"]};
+  gap: ${Spacing.px["3xs"]};
   width: 100%;
 `;
 

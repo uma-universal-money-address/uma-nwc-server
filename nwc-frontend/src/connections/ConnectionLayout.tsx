@@ -17,5 +17,5 @@ const LayoutContainer = styled.div`
   flex-direction: column;
   width: 100%;
   height: 100%;
-  gap: ${Spacing.xl};
+  gap: ${Spacing.px.xl};
 `;
