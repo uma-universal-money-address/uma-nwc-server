@@ -1,8 +1,10 @@
 import styled from "@emotion/styled";
-import { Modal } from "@lightsparkdev/ui/components";
+import { Button } from "@lightsparkdev/ui/components";
 import { Body } from "@lightsparkdev/ui/components/typography/Body";
+import { Headline } from "@lightsparkdev/ui/components/typography/Headline";
 import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
+import { NwcModal } from "./components/NwcModal";
 
 interface Props {
   visible: boolean;
@@ -11,49 +13,81 @@ interface Props {
 }
 
 export const LearnMoreModal = ({ visible, vaspName, onClose }: Props) => {
-  return (
-    <Modal
-      smKind="drawer"
-      visible={visible}
-      cancelText="Close"
-      onClose={onClose}
-      onCancel={onClose}
-      title={`How ${vaspName} connects your UMA securely to third-party apps and services`}
-    >
-      <Section>
-        <Title content="How does it work?" size="Medium" />
-        <Body
-          color="grayBlue43"
-          content={`You can unlock payments experiences on the apps and services you use by connecting your ${vaspName} UMA.`}
-        />
-        <Body
-          color="grayBlue43"
-          content={[
-            "UMA connections are powered by ",
-            {
-              text: "Nostr Wallet Connect",
-              externalLink: "https://nwc.dev/",
-              color: "blue39",
-            },
-            ", a standardized protocol that enables apps and services to securely interact with other UMAs or wallets.",
-          ]}
-        />
-      </Section>
+  const buttons = (
+    <Button text="Close" kind="quaternary" onClick={onClose} paddingY="short" />
+  );
 
-      <Section>
-        <Title content="You are in control" size="Medium" />
-        <Body
-          color="grayBlue43"
-          content="For each app or service that you connect to your UMA, you can review permissions, edit your spending limit, view transactions, or disconnect your UMA."
+  return (
+    <NwcModal visible={visible} onClose={onClose} buttons={buttons} width={560}>
+      <ModalBody>
+        <ModalTitle
+          size="Small"
+          content={`${vaspName} connects your UMA securely to third-party apps and services`}
         />
-      </Section>
-    </Modal>
+        <Section>
+          <Title content="How does it work?" size="Large" />
+          <SectionBody>
+            <Body
+              color="grayBlue43"
+              content={`Unlock payments experiences on your favorite apps and services by connecting your ${vaspName} UMA.`}
+            />
+            <LinkText>
+              <Body
+                color="grayBlue43"
+                content="UMA connections are powered by "
+              />
+              <Link target="_blank" href="https://nwc.dev/">
+                Nostr Wallet Connect
+              </Link>
+              <Body
+                color="grayBlue43"
+                content=", enabling apps and services to securely interact with other UMAs or wallets."
+              />
+            </LinkText>
+          </SectionBody>
+        </Section>
+
+        <Section>
+          <Title content="Always in control" size="Large" />
+          <Body
+            color="grayBlue43"
+            content="For every app or service you connect to your UMA you can change permissions, edit your spending limit, change when the connection expires, view your transactions, or revoke the connection at any time."
+          />
+        </Section>
+      </ModalBody>
+    </NwcModal>
   );
 };
+
+const ModalBody = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${Spacing.px["xl"]};
+`;
 
 const Section = styled.section`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.xs};
-  margin-top: ${Spacing["xl"]};
+  gap: ${Spacing.px.xs};
+`;
+
+const SectionBody = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${Spacing.px.lg};
+`;
+
+const ModalTitle = styled(Headline)`
+  padding-right: 20px;
+`;
+
+const LinkText = styled.div``;
+
+const Link = styled.a`
+  font-family: Manrope;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 18px; /* 150% */
+  color: #0068c9;
+  text-decoration: none;
 `;

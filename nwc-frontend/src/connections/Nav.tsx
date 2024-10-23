@@ -11,10 +11,11 @@ export const Nav = () => {
   return (
     <Button
       kind="ghost"
-      icon="ChevronLeft"
+      icon={{ name: "ChevronLeft" }}
       text="Back to Connections"
       onClick={handleBack}
-      typography={{ color: "blue39" }}
+      typography={{ type: "Title", color: "blue39" }}
+      size="Medium"
     />
   );
 };

@@ -8,6 +8,7 @@ import { TransactionTable } from "src/components/TransactionTable";
 import { useConnection } from "src/hooks/useConnection";
 import { PermissionsList } from "src/permissions/PermissionsList";
 import { ConnectionStatus } from "src/types/Connection";
+import { formatTimestamp } from "src/utils/formatTimestamp";
 import { ConnectionHeader } from "./ConnectionHeader";
 import { Limit } from "./Limit";
 import { PendingConnectionPage } from "./PendingConnectionPage";
@@ -49,7 +50,7 @@ export default function ConnectionPage() {
         connection?.status === ConnectionStatus.ACTIVE ? (
           <>
             <Section>
-              <Title content="Permissions" />
+              <Title size="Large" content="Permissions" />
               {isLoadingConnection ? (
                 <Shimmer width={200} height={20} />
               ) : (
@@ -58,7 +59,7 @@ export default function ConnectionPage() {
             </Section>
             <Section>
               <SectionHeader>
-                <Title content="Spending limit" />
+                <Title size="Large" content="Spending limit" />
               </SectionHeader>
               {isLoadingConnection ? (
                 <Shimmer width={200} height={20} />
@@ -66,10 +67,29 @@ export default function ConnectionPage() {
                 <Limit connection={connection} />
               )}
             </Section>
+            <Section>
+              <SectionHeader>
+                <Title size="Large" content="Expiration date" />
+              </SectionHeader>
+              {isLoadingConnection ? (
+                <Shimmer width={200} height={20} />
+              ) : (
+                <ExpirationText>
+                  <ExpiresOn>
+                    {connection.expiresAt
+                      ? `Expires on ${formatTimestamp(connection.expiresAt)}`
+                      : "No expiration set"}
+                  </ExpiresOn>
+                  <ConnectedOn>
+                    {`Connected on ${formatTimestamp(connection.createdAt, { showTime: true })}`}
+                  </ConnectedOn>
+                </ExpirationText>
+              )}
+            </Section>
           </>
         ) : null}
         <Section>
-          <Title content="Transactions" />
+          <Title size="Large" content="Transactions" />
           <TransactionTable connectionId={connectionId} />
         </Section>
       </Content>
@@ -86,16 +106,16 @@ const Content = styled.div`
 
   & > *:not(:last-child) {
     border-bottom: 1px solid ${colors.gray90};
-    padding-bottom: ${Spacing["xl"]};
+    padding-bottom: ${Spacing.px["xl"]};
   }
 `;
 
 const Section = styled.section`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.lg};
+  gap: ${Spacing.px.lg};
   width: 100%;
-  padding: ${Spacing["xl"]};
+  padding: ${Spacing.px["xl"]};
 `;
 
 const SectionHeader = styled.div`
@@ -107,4 +127,22 @@ const SectionHeader = styled.div`
   * {
     border: none !important;
   }
+`;
+
+const ExpirationText = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${Spacing.px.sm};
+`;
+
+const ExpiresOn = styled.span`
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px; /* 150% */
+`;
+
+const ConnectedOn = styled.span`
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px; /* 150% */
 `;

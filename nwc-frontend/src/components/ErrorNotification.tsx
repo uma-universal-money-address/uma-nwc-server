@@ -63,7 +63,7 @@ const Container = styled.div`
   grid-auto-flow: column;
   align-items: center;
   grid-template-columns: 24px 1fr auto;
-  padding: ${Spacing.md} 20px;
+  padding: ${Spacing.px.md} 20px;
   background-color: ${colors.danger};
   border-radius: 12px;
   box-shadow:
@@ -81,7 +81,7 @@ const Container = styled.div`
   line-height: 20px; /* 133.333% */
   letter-spacing: -0.187px;
 
-  margin-top: ${Spacing.md};
+  margin-top: ${Spacing.px.md};
   gap: 8px;
   width: 100%;
   max-width: 400px;

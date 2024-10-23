@@ -7,6 +7,12 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(advancedFormat);
 
-export const formatTimestamp = (date: string) => {
-  return dayjs(date).format("MMM D YYYY h:mm A");
+export const formatTimestamp = (
+  date: string,
+  options?: { showTime?: boolean },
+) => {
+  if (options?.showTime) {
+    return dayjs(date).format("MMM D, YYYY h:mm A z");
+  }
+  return dayjs(date).format("MMM D, YYYY");
 };

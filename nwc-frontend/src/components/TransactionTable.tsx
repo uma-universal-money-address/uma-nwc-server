@@ -1,5 +1,7 @@
 import styled from "@emotion/styled";
+import { Icon } from "@lightsparkdev/ui/components";
 import { Body } from "@lightsparkdev/ui/components/typography/Body";
+import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import type React from "react";
 import { useConnection } from "src/hooks/useConnection";
 import { useTransactions, type Transaction } from "src/hooks/useTransactions";
@@ -45,7 +47,9 @@ const TransactionRow = ({
     <Row>
       <TransactionRowContainer>
         <TransactionDetailsRow>
-          <span>{formatTimestamp(transaction.createdAt)}</span>
+          <span>
+            {formatTimestamp(transaction.createdAt, { showTime: true })}
+          </span>
           {amount}
         </TransactionDetailsRow>
       </TransactionRowContainer>
@@ -87,13 +91,24 @@ export const TransactionTable = ({
   } else if (!transactions || !transactions.length) {
     return (
       <EmptyResults>
-        <Body
-          content={
-            connection.status === ConnectionStatus.INACTIVE
-              ? "No transactions."
-              : "No transactions yet."
-          }
-        />
+        <NoTransactionsIcon>
+          <Icon name="ReceiptBill" width={32} />
+        </NoTransactionsIcon>
+        <EmptyResultsText>
+          <Title
+            size="Medium"
+            content={
+              connection.status === ConnectionStatus.INACTIVE
+                ? "No transactions"
+                : "No transactions yet"
+            }
+          />
+          {connection.status === ConnectionStatus.ACTIVE && (
+            <Body size="Large" color="grayBlue43">
+              {`Start using your UMA on ${connection.name} to get started`}
+            </Body>
+          )}
+        </EmptyResultsText>
       </EmptyResults>
     );
   } else {
@@ -120,8 +135,11 @@ const Container = styled.div`
 const EmptyResults = styled.div`
   display: flex;
   flex-direction: column;
-  place-content: center;
+  align-items: center;
   flex: 1;
+  padding-top: 32px;
+  padding-bottom: 36px;
+  gap: 16px;
 `;
 
 const Row = styled.div`
@@ -186,4 +204,23 @@ const TransactionAmountRow = styled.div`
 
 const Amount = styled.span`
   text-wrap: nowrap;
+`;
+
+const NoTransactionsIcon = styled.div`
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f2f3f5;
+`;
+
+const EmptyResultsText = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  text-align: center;
+  width: 360px;
 `;

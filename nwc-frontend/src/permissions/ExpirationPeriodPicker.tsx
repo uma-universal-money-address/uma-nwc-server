@@ -49,18 +49,13 @@ const ExpirationPeriodButton = styled(UnstyledButton)<{ selected: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: ${Spacing.sm} ${Spacing.md};
+  padding: ${Spacing.px.sm} ${Spacing.px.md};
   border-radius: 8px;
-  border: 1px solid ${({ theme }) => theme.lcNeutral};
-  opacity: ${({ selected }) => (selected ? 1 : 0.4)};
-  transition: opacity 0.2s;
+  border: ${({ selected }) =>
+    selected ? "2px solid #16171A" : ".5px solid #C0C9D6"};
 
-  color: ${({ theme }) => theme.text};
+  color: ${({ selected }) => (selected ? "#16171A" : "#686A72")};
   font-size: 14px;
   line-height: 20px;
   letter-spacing: -0.175px;
-
-  &:hover {
-    opacity: 1;
-  }
 `;

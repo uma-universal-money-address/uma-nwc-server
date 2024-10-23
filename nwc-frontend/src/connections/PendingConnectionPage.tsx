@@ -63,7 +63,7 @@ export const PendingConnectionPage = ({
                   <QRCodeSVG value={pairingUri} width="100%" height="100%" />
                 </QRCodeContainer>
                 <Button
-                  icon="Copy"
+                  icon={{ name: "Copy" }}
                   text="Copy connection string"
                   kind="primary"
                   onClick={handleCopyConnectionString}
@@ -89,7 +89,7 @@ export const PendingConnectionPage = ({
 const Intro = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.sm};
+  gap: ${Spacing.px.sm};
 `;
 
 const Description = styled.div``;
@@ -103,22 +103,22 @@ const Content = styled.div`
 
   & > *:not(:last-child) {
     border-bottom: 1px solid ${colors.gray90};
-    padding-bottom: ${Spacing["xl"]};
+    padding-bottom: ${Spacing.px["xl"]};
   }
 `;
 
 const Section = styled.section`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.lg};
+  gap: ${Spacing.px.lg};
   width: 100%;
-  padding: ${Spacing["xl"]};
+  padding: ${Spacing.px["xl"]};
 `;
 
 const AppSection = styled.div`
   display: flex;
   align-items: center;
-  gap: ${Spacing.sm};
+  gap: ${Spacing.px.sm};
 `;
 
 const AppName = styled.span`
@@ -132,32 +132,32 @@ const AppName = styled.span`
 const PermissionsAndQRCode = styled.div`
   display: flex;
   flex-direction: row;
-  gap: ${Spacing["5xl"]};
+  gap: ${Spacing.px["5xl"]};
   justify-content: space-between;
 `;
 
 const Info = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.lg};
+  gap: ${Spacing.px.lg};
 `;
 
 const Permissions = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.sm};
+  gap: ${Spacing.px.sm};
 `;
 
 const QRCodeSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${Spacing.md};
+  gap: ${Spacing.px.md};
 `;
 
 const QRCodeContainer = styled.div`
   width: 336px;
   height: 336px;
-  padding: ${Spacing.xl};
+  padding: ${Spacing.px.xl};
   border-radius: 16px;
   border: 1px solid ${colors.gray90};
 `;
@@ -165,6 +165,6 @@ const QRCodeContainer = styled.div`
 const Warning = styled.div`
   display: flex;
   flex-direction: row;
-  gap: ${Spacing.sm};
+  gap: ${Spacing.px.sm};
   align-items: center;
 `;
