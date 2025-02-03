@@ -10,12 +10,15 @@ class VaspJwt:
 
     @staticmethod
     def from_jwt(jwt_str: str) -> "VaspJwt":
+        iss = current_app.config.get("UMA_VASP_JWT_ISS")
+        aud = current_app.config.get("UMA_VASP_JWT_AUD")
         vasp_token_payload = jwt.decode(
             jwt_str,
             current_app.config.get("UMA_VASP_JWT_PUBKEY"),
             algorithms=["ES256"],
-            # TODO: verify the aud and iss
-            options={"verify_aud": False, "verify_iss": False},
+            options={"verify_aud": aud is not None, "verify_iss": iss is not None},
+            audience=aud,
+            issuer=iss,
         )
         return VaspJwt(
             user_id=vasp_token_payload["sub"],
