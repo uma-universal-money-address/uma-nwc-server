@@ -2,7 +2,7 @@
 
 import os
 import secrets
-from typing import List
+from typing import List, Optional
 
 DATABASE_URI: str = "sqlite+aiosqlite:///" + os.path.join(
     os.getcwd(), "instance", "nwc.sqlite"
@@ -10,6 +10,8 @@ DATABASE_URI: str = "sqlite+aiosqlite:///" + os.path.join(
 SECRET_KEY: str = secrets.token_hex(32)
 
 UMA_VASP_JWT_PUBKEY = "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\nq9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==\n-----END PUBLIC KEY-----"
+UMA_VASP_JWT_AUD: Optional[str] = None
+UMA_VASP_JWT_ISS: Optional[str] = None
 FRONTEND_BUILD_PATH = "../static"
 UMA_VASP_LOGIN_URL = "http://local:5001/auth/nwcsession"
 UMA_VASP_TOKEN_EXCHANGE_URL = "http://local:5001/umanwc/token"
