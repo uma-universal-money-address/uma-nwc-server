@@ -12,6 +12,7 @@ import {
 } from "src/components/ConnectionTable";
 import { useConnections } from "./hooks/useConnections";
 import { LearnMoreModal } from "./LearnMoreModal";
+import { Routes, generatePath } from "./routes/Routes";
 import { ConnectionStatus } from "./types/Connection";
 import { getConfig } from "./utils/getConfig";
 
@@ -73,7 +74,7 @@ function App() {
             icon={{ name: "Plus" }}
             text="Manual connection"
             kind="primary"
-            onClick={() => navigate("/connection/new")}
+            onClick={() => navigate(generatePath(Routes.ConnectionNew, {}))}
           />
         ) : null}
       </Section>

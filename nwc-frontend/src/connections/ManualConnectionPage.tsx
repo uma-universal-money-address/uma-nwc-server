@@ -21,6 +21,7 @@ import {
 } from "src/types/Connection";
 import { getAuth } from "src/utils/auth";
 import { formatConnectionString } from "src/utils/formatConnectionString";
+import { Routes, generatePath } from "../routes/Routes";
 import { ManualConnectionHowItWorksModal } from "./ManualConnectionHowItWorksModal";
 import { PendingConnectionPage } from "./PendingConnectionPage";
 
@@ -198,7 +199,11 @@ export default function ManualConnectionPage() {
       </Content>
 
       <ButtonSection>
-        <Button text="Cancel" kind="quaternary" externalLink="/" />
+        <Button
+          text="Cancel"
+          kind="quaternary"
+          externalLink={generatePath(Routes.Root, {})}
+        />
         <Button
           text="Continue"
           kind="primary"

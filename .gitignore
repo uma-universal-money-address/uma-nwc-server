@@ -163,3 +163,6 @@ cython_debug/
 
 .quartenv
 .vscode/
+
+# Local dev configs (besides the example ones)
+nwc_backend/configs/.local*

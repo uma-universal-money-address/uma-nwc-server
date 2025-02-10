@@ -22,8 +22,9 @@ import {
 } from "src/types/PermissionPageLoaderData";
 import { getAuth } from "src/utils/auth";
 import { formatConnectionString } from "src/utils/formatConnectionString";
+import { Routes, generatePath } from "../routes/Routes";
 import { PermissionsList } from "./PermissionsList";
-import { type ConnectionSettings, PersonalizePage } from "./PersonalizePage";
+import { PersonalizePage, type ConnectionSettings } from "./PersonalizePage";
 
 async function initConnection({
   appInfo,
@@ -108,7 +109,11 @@ export const PermissionsPage = () => {
     if (isLoaderDataFromUrl(loaderData)) {
       window.location.href = loaderData.oauthParams.redirectUri;
     } else {
-      navigate(`/connection/${loaderData.connection.connectionId}`);
+      navigate(
+        generatePath(Routes.ConnectionDetail, {
+          connectionId: loaderData.connection.connectionId,
+        }),
+      );
     }
   };
 
@@ -144,7 +149,11 @@ export const PermissionsPage = () => {
         status: loaderData.connection.status,
         expiration,
       });
-      navigate(`/connection/${loaderData.connection.connectionId}`);
+      navigate(
+        generatePath(Routes.ConnectionDetail, {
+          connectionId: loaderData.connection.connectionId,
+        }),
+      );
     }
   };
 

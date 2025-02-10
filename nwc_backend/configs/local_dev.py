@@ -18,11 +18,14 @@ VASP_NAME = "Pink Drink NWC"
 UMA_VASP_LOGIN_URL = "http://local:5001/auth/nwcsession"
 UMA_VASP_TOKEN_EXCHANGE_URL = "http://local:5001/umanwc/token"
 VASP_UMA_API_BASE_URL = "http://local:5001/umanwc"
+NWC_APP_ROOT_URL = "http://localhost:8080"
+# If you want to host the whole app in a subpath, set the BASE_PATH to the subpath and update
+# NWC_APP_ROOT_URL to include the subpath.
+# BASE_PATH = "/nwc"
 
 # Replace with your own constant private key via `openssl rand -hex 32` if you want.
 NOSTR_PRIVKEY: str = secrets.token_hex(32)
 RELAY = "wss://relay.getalby.com/v1"
-NWC_APP_ROOT_URL = "http://localhost:8080"
 
 VASP_SUPPORTED_COMMANDS = [
     "pay_invoice",

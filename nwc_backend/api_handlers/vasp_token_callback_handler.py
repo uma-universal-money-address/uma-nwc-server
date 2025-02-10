@@ -20,6 +20,8 @@ async def handle_vasp_token_callback() -> WerkzeugResponse:
     fe_redirect_path = request.args.get("fe_redirect")
     if fe_redirect_path:
         fe_redirect_path = unquote(fe_redirect_path)
+        base_path = (current_app.config.get("BASE_PATH") or "/").rstrip("/")
+        fe_redirect_path = fe_redirect_path.replace(base_path, "")
     frontend_redirect_url = current_app.config["NWC_APP_ROOT_URL"] + (
         fe_redirect_path or "/"
     )

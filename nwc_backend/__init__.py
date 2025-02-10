@@ -2,7 +2,7 @@
 
 import os
 
-from quart import Quart, Response, send_from_directory
+from quart import Quart, Response, request, send_from_directory
 
 import nwc_backend.alembic_importer  # noqa: F401
 from nwc_backend.api_handlers import (
@@ -21,6 +21,8 @@ def create_app() -> Quart:
 
     app.config.from_envvar("QUART_CONFIG")
     app.static_folder = app.config.get("FRONTEND_BUILD_PATH") or "../static"
+    base_path = app.config.get("BASE_PATH", "/").rstrip("/") + "/"
+
     db.init_app(app)
     if app.config.get("DATABASE_MODE") == "rds":
         setup_rds_iam_auth(db.engine)
@@ -28,20 +30,51 @@ def create_app() -> Quart:
     if not app.config.get("QUART_ENV") == "testing":
         app.before_serving(init_nostr_client)
 
-    @app.route("/-/alive")
+    # Register all API routes first
+    @app.route(f"{base_path}-/alive")
     def alive() -> str:
         return "ok"
 
-    @app.route("/-/ready")
+    @app.route(f"{base_path}-/ready")
     def ready() -> str:
         return "ok"
 
-    @app.route("/", defaults={"path": ""})
+    # Register other API routes
+    app.add_url_rule(
+        f"{base_path}oauth/auth",  # Remove urljoin, use f-strings
+        view_func=client_app_oauth_handler.handle_oauth_request,
+        methods=["GET"],
+    )
+    app.add_url_rule(
+        f"{base_path}oauth/token",
+        view_func=client_app_oauth_handler.handle_token_exchange,
+        methods=["POST"],
+    )
+    app.add_url_rule(
+        f"{base_path}auth/vasp_token_callback",
+        view_func=vasp_token_callback_handler.handle_vasp_token_callback,
+        methods=["GET"],
+    )
+
+    app.register_blueprint(frontend_api_bp, url_prefix=base_path + "api")
+
+    @app.route(base_path, defaults={"path": ""})
     @app.route("/<path:path>")
     async def serve_frontend(path: str) -> Response:
+        # Redirect paths with trailing slashes to non-trailing slash version
+        if path.endswith("/") or (path == base_path.lstrip("/") and path != ""):
+            query_string = request.query_string.decode()
+            print(f"query_string: {query_string}")
+            return Response(
+                "",
+                status=301,
+                headers={"Location": base_path.rstrip("/") + "?" + query_string},
+            )
+
         if not app.static_folder:
             return Response("No frontend build path provided", status=500)
         static_folder: str = app.static_folder
+        path = path.replace(base_path.strip("/"), "")
         if path != "" and os.path.exists(static_folder + "/" + path):
             return await send_from_directory(static_folder, path)
         else:
@@ -57,24 +90,8 @@ def create_app() -> Quart:
                 content = content.replace(
                     "${{VASP_LOGO_URL}}", app.config.get("VASP_LOGO_URL") or "/vasp.svg"
                 )
+                content = content.replace("${{BASE_PATH}}", base_path.rstrip("/"))
+
                 return Response(content, mimetype="text/html")
-
-    app.add_url_rule(
-        "/oauth/auth",
-        view_func=client_app_oauth_handler.handle_oauth_request,
-        methods=["GET"],
-    )
-    app.add_url_rule(
-        "/oauth/token",
-        view_func=client_app_oauth_handler.handle_token_exchange,
-        methods=["POST"],
-    )
-    app.add_url_rule(
-        "/auth/vasp_token_callback",
-        view_func=vasp_token_callback_handler.handle_vasp_token_callback,
-        methods=["GET"],
-    )
-
-    app.register_blueprint(frontend_api_bp)
 
     return app
