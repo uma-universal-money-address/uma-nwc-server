@@ -64,7 +64,6 @@ def create_app() -> Quart:
         # Redirect paths with trailing slashes to non-trailing slash version
         if path.endswith("/") or (path == base_path.lstrip("/") and path != ""):
             query_string = request.query_string.decode()
-            print(f"query_string: {query_string}")
             return Response(
                 "",
                 status=301,
