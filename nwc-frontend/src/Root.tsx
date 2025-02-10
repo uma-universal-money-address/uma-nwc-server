@@ -14,18 +14,21 @@ import { permissionsPageDataFromUrl } from "./loaders/permissionPageDataFromUrl"
 import { PermissionsPage } from "./permissions/PermissionsPage";
 import { PermissionsLayout } from "./PermissionsLayout";
 import { getAuth } from "./utils/auth";
+import { getConfig } from "./utils/getConfig";
 
+const basePath = getConfig().basePath;
 const router = createBrowserRouter([
   {
     element: <AppLayout />,
+    path: basePath,
     children: [
       {
-        path: "/",
+        path: "",
         element: <App />,
       },
       {
         element: <ConnectionLayout />,
-        path: "/connection",
+        path: "connection",
         children: [
           {
             path: ":connectionId",
@@ -41,14 +44,15 @@ const router = createBrowserRouter([
   },
   {
     element: <PermissionsLayout />,
+    path: basePath,
     children: [
       {
-        path: "/apps/new",
+        path: "apps/new",
         element: <PermissionsPage />,
         loader: permissionsPageDataFromUrl,
       },
       {
-        path: "/connection/:connectionId/update",
+        path: "connection/:connectionId/update",
         element: <PermissionsPage />,
         loader: permissionsPageData,
       },

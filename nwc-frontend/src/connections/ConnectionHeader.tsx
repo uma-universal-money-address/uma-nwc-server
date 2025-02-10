@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Avatar } from "src/components/Avatar";
 import { useAppInfo } from "src/hooks/useAppInfo";
 import { useGlobalNotificationContext } from "src/hooks/useGlobalNotificationContext";
+import { generatePath, Routes } from "src/routes/Routes";
 import { type Connection, ConnectionStatus } from "src/types/Connection";
 import { formatTimestamp } from "src/utils/formatTimestamp";
 
@@ -25,7 +26,11 @@ export const ConnectionHeader = ({
   });
 
   const handleEdit = () => {
-    navigate(`/connection/${connection.connectionId}/update`);
+    navigate(
+      generatePath(Routes.ConnectionUpdate, {
+        connectionId: connection.connectionId,
+      }),
+    );
   };
 
   const handleDisconnect = () => {
@@ -37,7 +42,7 @@ export const ConnectionHeader = ({
       .then((succeeded) => {
         if (succeeded) {
           setSuccessMessage(`${connection.name} disconnected successfully`);
-          navigate(`/`);
+          navigate(generatePath(Routes.Root, {}));
         } else {
           setError(new Error(`Failed to disconnect ${connection.name}`));
         }

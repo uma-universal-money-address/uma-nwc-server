@@ -5,6 +5,7 @@ import { Label } from "@lightsparkdev/ui/components/typography/Label";
 import { Title } from "@lightsparkdev/ui/components/typography/Title";
 import { Spacing } from "@lightsparkdev/ui/styles/tokens/spacing";
 import { Link, useNavigate } from "react-router-dom";
+import { generatePath, Routes } from "src/routes/Routes";
 import { type Connection, ConnectionStatus } from "src/types/Connection";
 import { formatTimestamp } from "src/utils/formatTimestamp";
 import { Avatar } from "./Avatar";
@@ -34,7 +35,11 @@ export const LoadingConnectionRow = ({
 
 const ConnectionRow = ({ connection }: { connection: Connection }) => {
   return (
-    <LinkRow to={`/connection/${connection.connectionId}`}>
+    <LinkRow
+      to={generatePath(Routes.ConnectionDetail, {
+        connectionId: connection.connectionId,
+      })}
+    >
       <Avatar size={48} src={connection.avatar ?? ""} />
       <InfoRowContainer>
         <InfoRow>
@@ -113,7 +118,7 @@ export const ConnectionTable = ({ connections }: ConnectionTableProps) => {
           icon={{ name: "Plus" }}
           text="New connection"
           kind="primary"
-          onClick={() => navigate("/connection/new")}
+          onClick={() => navigate(generatePath(Routes.ConnectionNew, {}))}
         />
       </EmptyResults>
     );
