@@ -21,7 +21,7 @@ def create_app() -> Quart:
 
     app.config.from_envvar("QUART_CONFIG")
     app.static_folder = app.config.get("FRONTEND_BUILD_PATH") or "../static"
-    base_path = app.config.get("BASE_PATH", "/").rstrip("/") + "/"
+    base_path: str = app.config.get("BASE_PATH", "/").rstrip("/") + "/"
 
     db.init_app(app)
     if app.config.get("DATABASE_MODE") == "rds":
