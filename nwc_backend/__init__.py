@@ -59,6 +59,7 @@ def create_app() -> Quart:
     app.register_blueprint(frontend_api_bp, url_prefix=base_path + "api")
 
     @app.route(base_path, defaults={"path": ""})
+    @app.route(f"{base_path}/<path:path>")
     @app.route("/<path:path>")
     async def serve_frontend(path: str) -> Response:
         # Redirect paths with trailing slashes to non-trailing slash version
@@ -90,6 +91,9 @@ def create_app() -> Quart:
                     "${{VASP_LOGO_URL}}", app.config.get("VASP_LOGO_URL") or "/vasp.svg"
                 )
                 content = content.replace("${{BASE_PATH}}", base_path.rstrip("/"))
+                content = content.replace(
+                    '="/assets/', f'="{base_path.rstrip("/")}/assets/'
+                )
 
                 return Response(content, mimetype="text/html")
 
