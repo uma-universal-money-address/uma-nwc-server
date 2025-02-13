@@ -85,10 +85,12 @@ def create_app() -> Quart:
                     "${{VASP_NAME}}", app.config.get("VASP_NAME") or "UMA NWC"
                 )
                 content = content.replace(
-                    "${{UMA_VASP_LOGIN_URL}}", app.config["UMA_VASP_LOGIN_URL"]
+                    "${{VASP_LOGO_URL}}",
+                    app.config.get("VASP_LOGO_URL")
+                    or f"{base_path.rstrip('/')}/vasp.svg",
                 )
                 content = content.replace(
-                    "${{VASP_LOGO_URL}}", app.config.get("VASP_LOGO_URL") or "/vasp.svg"
+                    "${{UMA_VASP_LOGIN_URL}}", app.config["UMA_VASP_LOGIN_URL"]
                 )
                 content = content.replace("${{BASE_PATH}}", base_path.rstrip("/"))
                 content = content.replace(
