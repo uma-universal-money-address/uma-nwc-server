@@ -12,7 +12,7 @@ from nwc_backend.exceptions import PublishEventFailedException
 from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 from nwc_backend.nostr.nostr_client import nostr_client
 from nwc_backend.nostr.nostr_config import NostrConfig
-from nwc_backend.nostr.versions import NWC_VERSIONS_SUPPORTED
+from nwc_backend.nostr.encryption import NWC_ENCRYPTION_SCHEMES_SUPPORTED
 
 
 class NotificationHandler(HandleNotification):
@@ -55,7 +55,7 @@ async def _publish_nip47_info() -> None:
             kind=KindEnum.WALLET_CONNECT_INFO(),  # pyre-ignore[6]
             content=" ".join([method.value for method in list(Nip47RequestMethod)]),
         )
-        .add_tag(["v", " ".join(NWC_VERSIONS_SUPPORTED)])
+        .add_tag(["encryption", " ".join(NWC_ENCRYPTION_SCHEMES_SUPPORTED)])
         .build()
     )
     response = await nostr_client.send_event(nip47_info_event)

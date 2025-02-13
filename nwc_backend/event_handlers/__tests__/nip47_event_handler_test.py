@@ -53,8 +53,8 @@ class Harness:
         self,
         method: Nip47RequestMethod = Nip47RequestMethod.PAY_INVOICE,
         params: Optional[dict[str, Any]] = None,
-        version: Optional[str] = "1.0",
         use_nip44: bool = True,
+        encryption_tag_override: Optional[str] = None,
     ) -> Event:
         if params is None:
             params = self.get_default_request_params()
@@ -72,8 +72,12 @@ class Harness:
             .encrypt_content(self.nwc_keys.public_key(), use_nip44=use_nip44)
             .add_tag(["p", self.nwc_keys.public_key().to_hex()])
         )
-        if version:
-            builder.add_tag(["v", version])
+
+        if encryption_tag_override:
+            builder.add_tag(["encryption", encryption_tag_override])
+        elif use_nip44:
+            builder.add_tag(["encryption", "nip44_v2"])
+
         return builder.build()
 
     def get_default_request_params(self) -> dict[str, Any]:
@@ -194,10 +198,7 @@ async def test_failed__invalid_input_params(
             granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
             keys=harness.client_app_keys,
         )
-        version = "1.0" if use_nip44 else None
-        request_event = harness.create_request_event(
-            params={}, use_nip44=use_nip44, version=version
-        )
+        request_event = harness.create_request_event(params={}, use_nip44=use_nip44)
         await handle_nip47_event(request_event)
 
         mock_nostr_send.assert_called_once()
@@ -238,10 +239,7 @@ async def test_succeeded(
             granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
             keys=harness.client_app_keys,
         )
-        version = "1.0" if use_nip44 else None
-        request_event = harness.create_request_event(
-            use_nip44=use_nip44, version=version
-        )
+        request_event = harness.create_request_event(use_nip44=use_nip44)
         await handle_nip47_event(request_event)
 
         mock_nostr_send.assert_called_once()
@@ -298,10 +296,7 @@ async def test_failed__vasp_error_response(
             granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
             keys=harness.client_app_keys,
         )
-        version = "1.0" if use_nip44 else None
-        request_event = harness.create_request_event(
-            use_nip44=use_nip44, version=version
-        )
+        request_event = harness.create_request_event(use_nip44=use_nip44)
         await handle_nip47_event(request_event)
 
         mock_nostr_send.assert_called_once()
@@ -342,57 +337,7 @@ async def test_duplicate_event(
 
 
 @patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
-async def test_failed__invalid_version(
-    mock_nostr_send: AsyncMock,
-    test_client: QuartClient,
-) -> None:
-    mock_nostr_send.return_value = SendEventOutput(
-        id=EventId.from_hex(token_hex()),
-        output=Output(success=["wss://relay.getalby.com/v1"], failed={}),
-    )
-    async with test_client.app.app_context():
-        harness = Harness.prepare()
-        await create_nwc_connection(
-            granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
-            keys=harness.client_app_keys,
-        )
-        request_event = harness.create_request_event(params={}, version="abc")
-        await handle_nip47_event(request_event)
-
-        mock_nostr_send.assert_called_once()
-        response_event = mock_nostr_send.call_args[0][0]
-        content = harness.validate_response_event(response_event, request_event.id())
-        assert content["result_type"] == Nip47RequestMethod.PAY_INVOICE.value
-        assert content["error"]["code"] == ErrorCode.OTHER.name
-
-
-@patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
-async def test_failed__unsupported(
-    mock_nostr_send: AsyncMock,
-    test_client: QuartClient,
-) -> None:
-    mock_nostr_send.return_value = SendEventOutput(
-        id=EventId.from_hex(token_hex()),
-        output=Output(success=["wss://relay.getalby.com/v1"], failed={}),
-    )
-    async with test_client.app.app_context():
-        harness = Harness.prepare()
-        await create_nwc_connection(
-            granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
-            keys=harness.client_app_keys,
-        )
-        request_event = harness.create_request_event(params={}, version="10.0")
-        await handle_nip47_event(request_event)
-
-        mock_nostr_send.assert_called_once()
-        response_event = mock_nostr_send.call_args[0][0]
-        content = harness.validate_response_event(response_event, request_event.id())
-        assert content["result_type"] == Nip47RequestMethod.PAY_INVOICE.value
-        assert content["error"]["code"] == ErrorCode.NOT_IMPLEMENTED.name
-
-
-@patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
-async def test_failed__wrong_encryption_for_version(
+async def test_failed__unsupported_encryption(
     mock_nostr_send: AsyncMock,
     test_client: QuartClient,
 ) -> None:
@@ -407,7 +352,34 @@ async def test_failed__wrong_encryption_for_version(
             keys=harness.client_app_keys,
         )
         request_event = harness.create_request_event(
-            params={}, version="1.0", use_nip44=False
+            params={}, encryption_tag_override="nip104"
+        )
+        await handle_nip47_event(request_event)
+
+        mock_nostr_send.assert_called_once()
+        response_event = mock_nostr_send.call_args[0][0]
+        content = harness.validate_response_event(response_event, request_event.id())
+        assert content["result_type"] == Nip47RequestMethod.PAY_INVOICE.value
+        assert content["error"]["code"] == ErrorCode.NOT_IMPLEMENTED.name
+
+
+@patch("nwc_backend.nostr.nostr_client.nostr_client.send_event", new_callable=AsyncMock)
+async def test_failed__wrong_encryption_for_tag(
+    mock_nostr_send: AsyncMock,
+    test_client: QuartClient,
+) -> None:
+    mock_nostr_send.return_value = SendEventOutput(
+        id=EventId.from_hex(token_hex()),
+        output=Output(success=["wss://relay.getalby.com/v1"], failed={}),
+    )
+    async with test_client.app.app_context():
+        harness = Harness.prepare()
+        await create_nwc_connection(
+            granted_permissions_groups=[PermissionsGroup.SEND_PAYMENTS],
+            keys=harness.client_app_keys,
+        )
+        request_event = harness.create_request_event(
+            params={}, use_nip44=False, encryption_tag_override="nip44_v2"
         )
         await handle_nip47_event(request_event)
 
