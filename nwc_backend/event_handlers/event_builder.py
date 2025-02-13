@@ -67,7 +67,7 @@ class EventBuilder:
             and not self.content_encrypted
         ):
             raise EventBuilderException(
-                "Content must be encrypted using nip04 for nip47 request and response."
+                "Content must be encrypted using nip44 or nip04 for nip47 request and response."
             )
 
         event_id = self._compute_id()
