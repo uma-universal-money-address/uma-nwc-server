@@ -58,18 +58,6 @@ def create_app() -> Quart:
 
     app.register_blueprint(frontend_api_bp, url_prefix=base_path + "api")
 
-    @app.route(f"{base_path}config.js")
-    async def serve_config() -> Response:
-        return Response(
-            f"""window.NWC_CONFIG = {{
-    UMA_VASP_LOGIN_URL: "{app.config['UMA_VASP_LOGIN_URL']}",
-    VASP_NAME: "{app.config.get('VASP_NAME') or 'UMA NWC'}",
-    VASP_LOGO_URL: "{app.config.get('VASP_LOGO_URL') or f"{base_path.rstrip('/')}/vasp.svg"}",
-    BASE_PATH: "{base_path.rstrip('/')}",
-}};""",
-            mimetype="text/javascript",
-        )
-
     @app.route(base_path, defaults={"path": ""})
     @app.route(f"{base_path}/<path:path>")
     @app.route("/<path:path>")
@@ -101,13 +89,12 @@ def create_app() -> Quart:
                     app.config.get("VASP_LOGO_URL")
                     or f"{base_path.rstrip('/')}/vasp.svg",
                 )
+                content = content.replace(
+                    "${{UMA_VASP_LOGIN_URL}}", app.config["UMA_VASP_LOGIN_URL"]
+                )
                 content = content.replace("${{BASE_PATH}}", base_path.rstrip("/"))
                 content = content.replace(
                     '="/assets/', f'="{base_path.rstrip("/")}/assets/'
-                )
-                content = content.replace(
-                    'data-src="${{CONFIG_PATH}}"',
-                    f'src="{base_path.rstrip("/")}/config.js"',
                 )
 
                 return Response(content, mimetype="text/html")
