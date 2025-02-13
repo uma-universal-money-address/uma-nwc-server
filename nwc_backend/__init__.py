@@ -106,7 +106,8 @@ def create_app() -> Quart:
                     '="/assets/', f'="{base_path.rstrip("/")}/assets/'
                 )
                 content = content.replace(
-                    'data-src="${{CONFIG_PATH}}"', f'src="{base_path.rstrip("/")}/config.js"'
+                    'data-src="${{CONFIG_PATH}}"',
+                    f'src="{base_path.rstrip("/")}/config.js"',
                 )
 
                 return Response(content, mimetype="text/html")
