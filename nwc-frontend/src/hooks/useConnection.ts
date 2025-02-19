@@ -124,7 +124,7 @@ export const initializeConnection = async (
   initialConnection: InitialConnection,
 ) => {
   try {
-    const response = await fetchWithAuth("/api/app", {
+    const response = await fetchWithAuth(`${getBackendUrl()}/api/app`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
