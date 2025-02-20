@@ -19,6 +19,11 @@ class NotificationHandler(HandleNotification):
     async def handle(self, relay_url: str, subscription_id: str, event: Event) -> None:
         async with current_app.app_context():
             logging.info("Received new event from %s: %s", relay_url, event.as_json())
+            if not event.verify():
+                logging.warning(
+                    "Ignoring event with invalid signature or id: %s", event.as_json()
+                )
+                return
 
             match event.kind().as_enum():
                 case KindEnum.WALLET_CONNECT_REQUEST():
