@@ -127,8 +127,10 @@ async def look_up_client_app_identity(
             "Invalid client_id. Should be in the format <npub> <relay>."
         )
 
-    if not relay_url.startswith("wss://") and not relay_url.startswith("ws://"):
-        raise InvalidClientIdException("Invalid relay url in client_id.")
+    if not relay_url.startswith("wss://"):
+        raise InvalidClientIdException(
+            "Invalid relay url in client_id. Only wss:// relays are allowed."
+        )
 
     try:
         client_pubkey = PublicKey.parse(client_pubkey)
