@@ -187,8 +187,8 @@ async def _look_up_from_kind_13195(
         return None
 
     event = events_13195[0]
-    if not event.verify_signature():
-        raise InvalidClientIdException("Invalid signature in 13195 event.")
+    if not event.verify():
+        raise InvalidClientIdException("Invalid signature or id in 13195 event.")
 
     content = json.loads(event.content())
     return ClientAppInfo(
@@ -214,8 +214,8 @@ async def _look_up_from_kind_0(
         event for event in events if event.kind().as_enum() == KindEnum.METADATA()
     ]
 
-    if not event.verify_signature():
-        raise InvalidClientIdException("Invalid signature in metadata event.")
+    if not event.verify():
+        raise InvalidClientIdException("Invalid signature or id in metadata event.")
 
     metadata = Metadata.from_json(event.content())
     return ClientAppInfo(
