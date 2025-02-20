@@ -3,6 +3,7 @@
 import os
 
 from quart import Quart, Response, request, send_from_directory
+from werkzeug.utils import safe_join
 
 import nwc_backend.alembic_importer  # noqa: F401
 from nwc_backend.api_handlers import (
@@ -75,7 +76,7 @@ def create_app() -> Quart:
             return Response("No frontend build path provided", status=500)
         static_folder: str = app.static_folder
         path = path.replace(base_path.strip("/"), "")
-        if path != "" and os.path.exists(static_folder + "/" + path):
+        if path != "" and os.path.exists(safe_join(static_folder, path)):
             return await send_from_directory(static_folder, path)
         else:
             # TODO(LIG-6299): Replace this with a proper template engine.
