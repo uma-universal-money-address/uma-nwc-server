@@ -99,9 +99,10 @@ class ClientAppInfo:
 
     def is_redirect_url_allowed(self, redirect_url: str) -> bool:
         parsed_url = urlparse(redirect_url)
-        if parsed_url.scheme == "http":
-            if not is_domain_local(parsed_url.netloc.lower()):
-                return False
+        if parsed_url.scheme == "http" and not is_domain_local(
+            parsed_url.netloc.lower()
+        ):
+            return False
 
         if not self.allowed_redirect_urls:
             return True
