@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from enum import Enum
 from typing import Callable, List, Optional
+from urllib.parse import urlparse
 
 from nostr_sdk import (
     Alphabet,
@@ -25,6 +26,7 @@ from nostr_sdk import (
 from quart import current_app
 
 from nwc_backend.exceptions import InvalidClientIdException
+from nwc_backend.urls import is_domain_local
 
 
 class Nip05VerificationStatus(Enum):
@@ -96,6 +98,12 @@ class ClientAppInfo:
     app_authority_verification: Optional[Nip68Verification] = None
 
     def is_redirect_url_allowed(self, redirect_url: str) -> bool:
+        parsed_url = urlparse(redirect_url)
+        if parsed_url.scheme == "http" and not is_domain_local(
+            parsed_url.netloc.lower()
+        ):
+            return False
+
         if not self.allowed_redirect_urls:
             return True
 
