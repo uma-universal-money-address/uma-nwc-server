@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from datetime import timedelta
 from enum import Enum
 from typing import Callable, List, Optional
-from urllib.parse import urlparse
 
 from nostr_sdk import (
     Alphabet,
@@ -100,18 +99,9 @@ class ClientAppInfo:
         if not self.allowed_redirect_urls:
             return True
 
-        parsed_redirect_url = urlparse(redirect_url)
+        redirect_url_lowercase = redirect_url.lower()
         for allowed_redirect_url in self.allowed_redirect_urls:  # pyre-ignore[16]
-            parsed_allowed_redirect_url = urlparse(allowed_redirect_url)
-            if (
-                parsed_redirect_url.scheme,
-                parsed_redirect_url.netloc,
-                parsed_redirect_url.path,
-            ) == (
-                parsed_allowed_redirect_url.scheme,
-                parsed_allowed_redirect_url.netloc,
-                parsed_allowed_redirect_url.path,
-            ):
+            if redirect_url_lowercase == allowed_redirect_url.lower():
                 return True
         return False
 
