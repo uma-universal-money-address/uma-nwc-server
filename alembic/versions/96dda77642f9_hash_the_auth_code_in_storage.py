@@ -30,7 +30,10 @@ def upgrade() -> None:
         batch_op.drop_constraint(
             "nwc_connection_unique_authorization_code", type_="unique"
         )
-        batch_op.create_unique_constraint(None, ["hashed_authorization_code"])
+        batch_op.create_unique_constraint(
+            "nwc_connection_unique_hashed_authorization_code",
+            ["hashed_authorization_code"],
+        )
         batch_op.drop_column("authorization_code")
 
     # ### end Alembic commands ###
@@ -42,7 +45,9 @@ def downgrade() -> None:
         batch_op.add_column(
             sa.Column("authorization_code", sa.VARCHAR(length=1024), nullable=True)
         )
-        batch_op.drop_constraint(None, type_="unique")
+        batch_op.drop_constraint(
+            "nwc_connection_unique_hashed_authorization_code", type_="unique"
+        )
         batch_op.create_unique_constraint(
             "nwc_connection_unique_authorization_code", ["authorization_code"]
         )
