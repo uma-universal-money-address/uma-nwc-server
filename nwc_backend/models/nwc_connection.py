@@ -68,7 +68,9 @@ class NWCConnection(ModelBase):
     hashed_refresh_token: Mapped[Optional[str]] = mapped_column(
         String(1024), unique=True
     )
-    authorization_code: Mapped[Optional[str]] = mapped_column(String(1024), unique=True)
+    hashed_authorization_code: Mapped[Optional[str]] = mapped_column(
+        String(1024), unique=True
+    )
     redirect_uri: Mapped[Optional[str]] = mapped_column(String(2048))
     code_challenge: Mapped[Optional[str]] = mapped_column(String(1024))
     # Expiration times for the tokens are stored as Unix timestamps
@@ -110,7 +112,7 @@ class NWCConnection(ModelBase):
     def create_oauth_auth_code(self) -> str:
         now = int(time())
         authorization_code = generate_token()
-        self.authorization_code = authorization_code
+        self.hashed_authorization_code = sha256(authorization_code.encode()).hexdigest()
         self.authorization_code_expires_at = now + AUTHORIZATION_CODE_EXPIRES_IN
         return authorization_code
 
@@ -166,8 +168,11 @@ class NWCConnection(ModelBase):
     async def from_oauth_authorization_code(
         authorization_code: str,
     ) -> Optional["NWCConnection"]:
+        hashed_authorization_code = sha256(authorization_code.encode()).hexdigest()
         result = await db.session.execute(
-            select(NWCConnection).filter_by(authorization_code=authorization_code)
+            select(NWCConnection).filter_by(
+                hashed_authorization_code=hashed_authorization_code
+            )
         )
         return result.scalars().one_or_none()
 

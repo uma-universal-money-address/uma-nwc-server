@@ -108,7 +108,7 @@ async def create_nwc_connection(
         access_token_expires_at=int(access_token_expires_at.timestamp()),
         hashed_refresh_token=hashed_refresh_token,
         refresh_token_expires_at=int((now + timedelta(days=120)).timestamp()),
-        authorization_code=token_hex(),
+        hashed_authorization_code=sha256(token_hex().encode()).hexdigest(),
         authorization_code_expires_at=int((now + timedelta(minutes=10)).timestamp()),
         budget_currency=create_currency(budget_currency_code),
     )

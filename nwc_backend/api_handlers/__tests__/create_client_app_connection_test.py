@@ -176,7 +176,10 @@ async def test_create_client_app_connection_success(
         assert nwc_connection.long_lived_vasp_token == long_lived_token
         assert nwc_connection.redirect_uri == redirect_uri
         assert nwc_connection.code_challenge == code_challenge
-        assert nwc_connection.authorization_code == auth_code
+        assert (
+            nwc_connection.hashed_authorization_code
+            == sha256(auth_code.encode()).hexdigest()
+        )
         assert nwc_connection.spending_limit.amount == budget_amount
         assert nwc_connection.spending_limit.frequency == budget_frequency
 
