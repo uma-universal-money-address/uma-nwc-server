@@ -9,6 +9,9 @@ DATABASE_URI: str = "sqlite+aiosqlite:///" + os.path.join(
 )
 SECRET_KEY: str = secrets.token_hex(32)
 
+# You can use this to specify a custom CA file for internal connections to your VASP server.
+# INTERNAL_CA_FILE = "/etc/certs/ca.crt"
+
 UMA_VASP_JWT_PUBKEY = "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\nq9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==\n-----END PUBLIC KEY-----"
 UMA_VASP_JWT_AUD: Optional[str] = None
 UMA_VASP_JWT_ISS: Optional[str] = None
