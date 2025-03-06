@@ -1,5 +1,6 @@
 # pyre-strict
 
+import ssl
 from typing import Any, Optional
 from urllib.parse import urlparse
 
@@ -30,6 +31,7 @@ from nwc_backend.models.receiving_address import ReceivingAddress, ReceivingAddr
 class VaspUmaClient:
     def __init__(self) -> None:
         self.base_url: str = current_app.config["VASP_UMA_API_BASE_URL"]
+        self.ca_file: Optional[str] = current_app.config.get("INTERNAL_CA_FILE")
 
     @staticmethod
     def instance() -> "VaspUmaClient":
@@ -39,13 +41,25 @@ class VaspUmaClient:
 
         return _vasp_uma_client
 
+    async def _get_http_session(self) -> aiohttp.ClientSession:
+        base_url_parts = urlparse(self.base_url)
+        base_url_without_path = f"{base_url_parts.scheme}://{base_url_parts.netloc}"
+        if self.ca_file:
+            return aiohttp.ClientSession(
+                base_url=base_url_without_path,
+                connector=aiohttp.TCPConnector(
+                    ssl=ssl.create_default_context(cafile=self.ca_file)
+                ),
+            )
+        else:
+            return aiohttp.ClientSession(base_url=base_url_without_path)
+
     async def _make_http_get(
         self, path: str, access_token: str, params: Optional[dict[str, Any]] = None
     ) -> str:
         base_url_parts = urlparse(self.base_url)
-        base_url_without_path = f"{base_url_parts.scheme}://{base_url_parts.netloc}"
         base_url_path = base_url_parts.path
-        async with aiohttp.ClientSession(base_url=base_url_without_path) as session:
+        async with await self._get_http_session() as session:
             async with session.get(  # pyre-ignore[16]
                 url=f"{base_url_path}{path}",
                 params=params,
@@ -66,9 +80,8 @@ class VaspUmaClient:
         self, path: str, access_token: str, data: Optional[str] = None
     ) -> str:
         base_url_parts = urlparse(self.base_url)
-        base_url_without_path = f"{base_url_parts.scheme}://{base_url_parts.netloc}"
         base_url_path = base_url_parts.path
-        async with aiohttp.ClientSession(base_url=base_url_without_path) as session:
+        async with await self._get_http_session() as session:
             async with session.post(  # pyre-ignore[16]
                 url=f"{base_url_path}{path}",
                 data=data,
