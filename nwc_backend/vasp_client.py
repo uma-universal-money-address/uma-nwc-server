@@ -78,13 +78,23 @@ class VaspUmaClient:
                 return text
 
     async def _make_http_post(
-        self, path: str, access_token: str, data: Optional[str] = None
+        self,
+        access_token: str,
+        path: Optional[str] = None,
+        url: Optional[str] = None,
+        data: Optional[str] = None,
     ) -> str:
-        base_url_parts = urlparse(self.base_url)
-        base_url_path = base_url_parts.path
+        if path is None and url is None:
+            raise ValueError("Either path or url must be provided")
+        if path is not None and url is not None:
+            raise ValueError("Only one of path or url must be provided")
+        if path is not None:
+            base_url_parts = urlparse(self.base_url)
+            base_url_path = base_url_parts.path
+            url = f"{base_url_path}{path}"
         async with await self._get_http_session() as session:
             async with session.post(  # pyre-ignore[16]
-                url=f"{base_url_path}{path}",
+                url=url,
                 data=data,
                 headers={
                     "Authorization": f"Bearer {access_token}",
@@ -107,7 +117,7 @@ class VaspUmaClient:
         if expiration:
             data["expiration"] = expiration
         result = await self._make_http_post(
-            path=uma_vasp_token_exchange_url,
+            url=uma_vasp_token_exchange_url,
             access_token=access_token,
             data=json.dumps(data),
         )
