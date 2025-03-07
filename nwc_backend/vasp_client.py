@@ -1,5 +1,6 @@
 # pyre-strict
 
+import json
 import ssl
 from typing import Any, Optional
 from urllib.parse import urlparse
@@ -97,6 +98,20 @@ class VaspUmaClient:
                         http_status=response.status, response=text
                     )
                 return text
+
+    async def token_exchange(
+        self, access_token: str, permissions: list[str], expiration: Optional[int]
+    ) -> str:
+        uma_vasp_token_exchange_url = current_app.config["UMA_VASP_TOKEN_EXCHANGE_URL"]
+        data: dict[str, Any] = {"permissions": permissions}
+        if expiration:
+            data["expiration"] = expiration
+        result = await self._make_http_post(
+            path=uma_vasp_token_exchange_url,
+            access_token=access_token,
+            data=json.dumps(data),
+        )
+        return json.loads(result)["token"]
 
     async def execute_quote(
         self,

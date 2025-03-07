@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 from uuid import uuid4
 
-import requests
 from nostr_sdk import Keys
 from quart import Response, current_app, request
 from sqlalchemy.sql import func, select
@@ -108,7 +107,6 @@ async def _initialize_connection_data(
     request_data: dict[str, Any],
     short_lived_vasp_token: str,
 ) -> None:
-    uma_vasp_token_exchange_url = current_app.config["UMA_VASP_TOKEN_EXCHANGE_URL"]
     permissions = request_data.get("permissions")
     currency_code = request_data.get("currencyCode")
     amount_in_lowest_denom = request_data.get("amountInLowestDenom")
@@ -120,8 +118,9 @@ async def _initialize_connection_data(
         expires_at = datetime.fromisoformat(expiration)
         nwc_connection.connection_expires_at = round(expires_at.timestamp())
 
+    vasp_uma_client = VaspUmaClient.instance()
     preferred_currencies = (
-        await VaspUmaClient.instance().get_info(access_token=short_lived_vasp_token)
+        await vasp_uma_client.get_info(access_token=short_lived_vasp_token)
     ).currencies
     if not preferred_currencies:
         raise NoSupportedCurrenciesException()
@@ -172,20 +171,11 @@ async def _initialize_connection_data(
     ]
 
     # save the long lived token in the db and create the app connection
-    response = requests.post(
-        uma_vasp_token_exchange_url,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + short_lived_vasp_token,
-        },
-        json={
-            "permissions": all_granted_granular_permissions_list,
-            "expiration": nwc_connection.connection_expires_at,
-        },
+    long_lived_vasp_token = await vasp_uma_client.token_exchange(
+        access_token=short_lived_vasp_token,
+        permissions=all_granted_granular_permissions_list,
+        expiration=nwc_connection.connection_expires_at,
     )
-    response.raise_for_status()
-    long_lived_vasp_token = response.json()["token"]
-
     nwc_connection.long_lived_vasp_token = long_lived_vasp_token
 
 
