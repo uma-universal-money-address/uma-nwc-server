@@ -2,14 +2,13 @@ from hashlib import sha256
 import json
 from datetime import datetime, timedelta, timezone
 from secrets import token_hex
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, patch
 from urllib.parse import urlencode, urlparse, urlunparse
 from uuid import uuid4
 
 import aiohttp
 import jwt
 import pytest
-import requests
 from aioauth.utils import create_s256_code_challenge
 from nostr_sdk import Keys
 from quart import Response, current_app
@@ -129,14 +128,16 @@ async def test_create_client_app_connection_success(
         "redirectUri": redirect_uri,
     }
     long_lived_token = token_hex()
-    with patch.object(requests, "post") as mock_token_exchange_post, patch.object(
+    with patch.object(
+        aiohttp.ClientSession, "post"
+    ) as mock_token_exchange_post, patch.object(
         aiohttp.ClientSession, "get"
     ) as mock_vasp_get_info:
         vasp_response = {"token": long_lived_token}
-        mock_response = Mock()
-        mock_response.json = Mock(return_value=vasp_response)
+        mock_response = AsyncMock()
+        mock_response.text = AsyncMock(return_value=json.dumps(vasp_response))
         mock_response.ok = True
-        mock_token_exchange_post.return_value = mock_response
+        mock_token_exchange_post.return_value.__aenter__.return_value = mock_response
 
         vasp_response = {
             "pubkey": token_hex(),
