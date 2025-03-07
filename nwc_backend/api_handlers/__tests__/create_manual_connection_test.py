@@ -5,7 +5,6 @@ from urllib.parse import urlparse
 
 import aiohttp
 import pytest
-import requests
 from quart.app import QuartClient
 
 from nwc_backend.models.__tests__.model_examples import (
@@ -17,7 +16,7 @@ from nwc_backend.models.nip47_request_method import Nip47RequestMethod
 
 
 @pytest.mark.asyncio
-@patch.object(requests, "post")
+@patch.object(aiohttp.ClientSession, "post")
 @patch.object(aiohttp.ClientSession, "get")
 async def test_create_manual_connection_success(
     mock_vasp_get_info: Mock,
@@ -27,10 +26,10 @@ async def test_create_manual_connection_success(
     vasp_response = {
         "token": token_hex(),
     }
-    mock_response = Mock()
-    mock_response.json = Mock(return_value=vasp_response)
+    mock_response = AsyncMock()
+    mock_response.text = AsyncMock(return_value=json.dumps(vasp_response))
     mock_response.ok = True
-    mock_token_exchange_post.return_value = mock_response
+    mock_token_exchange_post.return_value.__aenter__.return_value = mock_response
 
     vasp_response = {
         "pubkey": token_hex(),
