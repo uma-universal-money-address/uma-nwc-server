@@ -19,7 +19,12 @@ async def handle_vasp_token_callback() -> WerkzeugResponse:
 
     fe_redirect_path = request.args.get("fe_redirect")
     if fe_redirect_path:
-        fe_redirect_path = unquote(fe_redirect_path)
+        if "." in fe_redirect_path:
+            return WerkzeugResponse(
+                "Invalid redirect path: " + fe_redirect_path, status=400
+            )
+        # Note: Ensure that the frontend redirect path has a leading slash to avoid subdomains and other weirdness.
+        fe_redirect_path = "/" + unquote(fe_redirect_path).lstrip("/")
         base_path = (current_app.config.get("BASE_PATH") or "/").rstrip("/")
         fe_redirect_path = fe_redirect_path.replace(base_path, "")
     frontend_redirect_url = current_app.config["NWC_APP_ROOT_URL"] + (
