@@ -88,9 +88,9 @@ async def create_nwc_connection(
     keys = keys or Keys.generate()
     now = datetime.now(timezone.utc)
     if access_token_expired:
-        access_token_expires_at = now - timedelta(days=30)
+        access_token_expires_at = now - timedelta(days=1)
     else:
-        access_token_expires_at = now + timedelta(days=30)
+        access_token_expires_at = now + timedelta(days=1)
     refresh_token = token_hex()
     hashed_refresh_token = sha256(refresh_token.encode()).hexdigest()
     nwc_connection = NWCConnection(
