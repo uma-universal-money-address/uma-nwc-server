@@ -19,7 +19,10 @@ async def handle_vasp_token_callback() -> WerkzeugResponse:
 
     fe_redirect_path = request.args.get("fe_redirect")
     if fe_redirect_path:
-        if "." in fe_redirect_path:
+        # Don't allow periods except in a query parameter.
+        # This is to prevent redirecting to a malicious site.
+        before_query = fe_redirect_path.split("?", 1)[0]
+        if "." in before_query:
             return WerkzeugResponse(
                 "Invalid redirect path: " + fe_redirect_path, status=400
             )
