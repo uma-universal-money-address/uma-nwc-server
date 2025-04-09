@@ -22,6 +22,7 @@ import {
 } from "src/types/PermissionPageLoaderData";
 import { getAuth } from "src/utils/auth";
 import { formatConnectionString } from "src/utils/formatConnectionString";
+import { getConfig } from "src/utils/getConfig";
 import { Routes, generatePath } from "../routes/Routes";
 import { PermissionsList } from "./PermissionsList";
 import { PersonalizePage, type ConnectionSettings } from "./PersonalizePage";
@@ -81,6 +82,7 @@ export const PermissionsPage = () => {
   const auth = getAuth();
   const uma = auth.getUmaAddress();
   const currency = auth.getCurrency();
+  const { vaspLogoUrl } = getConfig();
   const navigate = useNavigate();
 
   const [isPersonalizeVisible, setIsPersonalizeVisible] =
@@ -192,7 +194,7 @@ export const PermissionsPage = () => {
 
   const header = (
     <Header>
-      <VaspLogo src="/vasp.svg" width={32} height={32} />
+      <VaspLogo src={vaspLogoUrl || "/vasp.svg"} width={32} height={32} />
     </Header>
   );
   return (
